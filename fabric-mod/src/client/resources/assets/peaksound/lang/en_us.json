@@ -1,0 +1,8 @@
+{
+  "itemGroup.peaksound": "PeakSound",
+  "item.peaksound.blank_record": "Blank Record",
+  "item.peaksound.written_record": "Written Record",
+  "item.peaksound.peak_tuner": "Peak Tuner",
+  "item.peaksound.jukebox": "PeakSound Jukebox",
+  "item.peaksound.speaker": "Speaker"
+}

@@ -9,6 +9,12 @@ java {
 
 loom {
     splitEnvironmentSourceSets()
+    runs {
+        // Dev-Client verbindet automatisch mit dem lokalen Testserver (run/server)
+        named("client") {
+            programArgs("--quickPlayMultiplayer", "localhost:25565", "--username", "PeakDev")
+        }
+    }
     mods {
         register("peaksound") {
             sourceSet(sourceSets["main"])

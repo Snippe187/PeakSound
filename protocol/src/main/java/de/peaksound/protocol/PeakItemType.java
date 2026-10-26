@@ -4,14 +4,15 @@ import java.util.Optional;
 
 /**
  * Alle PeakSound-Items. {@code carrier} ist das Vanilla-Item, das Spieler ohne Mod sehen;
- * {@code block} ist gesetzt, wenn das Item als Block platziert wird.
+ * {@code block} ist gesetzt, wenn das Item als Block platziert wird. Die Mod erkennt das Item
+ * am custom_model_data-String {@link #id()} und zeigt das eigene Modell.
  */
 public enum PeakItemType {
     BLANK_RECORD("blank_record", "DISC_FRAGMENT_5", null),
     WRITTEN_RECORD("written_record", "DISC_FRAGMENT_5", null),
     PEAK_TUNER("peak_tuner", "BREEZE_ROD", null),
-    JUKEBOX("jukebox", "JUKEBOX", PeakBlockType.JUKEBOX),
-    SPEAKER("speaker", "NOTE_BLOCK", PeakBlockType.SPEAKER);
+    JUKEBOX("jukebox", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.JUKEBOX),
+    SPEAKER("speaker", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.SPEAKER);
 
     private final String id;
     private final String carrier;

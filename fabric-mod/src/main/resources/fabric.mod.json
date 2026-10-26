@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "peaksound",
+  "version": "${version}",
+  "name": "PeakSound",
+  "description": "Burn your own music onto records and play it in real 3D surround. Requires the PeakSound plugin on the server.",
+  "authors": ["PeakSound contributors"],
+  "license": "MIT",
+  "icon": "assets/peaksound/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": ["de.peaksound.mod.PeakSoundMod"],
+    "client": ["de.peaksound.mod.client.PeakSoundClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

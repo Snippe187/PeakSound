@@ -2,9 +2,15 @@ package de.peaksound.plugin;
 
 import de.peaksound.protocol.PeakBlockType;
 import de.peaksound.protocol.PeakItemType;
+import java.util.Locale;
 import java.util.Optional;
 import org.bukkit.GameMode;
+import org.bukkit.Instrument;
+import org.bukkit.Material;
+import org.bukkit.Note;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.type.NoteBlock;
+import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -33,7 +39,23 @@ final class BlockListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent event) {
         Optional<PeakBlockType> type = items.typeOf(event.getItemInHand()).flatMap(PeakItemType::block);
-        type.ifPresent(t -> registry.register(event.getBlockPlaced(), t));
+        type.ifPresent(t -> {
+            Block placed = event.getBlockPlaced();
+            // Notenblock in den PeakSound-Zustand versetzen (die Mod zeigt dafuer das eigene Modell)
+            NoteBlock data = (NoteBlock) Material.NOTE_BLOCK.createBlockData();
+            data.setInstrument(Instrument.valueOf(t.instrument().toUpperCase(Locale.ROOT)));
+            data.setNote(new Note(t.note()));
+            data.setPowered(true);
+            placed.setBlockData(data, false);
+            registry.register(placed, t);
+        });
+    }
+
+    /** Verhindert, dass Nachbaraenderungen Instrument, Ton oder powered-Zustand zuruecksetzen. */
+    @EventHandler(ignoreCancelled = true)
+    public void onPhysics(BlockPhysicsEvent event) {
+        Block block = event.getBlock();
+        if (block.getType() == Material.NOTE_BLOCK && registry.get(block).isPresent()) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

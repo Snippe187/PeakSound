@@ -1,0 +1,27 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:custom_model_data",
+    "index": 0,
+    "cases": [
+      {
+        "when": "blank_record",
+        "model": {
+          "type": "minecraft:model",
+          "model": "peaksound:item/blank_record"
+        }
+      },
+      {
+        "when": "written_record",
+        "model": {
+          "type": "minecraft:model",
+          "model": "peaksound:item/written_record"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "minecraft:item/disc_fragment_5"
+    }
+  }
+}

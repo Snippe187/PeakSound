@@ -2,22 +2,36 @@ package de.peaksound.protocol;
 
 import java.util.Optional;
 
-/** Alle PeakSound-Bloecke. Serverseitig sind es Vanilla-Traegerbloecke, markiert durch das Plugin. */
+/**
+ * Alle PeakSound-Bloecke. Serverseitig sind es Notenbloecke in einem festen, im normalen Spiel
+ * praktisch nie vorkommenden Zustand (Instrument + Ton + powered=true). Das Plugin setzt und
+ * schuetzt diesen Zustand, die Mod ordnet ihm ein eigenes Modell zu. Spieler ohne Mod sehen
+ * einen normalen Notenblock.
+ */
 public enum PeakBlockType {
-    JUKEBOX("jukebox", "JUKEBOX"),
-    SPEAKER("speaker", "NOTE_BLOCK");
+    JUKEBOX("jukebox", "bit", 23),
+    SPEAKER("speaker", "bit", 24);
+
+    /** Vanilla-Block, der als Traeger dient. */
+    public static final String CARRIER_MATERIAL = "NOTE_BLOCK";
 
     private final String id;
-    private final String carrier;
+    private final String instrument;
+    private final int note;
 
-    PeakBlockType(String id, String carrier) {
+    PeakBlockType(String id, String instrument, int note) {
         this.id = id;
-        this.carrier = carrier;
+        this.instrument = instrument;
+        this.note = note;
     }
 
     public String id() { return id; }
 
-    public String carrierMaterial() { return carrier; }
+    /** Name des Notenblock-Instruments (Blockstate-Wert, z. B. "bit"). */
+    public String instrument() { return instrument; }
+
+    /** Tonhoehe 0-24 (Blockstate-Wert). */
+    public int note() { return note; }
 
     public static Optional<PeakBlockType> byId(String id) {
         for (PeakBlockType t : values()) {

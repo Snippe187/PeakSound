@@ -1,0 +1,8 @@
+{
+  "itemGroup.peaksound": "PeakSound",
+  "item.peaksound.blank_record": "Leere Schallplatte",
+  "item.peaksound.written_record": "Beschriebene Schallplatte",
+  "item.peaksound.peak_tuner": "Peak-Tuner",
+  "item.peaksound.jukebox": "PeakSound-Jukebox",
+  "item.peaksound.speaker": "Lautsprecher"
+}

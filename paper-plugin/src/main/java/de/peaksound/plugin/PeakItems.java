@@ -2,12 +2,14 @@ package de.peaksound.plugin;
 
 import de.peaksound.protocol.PeakIds;
 import de.peaksound.protocol.PeakItemType;
+import java.util.List;
 import java.util.Optional;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.persistence.PersistentDataType;
 
 /**
@@ -24,6 +26,10 @@ public final class PeakItems {
         ItemMeta meta = stack.getItemMeta();
         meta.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, type.id());
         meta.itemName(Component.translatable("item.peaksound." + type.id(), fallbackName(type)));
+        // Die Mod waehlt anhand dieses Strings das eigene Modell; Clients ohne Mod ignorieren ihn.
+        CustomModelDataComponent modelData = meta.getCustomModelDataComponent();
+        modelData.setStrings(List.of(type.id()));
+        meta.setCustomModelDataComponent(modelData);
         if (type == PeakItemType.PEAK_TUNER) {
             meta.setMaxStackSize(1);
         }

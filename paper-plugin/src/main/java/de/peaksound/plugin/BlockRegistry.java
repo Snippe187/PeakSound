@@ -73,7 +73,7 @@ public final class BlockRegistry {
     Optional<PeakBlockType> get(Block block) {
         PeakBlockType type = blocks.get(Key.of(block));
         if (type == null) return Optional.empty();
-        if (block.getType() != Material.valueOf(type.carrierMaterial())) {
+        if (block.getType() != Material.NOTE_BLOCK) {
             remove(block);
             return Optional.empty();
         }
