@@ -17,10 +17,12 @@ public final class ClientNetwork {
     private static volatile int malformed;
     private static volatile int dropped;
     private static volatile String lastError = "-";
+    /** Die ersten ungueltigen Pakete mit ID, Groesse und Anfang der Daten (zur Fehlersuche). */
+    private static final java.util.List<String> INVALID = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     static String debug() {
         return "  Gesendet: " + new java.util.TreeMap<>(SENT) + "\n  Empfangen: " + new java.util.TreeMap<>(RECEIVED) + "\n  Ungueltig empfangen: " + malformed
-                + ", nicht gesendet (Server kennt Kanal nicht): " + dropped + ", letzter Fehler: " + lastError + "\n";
+                + ", nicht gesendet (Server kennt Kanal nicht): " + dropped + ", letzter Fehler: " + lastError + "\n  Ungueltige Pakete (erste 12): " + INVALID + "\n";
     }
 
     public static void send(Packet.Serverbound packet) {
@@ -40,6 +42,12 @@ public final class ClientNetwork {
             } catch (MalformedPacketException e) {
                 malformed++;
                 lastError = e.getMessage();
+                if (INVALID.size() < 12) {
+                    byte[] d = payload.data();
+                    StringBuilder hex = new StringBuilder();
+                    for (int i = 0; i < Math.min(d.length, 24); i++) hex.append(String.format("%02x", d[i]));
+                    INVALID.add("id=" + (d.length > 0 ? d[0] & 0xFF : -1) + " len=" + d.length + " (" + e.getMessage() + ") " + hex);
+                }
                 return; // unbekannte oder defekte Pakete ignorieren
             }
             RECEIVED.computeIfAbsent(packet.getClass().getSimpleName(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();

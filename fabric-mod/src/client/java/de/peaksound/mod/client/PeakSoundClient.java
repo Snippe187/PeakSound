@@ -62,6 +62,10 @@ public final class PeakSoundClient implements ClientModInitializer {
             AudioEngine.tick();
             LightShow.tick();
             DebugReport.tick();
+            if (client.player != null && ServerState.shouldRetryHello()) {
+                ServerState.onHelloSent();
+                ClientNetwork.send(new Packet.Hello(PeakIds.PROTOCOL_VERSION, PeakSoundMod.VERSION));
+            }
             PreviewPlayer.tick();
         });
         // Button "Song-Verwaltung" im Escape-Menue, nur fuer Operatoren (der Server meldet den Status).

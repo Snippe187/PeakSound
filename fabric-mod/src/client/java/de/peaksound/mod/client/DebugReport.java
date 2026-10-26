@@ -71,7 +71,16 @@ final class DebugReport {
         if (mc.player == null) waiting = false;
     }
 
+    /** Fuer automatische Tests: existiert die Datei peaksound-autodebug.flag im Spielordner, laeuft der Bericht 10 s nach dem Beitritt und landet im Spiel-Log. */
+    private static final boolean AUTO = Files.exists(FabricLoader.getInstance().getGameDir().resolve("peaksound-autodebug.flag"));
+    private static int autoTicks;
+    private static boolean autoDone;
+
     static void tick() {
+        if (AUTO && !autoDone && Minecraft.getInstance().player != null && ++autoTicks == 200) {
+            autoDone = true;
+            run();
+        }
         if (waiting && System.currentTimeMillis() > deadline) {
             waiting = false;
             finish(null, "Keine Antwort vom Server innerhalb von " + SERVER_TIMEOUT_MS / 1000 + " s (Plugin zu alt oder haengt).");
@@ -106,6 +115,7 @@ final class DebugReport {
         String report = sb.toString();
 
         String file = save(report);
+        if (AUTO) for (String l : report.split("\\R")) System.out.println("[PEAKSOUND-DEBUG] " + l);
         // Zusammenfassung im Chat
         say(Component.literal("[PeakSound] Debug-Zusammenfassung").withStyle(ChatFormatting.GOLD));
         boolean channel = canSend();

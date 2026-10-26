@@ -36,6 +36,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     private DjService dj;
     private MicService mic;
     private DebugService debug;
+    /** Spieler, deren HelloAck noch aussteht, weil ihr Client den Kanal beim Server noch nicht angemeldet hatte (Paper verwirft solche Sendungen still). */
+    private final Set<UUID> pendingAck = ConcurrentHashMap.newKeySet();
     /** Letztes Hello je Spieler (auch bei Versionskonflikt) und Paketzaehler, nur fuer die Diagnose. */
     private record HelloInfo(int protocol, String modVersion, long at, boolean compatible) {}
 
@@ -139,15 +141,31 @@ final class NetworkHandler implements PluginMessageListener, Listener {
                 + ", Operator: " + Permissions.admin(player) + ")");
         if (compatible) {
             modded.add(player.getUniqueId());
-            playback.forget(player); // Client startet leer: laufende Jukeboxen erneut melden
         } else {
             player.sendMessage(Messages.versionMismatch(player, PeakIds.PROTOCOL_VERSION, hello.protocolVersion()));
         }
-        Net.send(plugin, player, new Packet.HelloAck(PeakIds.PROTOCOL_VERSION, compatible,
-                compatible && Permissions.admin(player), System.currentTimeMillis(), Limits.MAX_SONG_SECONDS));
-        if (compatible) lastOperator.put(player.getUniqueId(), Permissions.admin(player));
+        pendingAck.add(player.getUniqueId());
+        trySendAck(player);
     }
 
+    /**
+     * Antwortet auf das Hello, sobald der Client den Kanal angemeldet hat. Der Client schickt Hello und
+     * Kanal-Anmeldung unmittelbar nacheinander; kommt das Hello zuerst an, wuerde Paper die Antwort verwerfen.
+     */
+    private void trySendAck(Player player) {
+        HelloInfo h = hellos.get(player.getUniqueId());
+        if (h == null || !player.getListeningPluginChannels().contains(PeakIds.CHANNEL)) return;
+        if (!pendingAck.remove(player.getUniqueId())) return;
+        if (h.compatible()) playback.forget(player); // Client startet leer: laufende Jukeboxen erneut melden
+        Net.send(plugin, player, new Packet.HelloAck(PeakIds.PROTOCOL_VERSION, h.compatible(),
+                h.compatible() && Permissions.admin(player), System.currentTimeMillis(), Limits.MAX_SONG_SECONDS));
+        if (h.compatible()) lastOperator.put(player.getUniqueId(), Permissions.admin(player));
+    }
+
+    @EventHandler
+    public void onRegisterChannel(org.bukkit.event.player.PlayerRegisterChannelEvent event) {
+        if (event.getChannel().equals(PeakIds.CHANNEL)) trySendAck(event.getPlayer());
+    }
     /** Meldet Aenderungen des Operator-Status (z. B. nach /op), damit der Button im Escape-Menue stimmt. */
     void checkOperators() {
         for (Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
@@ -186,6 +204,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         lights.onQuit(player);
         lastOperator.remove(player.getUniqueId());
         hellos.remove(player.getUniqueId());
+        pendingAck.remove(player.getUniqueId());
         traffic.remove(player.getUniqueId());
         lastError.remove(player.getUniqueId());
         if (debug != null) debug.onQuit(player);

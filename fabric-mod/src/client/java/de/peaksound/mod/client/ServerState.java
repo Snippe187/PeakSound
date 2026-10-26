@@ -21,10 +21,21 @@ public final class ServerState {
         operator = false;
         clockOffsetMs = 0;
         helloSentAt = 0;
+        helloAttempts = 0;
     }
 
     /** Merkt sich den Sendezeitpunkt des Hello, um die Uhrzeit des Servers abzuschaetzen. */
-    public static void onHelloSent() { helloSentAt = System.currentTimeMillis(); }
+    public static void onHelloSent() {
+        helloSentAt = System.currentTimeMillis();
+        helloAttempts++;
+    }
+
+    private static volatile int helloAttempts;
+
+    /** Das Hello wiederholen, solange keine Antwort da ist (hoechstens 10 Versuche im Abstand von 2 s). */
+    static boolean shouldRetryHello() {
+        return !pluginPresent && helloAttempts > 0 && helloAttempts < 10 && System.currentTimeMillis() - helloSentAt > 2000;
+    }
 
     /** Der Server meldet eine Aenderung des Operator-Status (z. B. nach /op). */
     public static void setOperator(boolean value) { operator = pluginPresent && compatible && value; }
@@ -53,7 +64,7 @@ public final class ServerState {
     public static String debug() {
         return "  pluginPresent=" + pluginPresent + " compatible=" + compatible + " operator=" + operator + " Uhrversatz=" + clockOffsetMs + " ms maxSongSekunden=" + maxSongSeconds
                 + " HelloGesendetVor=" + (helloSentAt == 0 ? "nie" : (System.currentTimeMillis() - helloSentAt) / 1000 + " s")
-                + " HelloAckVor=" + (lastAckAt == 0 ? "nie" : (System.currentTimeMillis() - lastAckAt) / 1000 + " s") + " Acks=" + ackCount + "\n";
+                + " HelloAckVor=" + (lastAckAt == 0 ? "nie" : (System.currentTimeMillis() - lastAckAt) / 1000 + " s") + " HelloVersuche=" + helloAttempts + " Acks=" + ackCount + "\n";
     }
 
     public static int maxSongSeconds() { return maxSongSeconds; }
