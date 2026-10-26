@@ -55,6 +55,7 @@ final class JukeboxMenuScreen extends Screen {
     private Button nowPlayingButton;
     private Button loopButton;
     private Button shuffleButton;
+    private Button upmixButton;
 
     private JukeboxMenuScreen(Packet.OpenJukeboxMenu menu) {
         super(Component.translatable("peaksound.menu.jukebox.title"));
@@ -112,7 +113,8 @@ final class JukeboxMenuScreen extends Screen {
         playlistTab.active = tab != Tab.PLAYLIST;
         speakersTab.active = tab != Tab.SPEAKERS;
         if (tab == Tab.SETTINGS) initSettings(top + 28);
-        else if (tab == Tab.PLAYLIST) initPlaylist(top + 28);        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
+        else if (tab == Tab.PLAYLIST) initPlaylist(top + 28);
+        else initSpeakersTab(top + 28);        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
                 .bounds(width / 2 - 100, top + 196, 200, 20).build());
     }
 
@@ -161,6 +163,15 @@ final class JukeboxMenuScreen extends Screen {
             change(cur.withRainbow(!cur.rainbow()));
             refreshLabels();
         }).bounds(right, top + 124, w, 20).build());
+        refreshLabels();
+    }
+
+    /** Reiter "Lautsprecher": Schalter fuer den Stereo-Upmix (Anzeige der Lautsprecher zeichnet extractSpeakers). */
+    private void initSpeakersTab(int top) {
+        upmixButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
+            change(cur.withUpmix(!cur.upmix()));
+            refreshLabels();
+        }).bounds(width / 2 - 155, top + 166, 310, 20).tooltip(Tooltip.create(Component.translatable("peaksound.menu.upmix.tooltip"))).build());
         refreshLabels();
     }
 
@@ -248,6 +259,8 @@ final class JukeboxMenuScreen extends Screen {
             density.active = p;
             heightSlider.active = p;
             rainbowButton.active = p;
+        } else if (tab == Tab.SPEAKERS) {
+            upmixButton.setMessage(toggle("peaksound.menu.upmix", cur.upmix()));
         } else {
             loopButton.setMessage(Component.translatable("peaksound.menu.loop",
                     Component.translatable("peaksound.menu.loop." + cur.loop().name().toLowerCase())));

@@ -101,5 +101,8 @@
   "peaksound.admin.limits.zero": "0 = unlimited",
   "peaksound.admin.limits.players": "Player limits (- / + / default):",
 
-  "peaksound.options.volume": "PeakSound volume: %d %%"
+  "peaksound.options.volume": "PeakSound volume: %d %%",
+
+  "peaksound.menu.upmix": "Upmix stereo to all speakers: %s",
+  "peaksound.menu.upmix.tooltip": "Off: stereo songs play only on front left and right. On: stereo is spread over all speakers (center, rears, subwoofer, height). Surround files always use all speakers."
 }

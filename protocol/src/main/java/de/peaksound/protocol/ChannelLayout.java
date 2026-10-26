@@ -51,6 +51,16 @@ public final class ChannelLayout {
         return result;
     }
 
+    /**
+     * Spielt dieser Lautsprecher mit, wenn NICHT hochgemischt wird? Stereo-Songs laufen nur auf vorne links/rechts,
+     * Mono-Songs auf vorne links/rechts und Center. Mehrkanal-Songs (mehr als 2 Kanaele) laufen immer auf allen Lautsprechern.
+     */
+    public static boolean playsWithoutUpmix(int sourceChannels, SpeakerChannel speaker) {
+        if (sourceChannels > 2) return true;
+        if (speaker == FRONT_LEFT || speaker == FRONT_RIGHT) return true;
+        return sourceChannels == 1 && speaker == CENTER;
+    }
+
     public static Mapping mapping(int sourceChannels, boolean vorbisOrder, SpeakerChannel target) {
         SpeakerChannel[] order = sourceOrder(sourceChannels, vorbisOrder);
         int n = sourceChannels;

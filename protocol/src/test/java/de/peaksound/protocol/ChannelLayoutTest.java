@@ -231,6 +231,17 @@ class ChannelLayoutTest {
     }
 
     @Test
+    void withoutUpmixStereoStaysStereo() {
+        for (SpeakerChannel ch : SpeakerChannel.values()) {
+            boolean front = ch == FRONT_LEFT || ch == FRONT_RIGHT;
+            assertEquals(front, ChannelLayout.playsWithoutUpmix(2, ch), "Stereo " + ch);
+            assertEquals(front || ch == CENTER, ChannelLayout.playsWithoutUpmix(1, ch), "Mono " + ch);
+            assertTrue(ChannelLayout.playsWithoutUpmix(6, ch), "5.1 " + ch); // Mehrkanal bleibt Mehrkanal
+            assertTrue(ChannelLayout.playsWithoutUpmix(8, ch), "7.1 " + ch);
+        }
+    }
+
+    @Test
     void defaultOrderCoversAllChannelsOnce() {
         assertEquals(SpeakerChannel.values().length, java.util.Arrays.stream(SpeakerChannel.DEFAULT_ORDER).distinct().count());
         assertEquals(FRONT_LEFT, SpeakerChannel.DEFAULT_ORDER[0]);

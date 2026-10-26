@@ -101,5 +101,8 @@
   "peaksound.admin.limits.zero": "0 = unbegrenzt",
   "peaksound.admin.limits.players": "Spieler-Limits (- / + / Standard):",
 
-  "peaksound.options.volume": "PeakSound-Lautstärke: %d %%"
+  "peaksound.options.volume": "PeakSound-Lautstärke: %d %%",
+
+  "peaksound.menu.upmix": "Stereo auf alle Lautsprecher hochmischen: %s",
+  "peaksound.menu.upmix.tooltip": "Aus: Stereo-Songs laufen nur auf vorne links und rechts. An: Stereo wird auf alle Lautsprecher verteilt (Center, hinten, Subwoofer, Decke). Surround-Dateien nutzen immer alle Lautsprecher."
 }

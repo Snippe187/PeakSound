@@ -135,7 +135,7 @@ class PacketCodecTest {
     @Test
     void settingsRoundTripAndSanitize() {
         JukeboxSettings s = new JukeboxSettings("  Disco\u0007 ".concat("x".repeat(60)), 99, -5, true, false, 50, 0, 9, false, true,
-                LoopMode.ALL, true);
+                LoopMode.ALL, true, true);
         JukeboxSettings clean = s.sanitized();
         assertEquals(30, clean.range());
         assertEquals(0, clean.volume());

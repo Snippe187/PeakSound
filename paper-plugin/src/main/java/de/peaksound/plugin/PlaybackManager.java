@@ -1,6 +1,7 @@
 package de.peaksound.plugin;
 
 import de.peaksound.audio.Analysis;
+import de.peaksound.protocol.ChannelLayout;
 import de.peaksound.protocol.JukeboxSettings;
 import de.peaksound.protocol.LoopMode;
 import de.peaksound.protocol.Packet;
@@ -322,6 +323,12 @@ final class PlaybackManager {
             for (BlockRegistry.Key member : members) jukeboxes.put(member, leader);
 
             List<SpeakerService.Speaker> netSpeakers = speakers.speakersOf(net).stream().filter(sp -> sp.number() > 0).toList();
+            // Stereo-/Mono-Songs bleiben Stereo/Mono, solange die Jukebox nicht auf Upmix steht (dann alle Lautsprecher)
+            int sourceChannels = songChannels(leader.hash);
+            List<SpeakerService.Speaker> playing = netSpeakers.stream()
+                    .filter(sp -> settings.get(sp.jukebox()).upmix() || ChannelLayout.playsWithoutUpmix(sourceChannels, sp.settings().channel()))
+                    .toList();
+            if (!playing.isEmpty()) netSpeakers = playing; // gibt es keinen passenden Lautsprecher, spielen alle (besser als Stille)
             if (netSpeakers.isEmpty()) {
                 for (BlockRegistry.Key member : members) {
                     JukeboxSettings cfg = settings.get(member);
