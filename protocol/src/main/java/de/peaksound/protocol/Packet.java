@@ -206,14 +206,14 @@ public sealed interface Packet {
      * {@code offsetMs + (jetzt - serverTimeMs)}, damit spaeter Hinzukommende richtig einsteigen.
      */
     record PlaybackStart(int x, int y, int z, String hash, int offsetMs, long serverTimeMs, int durationMs,
-                         int channels, int range, int volume, int speakerChannel) implements Clientbound {
+                         int channels, int range, int volume, int speakerChannel, int speakerKind) implements Clientbound {
         public static final int ID = 13;
 
         @Override
         public byte[] encode() {
             return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeString(hash, Limits.HASH_LENGTH)
                     .writeInt(offsetMs).writeLong(serverTimeMs).writeInt(durationMs).writeInt(channels)
-                    .writeInt(range).writeInt(volume).writeByte(speakerChannel).toBytes();
+                    .writeInt(range).writeInt(volume).writeByte(speakerChannel).writeByte(speakerKind).toBytes();
         }
 
         static PlaybackStart decode(ByteBuffer in) {
@@ -221,7 +221,7 @@ public sealed interface Packet {
                     PacketIO.readString(in, Limits.HASH_LENGTH), PacketIO.readIntRange(in, 0, Integer.MAX_VALUE),
                     PacketIO.readLong(in), PacketIO.readIntRange(in, 1, Integer.MAX_VALUE),
                     PacketIO.readIntRange(in, 1, 16), PacketIO.readIntRange(in, Limits.MIN_RANGE, Limits.MAX_RANGE),
-                    PacketIO.readIntRange(in, 0, 100), readSpeakerChannel(in));
+                    PacketIO.readIntRange(in, 0, 100), readSpeakerChannel(in), SpeakerKind.byOrdinal(PacketIO.readByte(in)).ordinal());
         }
     }
 

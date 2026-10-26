@@ -84,7 +84,7 @@ final class PlaybackManager {
     private record Heard(String signature, int range, int volume) {}
 
     /** Eine Schallquelle: Jukebox (Kanal 0, Mono-Mix) oder Lautsprecher (Kanal 1-12) mit Reichweite und Lautstaerke. */
-    record Emitter(BlockRegistry.Key key, State state, int channel, int range, int volume) {}
+    record Emitter(BlockRegistry.Key key, State state, int channel, int range, int volume, int kind) {}
 
     /** Ergebnis von {@link #effective()}: Jukeboxen mit ihrem Song und die tatsaechlichen Schallquellen. */
     record Effective(Map<BlockRegistry.Key, State> jukeboxes, Map<BlockRegistry.Key, Emitter> emitters) {}
@@ -368,7 +368,7 @@ final class PlaybackManager {
             if (net == null) { // Chunk nicht geladen oder Block weg: nur die eigene Jukebox
                 jukeboxes.putIfAbsent(e.getKey(), e.getValue());
                 JukeboxSettings cfg = settings.get(e.getKey());
-                emitters.putIfAbsent(e.getKey(), new Emitter(e.getKey(), e.getValue(), 0, cfg.range(), cfg.volume() * gain(e.getKey()) / 100));
+                emitters.putIfAbsent(e.getKey(), new Emitter(e.getKey(), e.getValue(), 0, cfg.range(), cfg.volume() * gain(e.getKey()) / 100, 0));
                 continue;
             }
             if (!seen.add(net)) continue;
@@ -392,13 +392,14 @@ final class PlaybackManager {
             if (netSpeakers.isEmpty()) {
                 for (BlockRegistry.Key member : members) {
                     JukeboxSettings cfg = settings.get(member);
-                    emitters.put(member, new Emitter(member, leader, 0, cfg.range(), cfg.volume() * gain(member) / 100));
+                    emitters.put(member, new Emitter(member, leader, 0, cfg.range(), cfg.volume() * gain(member) / 100, 0));
                 }
             } else {
                 for (SpeakerService.Speaker sp : netSpeakers) {
                     JukeboxSettings cfg = settings.get(sp.jukebox());
                     int volume = cfg.volume() * sp.settings().volume() / 100 * gain(sp.jukebox()) / 100;
-                    emitters.put(sp.key(), new Emitter(sp.key(), leader, sp.settings().channel().ordinal() + 1, cfg.range(), volume));
+                    emitters.put(sp.key(), new Emitter(sp.key(), leader, sp.settings().channel().ordinal() + 1, cfg.range(), volume,
+                            sp.settings().kind().ordinal()));
                 }
             }
         }
@@ -430,7 +431,7 @@ final class PlaybackManager {
                 BlockRegistry.Key key = em.key();
                 State s = em.state();
                 double d2 = distanceSquared(key, world, loc);
-                String signature = s.hash + "@" + s.startedAt + "#" + em.channel();
+                String signature = s.hash + "@" + s.startedAt + "#" + em.channel() + "/" + em.kind();
                 Heard known = hearing.get(key);
                 if (known == null) {
                     if (d2 <= sq(em.range() + PRELOAD_MARGIN)) {
@@ -464,7 +465,7 @@ final class PlaybackManager {
         State s = em.state();
         int offset = (int) Math.min(Integer.MAX_VALUE, now - s.startedAt);
         Net.send(plugin, p, new Packet.PlaybackStart(em.key().x(), em.key().y(), em.key().z(), s.hash, offset, now,
-                s.durationMs, songChannels(s.hash), em.range(), em.volume(), em.channel()));
+                s.durationMs, songChannels(s.hash), em.range(), em.volume(), em.channel(), em.kind()));
     }
 
     /** "Jetzt laeuft"-Anzeige (Actionbar) fuer alle Spieler, auch ohne Mod. */

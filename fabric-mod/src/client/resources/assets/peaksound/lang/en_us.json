@@ -156,5 +156,11 @@
   "peaksound.menu.mic.novoice": "Simple Voice Chat is not installed on this server",
   "peaksound.menu.mic.connected": "Connected to speakers",
   "peaksound.menu.mic.unconnected": "Not connected: link it to speakers or a jukebox with redstone dust",
-  "peaksound.menu.mic.hint": "Players need the Simple Voice Chat mod to speak and listen."
+  "peaksound.menu.mic.hint": "Players need the Simple Voice Chat mod to speak and listen.",
+
+  "peaksound.menu.speaker.kind": "Type: %s",
+  "peaksound.speaker.kind.full": "Full range",
+  "peaksound.speaker.kind.woofer": "Woofer (lows)",
+  "peaksound.speaker.kind.tweeter": "Tweeter (highs)",
+  "peaksound.speaker.kind.subwoofer": "Subwoofer (deep bass)"
 }

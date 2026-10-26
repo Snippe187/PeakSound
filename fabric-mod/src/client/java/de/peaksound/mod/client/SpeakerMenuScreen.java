@@ -25,6 +25,7 @@ final class SpeakerMenuScreen extends Screen {
     private long lastChange;
 
     private Button channelButton;
+    private Button kindButton;
 
     private SpeakerMenuScreen(Packet.OpenSpeakerMenu menu) {
         super(Component.translatable("peaksound.menu.speaker.title"));
@@ -66,14 +67,19 @@ final class SpeakerMenuScreen extends Screen {
             refresh();
         }).bounds(left + 176, top + 62, 24, 20).build());
 
-        addRenderableWidget(new IntSlider(left, top + 90, 200, "peaksound.menu.speaker.volume", 0, 100, cur.volume(),
+        kindButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
+            change(cur.withKind(cur.kind().next()));
+            refresh();
+        }).bounds(left, top + 90, 200, 20).build());
+        addRenderableWidget(new IntSlider(left, top + 114, 200, "peaksound.menu.speaker.volume", 0, 100, cur.volume(),
                 v -> change(cur.withVolume(v))));
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
-                .bounds(left, top + 122, 200, 20).build());
+                .bounds(left, top + 146, 200, 20).build());
         refresh();
     }
 
     private void refresh() {
+        kindButton.setMessage(Component.translatable("peaksound.menu.speaker.kind", Component.translatable("peaksound.speaker.kind." + cur.kind().key())));
         SpeakerChannel c = cur.channel();
         channelButton.setMessage(Component.translatable("peaksound.menu.speaker.channel",
                 Component.translatable("peaksound.channel." + c.key()), c.shortName()));

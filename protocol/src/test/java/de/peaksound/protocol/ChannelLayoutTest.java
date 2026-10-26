@@ -253,4 +253,27 @@ class ChannelLayoutTest {
         assertEquals(FRONT_RIGHT, FRONT_LEFT.next());
         assertEquals(TOP_REAR_RIGHT, FRONT_LEFT.previous()); // springt am Anfang um
     }
+
+    @Test
+    void speakerKindsFilterTheirBand() {
+        int rate = 44100;
+        short[] low = new short[rate], high = new short[rate];
+        for (int i = 0; i < rate; i++) {
+            low[i] = (short) (8000 * Math.sin(2 * Math.PI * 80 * i / rate));
+            high[i] = (short) (8000 * Math.sin(2 * Math.PI * 8000 * i / rate));
+        }
+        ChannelLayout.Mapping mono = new ChannelLayout.Mapping(new float[] {1f}, false);
+        assertTrue(rms(new ChannelMixer(mono, rate, SpeakerKind.WOOFER).process(low, rate, 1)) > 4000);
+        assertTrue(rms(new ChannelMixer(mono, rate, SpeakerKind.WOOFER).process(high, rate, 1)) < 400);
+        assertTrue(rms(new ChannelMixer(mono, rate, SpeakerKind.TWEETER).process(high, rate, 1)) > 4000);
+        assertTrue(rms(new ChannelMixer(mono, rate, SpeakerKind.TWEETER).process(low, rate, 1)) < 400);
+        assertTrue(rms(new ChannelMixer(mono, rate, SpeakerKind.SUBWOOFER).process(high, rate, 1)) < 100);
+        assertTrue(rms(new ChannelMixer(mono, rate, SpeakerKind.FULL_RANGE).process(high, rate, 1)) > 4000);
+    }
+
+    private static double rms(short[] s) {
+        double sum = 0;
+        for (int i = s.length / 2; i < s.length; i++) sum += (double) s[i] * s[i];
+        return Math.sqrt(sum / (s.length - s.length / 2));
+    }
 }

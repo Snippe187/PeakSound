@@ -12,6 +12,9 @@ public final class ChannelMixer {
     private final boolean lowPass;
     private final Filter filterA;
     private final Filter filterB;
+    /** Zusaetzlicher Filter der Bauart (Tieftoener, Hochtoener, Subwoofer), sonst null. */
+    private final Filter kindA;
+    private final Filter kindB;
 
     /** Zweipol-Tiefpass (Butterworth-Guete), zweimal hintereinander = vierte Ordnung. */
     private static final class Filter {
@@ -19,11 +22,15 @@ public final class ChannelMixer {
         private double x1, x2, y1, y2;
 
         Filter(double fs, double fc) {
+            this(fs, fc, false);
+        }
+
+        Filter(double fs, double fc, boolean high) {
             double w = 2 * Math.PI * Math.min(fc, fs * 0.45) / fs, cos = Math.cos(w), alpha = Math.sin(w) / (2 * 0.7071);
             double a0 = 1 + alpha;
-            b0 = (1 - cos) / 2 / a0;
-            b1 = (1 - cos) / a0;
-            b2 = (1 - cos) / 2 / a0;
+            b0 = (high ? (1 + cos) / 2 : (1 - cos) / 2) / a0;
+            b1 = (high ? -(1 + cos) : (1 - cos)) / a0;
+            b2 = b0;
             a1 = -2 * cos / a0;
             a2 = (1 - alpha) / a0;
         }
@@ -36,6 +43,13 @@ public final class ChannelMixer {
     }
 
     public ChannelMixer(ChannelLayout.Mapping mapping, int sampleRate) {
+        this(mapping, sampleRate, SpeakerKind.FULL_RANGE);
+    }
+
+    public ChannelMixer(ChannelLayout.Mapping mapping, int sampleRate, SpeakerKind kind) {
+        boolean filtered = kind != SpeakerKind.FULL_RANGE;
+        this.kindA = filtered ? new Filter(sampleRate, kind.cutoffHz(), kind.highPass()) : null;
+        this.kindB = filtered ? new Filter(sampleRate, kind.cutoffHz(), kind.highPass()) : null;
         this.gains = mapping.gains();
         this.lowPass = mapping.lowPass();
         this.filterA = lowPass ? new Filter(sampleRate, LFE_CUTOFF_HZ) : null;
@@ -53,6 +67,7 @@ public final class ChannelMixer {
             double sum = 0;
             for (int c = 0; c < channels; c++) sum += gains[c] * interleaved[i * channels + c];
             if (lowPass) sum = filterB.process(filterA.process(sum));
+            if (kindA != null) sum = kindB.process(kindA.process(sum));
             out[i] = (short) Math.max(-32768, Math.min(32767, Math.round(sum)));
         }
         return out;

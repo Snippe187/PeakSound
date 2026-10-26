@@ -114,8 +114,11 @@ final class JukeboxMenuScreen extends Screen {
         speakersTab.active = tab != Tab.SPEAKERS;
         if (tab == Tab.SETTINGS) initSettings(top + 28);
         else if (tab == Tab.PLAYLIST) initPlaylist(top + 28);
-        else initSpeakersTab(top + 28);        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
-                .bounds(width / 2 - 100, top + 196, 200, 20).build());
+        else initSpeakersTab(top + 28);
+        // Im Lautsprecher-Reiter teilen sich Upmix-Schalter und Fertig-Knopf die Zeile
+        boolean shared = tab == Tab.SPEAKERS;
+        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
+                .bounds(shared ? width / 2 + 57 : width / 2 - 100, top + 196, shared ? 98 : 200, 20).build());
     }
 
     private void switchTab(Tab next) {
@@ -171,7 +174,7 @@ final class JukeboxMenuScreen extends Screen {
         upmixButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
             change(cur.withUpmix(!cur.upmix()));
             refreshLabels();
-        }).bounds(width / 2 - 155, top + 166, 310, 20).tooltip(Tooltip.create(Component.translatable("peaksound.menu.upmix.tooltip"))).build());
+        }).bounds(width / 2 - 155, top + 168, 208, 20).tooltip(Tooltip.create(Component.translatable("peaksound.menu.upmix.tooltip"))).build());
         refreshLabels();
     }
 

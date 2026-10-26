@@ -8,6 +8,7 @@ import de.peaksound.protocol.ChannelMixer;
 import de.peaksound.protocol.DjMath;
 import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.SpeakerChannel;
+import de.peaksound.protocol.SpeakerKind;
 import de.peaksound.protocol.SyncMath;
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -45,6 +46,7 @@ final class PlaybackSession {
         final long key;
         final double x, y, z;
         final int channel; // 0 = Mono-Mix, 1-12 = Lautsprecher-Kanal
+        final SpeakerKind kind;
         volatile int range;
         volatile int volume;
         /** Ueberblendung (DJ-Pult): Lautstaerke rampt linear von fadeFrom nach volume ueber fadeMs. */
@@ -64,6 +66,7 @@ final class PlaybackSession {
             this.y = start.y() + 0.5;
             this.z = start.z() + 0.5;
             this.channel = start.speakerChannel();
+            this.kind = SpeakerKind.byOrdinal(start.speakerKind());
             this.range = start.range();
             this.volume = start.volume();
         }
@@ -255,7 +258,7 @@ final class PlaybackSession {
             return false;
         }
         e.mixer = e.channel == 0 ? null : new ChannelMixer(
-                ChannelLayout.mapping(sourceChannels, vorbisOrder, SpeakerChannel.values()[e.channel - 1]), sampleRate);
+                ChannelLayout.mapping(sourceChannels, vorbisOrder, SpeakerChannel.values()[e.channel - 1]), sampleRate, e.kind);
         // Kommt eine Quelle mitten im Song dazu: Stille in Hoehe des schon eingereihten Vorlaufs, damit sie phasengleich bleibt
         e.pendingSilence = (int) referenceQueuedAhead(e);
         return true;

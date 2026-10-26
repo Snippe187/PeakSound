@@ -24,7 +24,7 @@ class PacketCodecTest {
             new Packet.DjUpdate(1, 2, 3, new DjSettings(60, 8, 90, 70, true)),
             new Packet.DjDeckAction(1, 2, 3, 1, Packet.DjDeckAction.Action.PLAY, 4),
             new Packet.AdminAction(Packet.AdminAction.Action.SET_PLAYER_LIMIT, "", 12345L, -9876L, 25),
-            new Packet.SpeakerUpdate(1, 64, -3, new SpeakerSettings("Links", SpeakerChannel.REAR_LEFT, 70)),
+            new Packet.SpeakerUpdate(1, 64, -3, new SpeakerSettings("Links", SpeakerChannel.REAR_LEFT, 70, SpeakerKind.TWEETER)),
             new Packet.SpeakerOverviewRequest(1, 64, -3),
             new Packet.PlaylistAction(1, 64, -3, Packet.PlaylistAction.Action.MOVE_UP, 4));
 
@@ -37,7 +37,7 @@ class PacketCodecTest {
             new Packet.UploadResult(3, true, "b".repeat(64), "Titel", "Interpret", 200_000, 6),
             new Packet.SongChunk("c".repeat(64), 1, 4, new byte[Limits.DOWNLOAD_CHUNK_BYTES]),
             new Packet.SongUnavailable("d".repeat(64)),
-            new Packet.PlaybackStart(1, -60, 3, "e".repeat(64), 1500, 1_700_000_000_000L, 180_000, 2, 16, 80, 5),
+            new Packet.PlaybackStart(1, -60, 3, "e".repeat(64), 1500, 1_700_000_000_000L, 180_000, 2, 16, 80, 5, 2),
             new Packet.PlaybackStop(1, -60, 3),
             new Packet.PlaybackUpdate(1, -60, 3, 20, 40),
             new Packet.OpenJukeboxMenu(1, 64, -3, JukeboxSettings.defaults(16, 100), true, "Titel", "Interpret"),

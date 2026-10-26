@@ -156,5 +156,11 @@
   "peaksound.menu.mic.novoice": "Simple Voice Chat ist auf diesem Server nicht installiert",
   "peaksound.menu.mic.connected": "Mit Lautsprechern verbunden",
   "peaksound.menu.mic.unconnected": "Nicht verbunden: per Redstone-Staub an Lautsprecher oder Jukebox anschlie\u00dfen",
-  "peaksound.menu.mic.hint": "Zum Sprechen und H\u00f6ren braucht man die Simple-Voice-Chat-Mod."
+  "peaksound.menu.mic.hint": "Zum Sprechen und H\u00f6ren braucht man die Simple-Voice-Chat-Mod.",
+
+  "peaksound.menu.speaker.kind": "Bauart: %s",
+  "peaksound.speaker.kind.full": "Vollbereich",
+  "peaksound.speaker.kind.woofer": "Tiefton\u00e4r (Tiefen)",
+  "peaksound.speaker.kind.tweeter": "Hochton\u00e4r (H\u00f6hen)",
+  "peaksound.speaker.kind.subwoofer": "Subwoofer (Tiefbass)"
 }
