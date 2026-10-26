@@ -79,6 +79,12 @@ final class PlaybackManager {
     private final Map<BlockRegistry.Key, Integer> deckGain = new ConcurrentHashMap<>();
     /** Bis wann (ms) eine Schallquelle gerade ueberblendet wird. */
     private final Map<BlockRegistry.Key, Long> fadeUntil = new ConcurrentHashMap<>();
+    /** Laufende Ueberblendungen: von, nach (Prozent), Startzeit und Dauer, damit Neuankoemmlinge mittendrin einsteigen. */
+    private record Fade(int from, int to, long startMs, int durationMs) {
+        double current(long now) { return de.peaksound.protocol.DjMath.rampPercent(from, to, now - startMs, durationMs); }
+    }
+
+    private final Map<BlockRegistry.Key, Fade> fades = new ConcurrentHashMap<>();
 
     /** Was der Client einer Schallquelle zuletzt gemeldet bekam: Song@Start#Kanal (erkennt Songwechsel) sowie Reichweite und Lautstaerke. */
     private record Heard(String signature, int range, int volume) {}
@@ -163,6 +169,10 @@ final class PlaybackManager {
         for (Emitter now : after.values()) {
             Emitter old = before.get(now.key());
             if (old == null || old.volume() == now.volume()) continue;
+            Fade running = fades.get(now.key());
+            int from = running != null && running.startMs() + running.durationMs() > System.currentTimeMillis()
+                    ? (int) Math.round(running.current(System.currentTimeMillis())) : old.volume();
+            fades.put(now.key(), new Fade(from, now.volume(), System.currentTimeMillis(), durationMs));
             fadeUntil.put(now.key(), until);
             for (Player p : Bukkit.getOnlinePlayers()) {
                 Map<BlockRegistry.Key, Heard> hearing = heard.get(p.getUniqueId());
@@ -463,9 +473,16 @@ final class PlaybackManager {
 
     private void sendStart(Player p, Emitter em, long now) {
         State s = em.state();
+        Fade fade = fades.get(em.key());
+        boolean fading = fade != null && fade.startMs() + fade.durationMs() > now;
+        if (fade != null && !fading) fades.remove(em.key());
         int offset = (int) Math.min(Integer.MAX_VALUE, now - s.startedAt);
         Net.send(plugin, p, new Packet.PlaybackStart(em.key().x(), em.key().y(), em.key().z(), s.hash, offset, now,
-                s.durationMs, songChannels(s.hash), em.range(), em.volume(), em.channel(), em.kind()));
+                s.durationMs, songChannels(s.hash), em.range(), fading ? (int) Math.round(fade.current(now)) : em.volume(), em.channel(), em.kind()));
+        if (fading) { // mitten in einer Ueberblendung: von hier aus zum Ziel weiterrampen
+            Net.send(plugin, p, new Packet.PlaybackFade(em.key().x(), em.key().y(), em.key().z(), fade.to(),
+                    (int) (fade.startMs() + fade.durationMs() - now)));
+        }
     }
 
     /** "Jetzt laeuft"-Anzeige (Actionbar) fuer alle Spieler, auch ohne Mod. */

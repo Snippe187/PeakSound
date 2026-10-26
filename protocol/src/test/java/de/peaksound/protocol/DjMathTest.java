@@ -47,7 +47,11 @@ class DjMathTest {
     void remainingTimeAndRamp() {
         assertEquals(3000, DjMath.remainingMs(1000, 4000, 2000));
         assertEquals(0, DjMath.remainingMs(1000, 4000, 9000));
-        assertEquals(50.0, DjMath.rampPercent(100, 0, 500, 1000), 1e-9);
+        // Gleiche Gesamtleistung: in der Mitte haben beide Decks je cos(45 Grad) Verstaerkung
+        assertEquals(100 * Math.cos(Math.PI / 4), DjMath.rampPercent(100, 0, 500, 1000), 1e-9);
+        assertEquals(100 * Math.sin(Math.PI / 4), DjMath.rampPercent(0, 100, 500, 1000), 1e-9);
+        double a = DjMath.rampPercent(100, 0, 300, 1000) / 100, b = DjMath.rampPercent(0, 100, 300, 1000) / 100;
+        assertEquals(1.0, a * a + b * b, 1e-9);
         assertEquals(0.0, DjMath.rampPercent(100, 0, 2000, 1000), 1e-9);
         assertEquals(100.0, DjMath.rampPercent(100, 0, -5, 1000), 1e-9);
         assertEquals(30.0, DjMath.rampPercent(80, 30, 0, 0), 1e-9);

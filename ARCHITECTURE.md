@@ -5,7 +5,7 @@ Stand: Entwurf, noch kein Code. APIs für Minecraft 26.2 werden in Phase 1 gegen
 ## 0. Versionshinweis
 Mojang nutzt seit 2026 das Schema `26.x` (kein `1.` mehr). Gemeint ist daher vermutlich **Minecraft 26.2**.
 Gefunden (Drittquellen, vor Phase 1 gegen fabricmc.net / modrinth / papermc.io prüfen): Fabric API `0.16x.x+26.2`, Fabric Loader 0.19.x, Paper 26.2 (Beta-Builds).
-Simple Voice Chat: letzte gefundene Paper-Version 2.6.11 listet nur bis 1.21.11 → **Kompatibilität mit 26.2 ist offen** (siehe Phase 10).
+Simple Voice Chat: **Stand Phase 10 geprüft**, Paper-Version 2.6.23 und neuer unterstützt Minecraft 26.2 (API 2.6.25).
 
 ## 1. Ordnerstruktur (Gradle Multi-Projekt, Java 25, MIT)
 ```

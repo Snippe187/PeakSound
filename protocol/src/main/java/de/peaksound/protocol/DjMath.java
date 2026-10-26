@@ -32,11 +32,13 @@ public final class DjMath {
         return Math.max(0, startMs + durationMs - nowMs);
     }
 
-    /** Interpolierte Lautstaerke eines Clients waehrend einer Ueberblendung (lineare Rampe in Prozent). */
+    /** Interpolierte Lautstaerke eines Clients waehrend einer Ueberblendung (Rampe mit gleicher Gesamtleistung: steigende Lautstaerke folgt sin, fallende cos, damit sich zwei Decks in der Mitte nicht einbrechen). */
     public static double rampPercent(double fromPercent, double toPercent, long elapsedMs, long durationMs) {
         if (durationMs <= 0 || elapsedMs >= durationMs) return toPercent;
         if (elapsedMs <= 0) return fromPercent;
-        return fromPercent + (toPercent - fromPercent) * ((double) elapsedMs / durationMs);
+        double t = (double) elapsedMs / durationMs;
+        double shape = toPercent >= fromPercent ? Math.sin(t * Math.PI / 2) : 1 - Math.cos(t * Math.PI / 2);
+        return fromPercent + (toPercent - fromPercent) * shape;
     }
 
     private static double clamp01(double v) { return Math.max(0, Math.min(1, v)); }

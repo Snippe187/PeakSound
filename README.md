@@ -16,6 +16,13 @@ Für Minecraft **26.2**: eine **Fabric-Client-Mod**, ein **Paper-Server-Plugin**
 - **Comparator-Equalizer:** Comparator an der Jukebox gibt live 0–15 aus (Norden Bass, Osten Mitten, Süden Höhen, Westen gesamt).
 - **Lautsprecher und Surround:** bis zu 25 Lautsprecher je System, jeder eine eigene 3D-Schallquelle mit Kanal
   (7.1.4-Positionen), Nummer auf der Textur, Upmix von Stereo, Mehrkanal direkt.
+- **Lautsprecher-Bauart:** Vollbereich, Tieftöner, Hochtöner oder Subwoofer (Frequenzfilter pro Box, zusätzlich zur Position).
+- **DJ-Pult:** zwei Decks (je ein Redstone-Strang zu einer Jukebox-Gruppe), Crossfader mit einstellbarer Überblendzeit
+  (für alle Spieler synchron, gleiche Gesamtleistung), Lautstärke je Deck, Song je Deck aus der Playlist.
+- **Scheinwerfer:** Strahl aus Partikeln und echtes Licht; bis zu vier abwechselnde Farben, Modi dauerhaft/blinkend/im Takt
+  (Bass, Mitten, Höhen), Effekte Farbwechsel, Strobo (mit Warnung und Client-Option), Schwenken, Pulsieren.
+- **Mikrofon** (optional, braucht [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat)): Sprache läuft in 3D über die
+  angeschlossenen Lautsprecher; Reichweite, Lautstärke, Ducking der Musik.
 - **Streaming und Cache:** Die Wiedergabe startet, während der Song noch lädt. Geladene Songs liegen im Client-Cache
   (Hash als Kennung).
 - **OP-Menü:** Song-Verwaltung im Escape-Menü: alle Songs, vorhören, löschen, gesperrte Mehrkanal-Dateien
@@ -24,6 +31,10 @@ Für Minecraft **26.2**: eine **Fabric-Client-Mod**, ein **Paper-Server-Plugin**
 - Deutsch und Englisch.
 
 Spieler ohne Mod werden nie gekickt: Sie sehen normale Blöcke und bekommen einen Hinweis im Chat.
+
+## Showroom
+
+Mit dem Skript [tools/build_showroom.ps1](tools/build_showroom.ps1) baut man auf dem Testserver eine Karte mit einer Plaza (Tutorial-Tafeln: Rezepte, Redstone-Ausgänge, Menüs) und vier Räumen: Stereo-Anlage mit Mikrofon, Surround 7.1.4, DJ-Pult mit Scheinwerfern und Lichtshow mit Comparator-Equalizer.
 
 ## Aufbau
 

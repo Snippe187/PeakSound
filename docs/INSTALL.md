@@ -18,6 +18,10 @@ keine Musik und sieht nur normale Blöcke.
 6. Rechte: Die Song-Verwaltung ist Operatoren vorbehalten (Recht `peaksound.admin`, Standard OP). Jeder Spieler darf
    hochladen.
 
+### Mikrofon-Block (optional)
+
+Der Mikrofon-Block braucht [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) (Paper-Plugin ab Version 2.6.23 für Minecraft 26.2) im Ordner `plugins` und die passende Mod bei jedem Spieler. Ohne das Plugin läuft PeakSound unverändert, der Mikrofon-Block tut dann nichts (der Server-Log meldet das beim Start). Der Port von Simple Voice Chat (UDP 24454) muss erreichbar sein.
+
 ### Port und Firmen-Hoster
 
 Es ist **kein zusätzlicher Port** nötig. Uploads und Downloads laufen über den normalen Spielport (Plugin-Messaging).
