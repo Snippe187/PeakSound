@@ -254,6 +254,11 @@ final class PlaybackManager {
         return true;
     }
 
+    /** Wiederholmodus einer Jukebox setzen (z. B. fuer Dauer-Tests). */
+    void setLoop(Block block, LoopMode loop) {
+        applySettings(block, settings.get(block).withLoop(loop));
+    }
+
     /** Neue Einstellungen uebernehmen; laufende Wiedergabe wird sofort nachgezogen (naechster Abgleich). */
     void applySettings(Block block, JukeboxSettings updated) {
         settings.set(block, updated);

@@ -68,7 +68,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu), this);
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(new NetworkListener(networks, equalizer), this);
-        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items);
+        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers);
         getCommand("peaksound").setExecutor(command);
         getCommand("peaksound").setTabCompleter(command);
         getServer().getPluginManager().registerEvents(

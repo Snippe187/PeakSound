@@ -98,13 +98,16 @@ function numberTexture(n) {
 }
 const MAX_SPEAKERS = 25;
 const face = t => ({ texture: t });
+// Das Overlay ragt minimal ueber den Block hinaus (gegen Z-Fighting); ohne feste UVs wuerde Minecraft die
+// UV-Koordinaten aus der Elementgroesse ableiten und ausserhalb des Bildes landen (Modell wuerde nicht gebacken).
+const overlayFace = t => ({ texture: t, uv: [0, 0, 16, 16] });
 for (let n = 1; n <= MAX_SPEAKERS; n++) {
   write(path.join(PS, `textures/block/speaker_digit_${n}.png`), numberTexture(n));
   json(path.join(PS, `models/block/speaker_${n}.json`), {
     textures: { particle: "minecraft:block/note_block", base: "minecraft:block/note_block", num: `peaksound:block/speaker_digit_${n}` },
     elements: [
       { from: [0, 0, 0], to: [16, 16, 16], faces: { down: face("#base"), up: face("#base"), north: face("#base"), south: face("#base"), west: face("#base"), east: face("#base") } },
-      { from: [-0.01, -0.01, -0.01], to: [16.01, 16.01, 16.01], faces: { north: face("#num"), south: face("#num"), west: face("#num"), east: face("#num") } }
+      { from: [-0.01, -0.01, -0.01], to: [16.01, 16.01, 16.01], faces: { north: overlayFace("#num"), south: overlayFace("#num"), west: overlayFace("#num"), east: overlayFace("#num") } }
     ]
   });
 }

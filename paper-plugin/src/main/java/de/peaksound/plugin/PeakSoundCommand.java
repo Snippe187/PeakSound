@@ -12,7 +12,8 @@ import org.bukkit.entity.Player;
 /**
  * Diagnose-Befehle fuer Server-Betreiber (nur Operatoren): {@code eqtest} setzt einen Comparator auf einen Pegel
  * und meldet den Ausgang zurueck (prueft, ob der Equalizer auf diesem Server funktioniert, er nutzt Server-Interna);
- * {@code place} setzt einen registrierten PeakSound-Block; {@code play} spielt einen gespeicherten Song an einer Jukebox.
+ * {@code place} setzt einen registrierten PeakSound-Block; {@code play} spielt einen gespeicherten Song an einer Jukebox;
+ * {@code speaker} legt den Kanal eines Lautsprechers fest.
  * Damit lassen sich Netz und Equalizer ohne Spielerbedienung testen.
  */
 final class PeakSoundCommand implements CommandExecutor, TabCompleter {
@@ -21,8 +22,11 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
     private final SongStore songs;
     private final PlaybackManager playback;
     private final PeakItems items;
+    private final SpeakerService speakers;
 
-    PeakSoundCommand(EqualizerService equalizer, BlockRegistry registry, SongStore songs, PlaybackManager playback, PeakItems items) {
+    PeakSoundCommand(EqualizerService equalizer, BlockRegistry registry, SongStore songs, PlaybackManager playback, PeakItems items,
+                     SpeakerService speakers) {
+        this.speakers = speakers;
         this.equalizer = equalizer;
         this.registry = registry;
         this.songs = songs;
@@ -68,12 +72,30 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
             try {
                 Song song = all.get(Integer.parseInt(args[4]) - 1);
                 playback.insert(block, items.createWritten(new PeakItems.Written(song.hash(), song.title(), song.artist(), song.uploaderName())), song);
-                sender.sendMessage("Spielt: " + song.title());
+                playback.setLoop(block, de.peaksound.protocol.LoopMode.ONE); // Test-Songs laufen in Dauerschleife
+                sender.sendMessage("Spielt (Dauerschleife): " + song.title());
             } catch (RuntimeException e) {
                 sender.sendMessage("Song-Nummer 1-" + all.size() + " erwartet.");
             }
             return true;
         }
+        if (args.length == 5 && args[0].equalsIgnoreCase("speaker")) {
+            Block block = blockAt(sender, args);
+            if (block == null) return true;
+            if (registry.get(block).filter(t -> t == de.peaksound.protocol.PeakBlockType.SPEAKER).isEmpty()) {
+                sender.sendMessage("Dort ist kein PeakSound-Lautsprecher.");
+                return true;
+            }
+            try {
+                de.peaksound.protocol.SpeakerChannel channel = de.peaksound.protocol.SpeakerChannel.valueOf(args[4].toUpperCase());
+                speakers.update(block, new de.peaksound.protocol.SpeakerSettings(channel.shortName(), channel, 100));
+                sender.sendMessage("Lautsprecher " + channel.shortName() + " gesetzt.");
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage("Kanal: " + java.util.Arrays.toString(de.peaksound.protocol.SpeakerChannel.values()));
+            }
+            return true;
+        }
+        sender.sendMessage("/peaksound speaker <x> <y> <z> <kanal>");
         sender.sendMessage("/peaksound eqtest <x> <y> <z> <pegel 0-15>");
         sender.sendMessage("/peaksound place <jukebox|speaker> <x> <y> <z>");
         sender.sendMessage("/peaksound play <x> <y> <z> <song-nummer>");
@@ -94,6 +116,6 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        return args.length == 1 ? List.of("eqtest", "place", "play") : List.of();
+        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker") : List.of();
     }
 }
