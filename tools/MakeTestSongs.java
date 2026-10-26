@@ -26,6 +26,7 @@ public class MakeTestSongs {
         Files.createDirectories(songsDir);
         List<String> entries = new ArrayList<>();
         entries.add(store(songsDir, "Testbeat", "PeakSound Stereo-Test", 2, 44100, 30, stereoBeat(), "OK"));
+        entries.add(store(songsDir, "Stereo breit", "PeakSound Stereo-Test", 2, 44100, 30, wideStereo(), "OK"));
         entries.add(store(songsDir, "Surround-Demo 7.1", "PeakSound 3D-Test", 8, 48000, 60, surroundDemo(), "OK"));
         // Zwei gesperrte Mehrkanal-Dateien zum Testen der Freigabe im OP-Menue (6 Kanaele, 5.1)
         entries.add(store(songsDir, "Gesperrt: 5.1-Rundgang", "Warteschlange A", 6, 48000, 24, (t, c) -> channelWalk(t, c == 4 ? BL : c == 5 ? BR : c), "PENDING"));
@@ -42,6 +43,18 @@ public class MakeTestSongs {
             double hat = (noise.nextDouble() * 2 - 1) * Math.exp(-((t + 0.25) % 0.5) * 40) * 0.4;      // Hoehen
             double lead = Math.sin(2 * Math.PI * (Math.floor(t) % 2 == 0 ? 523 : 659) * t) * 0.25;      // Mitten
             return (kick * 0.8 + hat + lead) * 0.45;
+        };
+    }
+
+    /** Stereo mit echtem Unterschied links/rechts (links Melodie, rechts Akkord, beide teilen sich einen Bass). */
+    static Source wideStereo() {
+        return (t, c) -> {
+            double bass = Math.sin(2 * Math.PI * 55 * t) * Math.exp(-(t % 0.5) * 12) * 0.5;
+            if (c == 0) {
+                double[] melody = {523, 659, 784, 659};
+                return bass + Math.sin(2 * Math.PI * melody[(int) (t * 2) % 4] * t) * 0.35 * Math.exp(-(t % 0.5) * 3);
+            }
+            return bass + (Math.sin(2 * Math.PI * 330 * t) + Math.sin(2 * Math.PI * 392 * t)) * 0.18 * (0.6 + 0.4 * Math.sin(2 * Math.PI * 0.5 * t));
         };
     }
 

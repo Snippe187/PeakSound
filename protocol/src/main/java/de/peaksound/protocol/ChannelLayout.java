@@ -7,7 +7,8 @@ import static de.peaksound.protocol.SpeakerChannel.*;
  * <ul>
  *   <li>Mehrkanal-Dateien werden direkt den Kanaelen zugeordnet (5.1, 7.1 ...).</li>
  *   <li>Stereo- und Mono-Dateien werden hochgemischt: Center = Mitte, Subwoofer = Bass (Tiefpass),
- *       hinten und oben = Raumanteil (Differenz L-R, dadurch bei Mono-Material still).</li>
+ *       hinten und oben = Raumanteil (Differenz L-R, gegenphasig links/rechts) plus ein Teil des Frontsignals,
+ *       damit auch Mono-Material hinten hoerbar bleibt (dann leiser als vorne).</li>
  *   <li>Fehlt in einer Mehrkanal-Datei ein Kanal (z. B. keine Deckenkanaele bei 7.1), wird er aus den
  *       vorhandenen abgeleitet.</li>
  * </ul>
@@ -90,12 +91,12 @@ public final class ChannelLayout {
             case SIDE_RIGHT -> side(g, stereoFront, fl, fr, br, mono, false);
             case REAR_LEFT -> {
                 if (sl >= 0) g[sl] = 1f;
-                else if (stereoFront) { g[fl] = 0.5f; g[fr] = -0.5f; } // Raumanteil (L-R)/2
+                else if (stereoFront) { g[fl] = 0.8f; g[fr] = -0.5f; } // Raumanteil (L-R)/2 plus etwas Front, damit Mono-Material hinten nicht verstummt
                 else g[mono] = 0.5f;
             }
             case REAR_RIGHT -> {
                 if (sr >= 0) g[sr] = 1f;
-                else if (stereoFront) { g[fr] = 0.5f; g[fl] = -0.5f; }
+                else if (stereoFront) { g[fr] = 0.8f; g[fl] = -0.5f; }
                 else g[mono] = 0.5f;
             }
             case TOP_FRONT_LEFT -> {
@@ -111,13 +112,13 @@ public final class ChannelLayout {
             case TOP_REAR_LEFT -> {
                 if (bl >= 0) g[bl] = 0.5f;
                 else if (sl >= 0) g[sl] = 0.5f;
-                else if (stereoFront) { g[fl] = 0.2f; g[fr] = -0.2f; }
+                else if (stereoFront) { g[fl] = 0.35f; g[fr] = -0.15f; }
                 else g[mono] = 0.3f;
             }
             case TOP_REAR_RIGHT -> {
                 if (br >= 0) g[br] = 0.5f;
                 else if (sr >= 0) g[sr] = 0.5f;
-                else if (stereoFront) { g[fr] = 0.2f; g[fl] = -0.2f; }
+                else if (stereoFront) { g[fr] = 0.35f; g[fl] = -0.15f; }
                 else g[mono] = 0.3f;
             }
         }

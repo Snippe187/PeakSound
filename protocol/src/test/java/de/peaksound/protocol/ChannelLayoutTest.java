@@ -77,21 +77,26 @@ class ChannelLayoutTest {
     }
 
     @Test
-    void monoCompatibleMaterialIsSilentInTheAmbienceChannels() {
-        // L = R: Raumanteil (L-R) ist null -> hinten und hintere Decke bleiben still
-        for (SpeakerChannel ch : new SpeakerChannel[] {REAR_LEFT, REAR_RIGHT, TOP_REAR_LEFT, TOP_REAR_RIGHT}) {
-            assertEquals(0.0, apply(2, false, ch, 0.7, 0.7), 1e-6, ch.name());
+    void monoCompatibleMaterialStaysAudibleButQuieterInTheBack() {
+        // L = R: der Raumanteil ist null, aber ein Teil des Frontsignals haelt die hinteren Lautsprecher hoerbar
+        for (SpeakerChannel ch : new SpeakerChannel[] {REAR_LEFT, REAR_RIGHT}) {
+            double v = apply(2, false, ch, 0.7, 0.7);
+            assertTrue(v > 0.1 && v < 0.7, ch + ": " + v);
+        }
+        for (SpeakerChannel ch : new SpeakerChannel[] {TOP_REAR_LEFT, TOP_REAR_RIGHT}) {
+            double v = apply(2, false, ch, 0.7, 0.7);
+            assertTrue(v > 0.05 && v < 0.7, ch + ": " + v);
         }
     }
 
     @Test
     void ambienceGoesToRearInAntiPhase() {
-        double left = apply(2, false, REAR_LEFT, 1.0, 0.0);
-        double right = apply(2, false, REAR_RIGHT, 1.0, 0.0);
-        assertEquals(0.5, left, 1e-6);
-        assertEquals(-0.5, right, 1e-6);
+        // Rein linkes Signal: hinten links bekommt es, hinten rechts in Gegenphase
+        assertEquals(0.8, apply(2, false, REAR_LEFT, 1.0, 0.0), 1e-6);
+        assertEquals(-0.5, apply(2, false, REAR_RIGHT, 1.0, 0.0), 1e-6);
+        // Die Differenz (L-R) ist der Raumanteil: bei Gegenphase ist hinten lauter als vorne
+        assertTrue(apply(2, false, REAR_LEFT, 0.5, -0.5) > 0.5);
     }
-
     @Test
     void stereoSidesAreMostlyFront() {
         assertEquals(0.75, apply(2, false, SIDE_LEFT, 1.0, 0.0), 1e-6);
