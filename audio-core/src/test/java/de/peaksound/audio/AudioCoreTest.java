@@ -99,6 +99,49 @@ class AudioCoreTest {
         assertTrue(info.multichannel());
     }
 
+    /** Strom, der nur kleine Haeppchen liefert (wie ein Download, der gerade ankommt). */
+    private static java.io.InputStream trickle(byte[] data, int maxPerRead) {
+        return new java.io.InputStream() {
+            int pos;
+            @Override public int read() { return pos < data.length ? data[pos++] & 0xFF : -1; }
+            @Override public int read(byte[] b, int off, int len) {
+                if (pos >= data.length) return -1;
+                int n = Math.min(Math.min(len, maxPerRead), data.length - pos);
+                System.arraycopy(data, pos, b, off, n);
+                pos += n;
+                return n;
+            }
+        };
+    }
+
+    @Test
+    void streamingDecodersWorkOnTrickledData() throws Exception {
+        byte[] wav = sineWav(2, 44100, 1.0);
+        byte[] flac = Transcoder.create("definitely-not-ffmpeg").transcode(wav, AudioFormat.WAV).data();
+        for (AudioFormat format : new AudioFormat[] {AudioFormat.WAV, AudioFormat.FLAC}) {
+            byte[] bytes = format == AudioFormat.WAV ? wav : flac;
+            try (PcmSource whole = PcmSource.open(bytes, format);
+                 PcmSource streamed = PcmSource.open(trickle(bytes, 7), format)) {
+                short[] a = new short[2048], b = new short[2048];
+                long frames = 0;
+                int ra;
+                while ((ra = whole.read(a, 1024)) > 0) {
+                    int got = 0;
+                    while (got < ra) {
+                        short[] part = new short[2048];
+                        int rb = streamed.read(part, ra - got);
+                        assertTrue(rb > 0, format + ": Strom endete zu frueh");
+                        System.arraycopy(part, 0, b, got * 2, rb * 2);
+                        got += rb;
+                    }
+                    for (int i = 0; i < ra * 2; i++) assertEquals(a[i], b[i], format + " Sample " + (frames * 2 + i));
+                    frames += ra;
+                }
+                assertEquals(44100, frames);
+            }
+        }
+    }
+
     @Test
     void keepsAlreadyCompactFormats() throws Exception {
         byte[] ogg = new byte[64];

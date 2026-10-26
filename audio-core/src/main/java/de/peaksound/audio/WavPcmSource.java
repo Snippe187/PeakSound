@@ -1,7 +1,8 @@
 package de.peaksound.audio;
 
-import java.io.ByteArrayInputStream;
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -14,9 +15,10 @@ final class WavPcmSource implements PcmSource {
     private final int sampleRate;
     private byte[] buffer = new byte[0];
 
-    WavPcmSource(byte[] data) throws AudioException {
+    WavPcmSource(InputStream source) throws AudioException {
         try {
-            AudioInputStream raw = AudioSystem.getAudioInputStream(new ByteArrayInputStream(data));
+            // javax.sound braucht mark/reset zum Erkennen des Formats
+            AudioInputStream raw = AudioSystem.getAudioInputStream(new BufferedInputStream(source, 1 << 16));
             AudioFormat in = raw.getFormat();
             AudioFormat target = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, in.getSampleRate(), 16,
                     in.getChannels(), in.getChannels() * 2, in.getSampleRate(), false);

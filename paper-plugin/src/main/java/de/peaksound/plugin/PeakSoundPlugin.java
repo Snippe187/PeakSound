@@ -67,8 +67,10 @@ public final class PeakSoundPlugin extends JavaPlugin {
         getServer().getMessenger().registerIncomingPluginChannel(this, PeakIds.CHANNEL, network);
         getServer().getMessenger().registerOutgoingPluginChannel(this, PeakIds.CHANNEL);
 
+        SettingsClipboard clipboard = new SettingsClipboard(items, jukeboxSettings, playback, speakers);
+        getServer().getPluginManager().registerEvents(clipboard, this);
         getServer().getPluginManager().registerEvents(network, this);
-        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu), this);
+        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard), this);
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(new NetworkListener(networks, equalizer), this);
         PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers);
@@ -83,6 +85,9 @@ public final class PeakSoundPlugin extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, playback::fastTick, 2L, 2L);
         // Lautsprecher-Nummern und Standard-Kanaele abgleichen (nutzt den Netz-Cache, rechnet nur bei Aenderungen)
         Bukkit.getScheduler().runTaskTimer(this, speakers::refresh, 20L, 20L);
+        // Verbindungsanzeige fuer Spieler mit Peak-Tuner in der Hand
+        ConnectionDisplay connections = new ConnectionDisplay(blocks, networks, items);
+        Bukkit.getScheduler().runTaskTimer(this, connections::tick, 10L, 10L);
         // Operator-Status regelmaessig abgleichen (der Button der Song-Verwaltung folgt /op und /deop)
         Bukkit.getScheduler().runTaskTimer(this, network::checkOperators, 40L, 40L);
     }

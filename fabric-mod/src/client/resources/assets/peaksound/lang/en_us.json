@@ -99,5 +99,7 @@
   "peaksound.admin.limits.used": "Used: %d MB of %s MB",
   "peaksound.admin.limits.default": "Songs per player:",
   "peaksound.admin.limits.zero": "0 = unlimited",
-  "peaksound.admin.limits.players": "Player limits (- / + / default):"
+  "peaksound.admin.limits.players": "Player limits (- / + / default):",
+
+  "peaksound.options.volume": "PeakSound volume: %d %%"
 }

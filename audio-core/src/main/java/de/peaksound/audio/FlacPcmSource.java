@@ -1,7 +1,7 @@
 package de.peaksound.audio;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import org.jflac.FLACDecoder;
 import org.jflac.frame.Frame;
 import org.jflac.metadata.StreamInfo;
@@ -17,9 +17,9 @@ final class FlacPcmSource implements PcmSource {
     private int pendingPos;
     private boolean eof;
 
-    FlacPcmSource(byte[] data) throws AudioException {
+    FlacPcmSource(InputStream in) throws AudioException {
         try {
-            decoder = new FLACDecoder(new ByteArrayInputStream(data));
+            decoder = new FLACDecoder(in);
             StreamInfo info = decoder.readStreamInfo();
             if (info == null) throw new AudioException("FLAC ohne StreamInfo");
             decoder.readMetadata(info);

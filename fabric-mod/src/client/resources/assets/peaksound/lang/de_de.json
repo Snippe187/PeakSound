@@ -99,5 +99,7 @@
   "peaksound.admin.limits.used": "Belegt: %d MB von %s MB",
   "peaksound.admin.limits.default": "Songs pro Spieler:",
   "peaksound.admin.limits.zero": "0 = unbegrenzt",
-  "peaksound.admin.limits.players": "Spieler-Limits (- / + / Standard):"
+  "peaksound.admin.limits.players": "Spieler-Limits (- / + / Standard):",
+
+  "peaksound.options.volume": "PeakSound-Lautstärke: %d %%"
 }

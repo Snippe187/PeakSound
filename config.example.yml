@@ -1,0 +1,31 @@
+# PeakSound - Plugin-Konfiguration
+
+# Hinweis im Chat fuer Spieler ohne PeakSound-Mod.
+non-mod-hint:
+  enabled: true
+  # Wartezeit nach dem Beitritt (20 Ticks = 1 Sekunde). Die Mod meldet sich normalerweise sofort.
+  delay-ticks: 100
+
+upload:
+  # Mindestabstand zwischen zwei Uploads eines Spielers in Sekunden (0 = aus). Schutz gegen Spam.
+  cooldown-seconds: 60
+  # Maximale Anzahl Songs pro Spieler (neu hochgeladene, nicht doppelte Songs).
+  max-songs-per-player: 10
+  # Serverweites Speicher-Limit fuer alle Songs in Megabyte.
+  max-storage-mb: 2048
+  # Wie viele Uploads gleichzeitig verarbeitet werden duerfen.
+  max-concurrent: 3
+  # Pfad zu ffmpeg. Leer = "ffmpeg" im PATH. Ohne ffmpeg bleiben OGG/FLAC/MP3 unveraendert,
+  # WAV wird zu FLAC. Mit ffmpeg wird alles ausser OGG zu Ogg Vorbis (deutlich kleiner).
+  ffmpeg-path: ""
+
+playback:
+  # Startwerte fuer neue Jukeboxen (Reichweite 1-30 Bloecke, Lautstaerke 0-100 %).
+  default-range: 16
+  default-volume: 100
+
+network:
+  # Redstone-Verbund: Jukeboxen, die ueber Redstone-Staub verbunden sind, spielen denselben Song.
+  # Grenzen schuetzen den Server vor riesigen Staubfeldern (Suche bricht dort ab).
+  max-dust: 256
+  max-devices: 32

@@ -63,5 +63,14 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [x] Mod: Button im Escape-Menü (nur Operatoren), OP-Menü mit Reitern Songs, Freigabe, Limits, Vorhören
 - [ ] Manuelle Abnahme
 ## Phase 8 – Optimierungen und Feinschliff
+- [x] Streaming: Wiedergabe startet nach den ersten Chunks (Decoder lesen von einem wachsenden Strom, alle Formate über JOrbis/JLayer/jFLAC)
+- [x] Client-Cache mit Hash-Prüfung auch beim Lesen (kaputte Dateien werden verworfen und neu geladen)
+- [x] Server-Song-Cache im Arbeitsspeicher (LRU 64 MB) statt Festplattenzugriff je Chunk
+- [x] PeakSound-Lautstärkeregler in den Minecraft-Soundeinstellungen (Mixin), pro Spieler gespeichert
+- [x] Verbindungsanzeige: Partikel-Linien Jukebox ↔ Lautsprecher/Jukeboxen mit dem Peak-Tuner in der Hand
+- [x] Einstellungen kopieren und einfügen (Shift-Rechtsklick mit Peak-Tuner, Jukebox und Lautsprecher)
+- [x] Doku: README, Installation (Server, Client, Lunar), Build, Testlisten, Lizenzen, kommentierte Beispiel-Config
+- [ ] Manuelle Abnahme
+- Offen für Phase 9: Strobo-Option liegt schon in den Client-Einstellungen (`peaksound-client.json`), das Menü dafür kommt mit den Scheinwerfern.
 ## Phase 9 – DJ-Pult und Scheinwerfer
 ## Phase 10 – Simple Voice Chat und Mikrofon

@@ -32,9 +32,12 @@ final class BlockListener implements Listener {
     private final NetworkHandler network;
     private final SpeakerService speakers;
     private final SpeakerMenuService speakerMenu;
+    private final SettingsClipboard clipboard;
 
     BlockListener(PeakItems items, BlockRegistry registry, PlaybackManager playback, JukeboxSettingsStore settings,
-                  JukeboxMenuService menu, NetworkHandler network, SpeakerService speakers, SpeakerMenuService speakerMenu) {
+                  JukeboxMenuService menu, NetworkHandler network, SpeakerService speakers, SpeakerMenuService speakerMenu,
+                  SettingsClipboard clipboard) {
+        this.clipboard = clipboard;
         this.items = items;
         this.registry = registry;
         this.playback = playback;
@@ -125,7 +128,9 @@ final class BlockListener implements Listener {
         event.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
         if (tuner) {
             event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
-            if (type.get() == PeakBlockType.JUKEBOX && network.hasMod(player)) {
+            if (player.isSneaking()) {
+                clipboard.use(player, block, type.get()); // Einstellungen kopieren / einfuegen
+            } else if (type.get() == PeakBlockType.JUKEBOX && network.hasMod(player)) {
                 menu.open(player, block);
             } else if (type.get() == PeakBlockType.SPEAKER && network.hasMod(player)) {
                 speakerMenu.open(player, block);

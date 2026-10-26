@@ -25,7 +25,7 @@ public final class AudioEngine {
         if (session == null) {
             session = new PlaybackSession(start);
             sessions.put(id, session);
-            SongLibrary.request(start.hash(), session::onData);
+            SongLibrary.openStream(start.hash(), session::onStream); // Wiedergabe beginnt schon waehrend des Downloads
         }
         PlaybackSession previous = byKey.get(key);
         if (previous != null && previous != session) detach(previous, key); // diese Quelle spielt jetzt einen anderen Song

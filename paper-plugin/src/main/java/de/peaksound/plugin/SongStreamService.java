@@ -3,9 +3,6 @@ package de.peaksound.plugin;
 import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.Packet;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,6 +23,10 @@ final class SongStreamService {
     private final PeakSoundPlugin plugin;
     private final SongStore store;
     private final Map<UUID, Bucket> buckets = new ConcurrentHashMap<>();
+    /** Zuletzt benutzte Songs im Arbeitsspeicher (LRU, hoechstens {@link #MAX_CACHE_BYTES}). */
+    private static final long MAX_CACHE_BYTES = 64L * 1024 * 1024;
+    private final java.util.LinkedHashMap<String, byte[]> cache = new java.util.LinkedHashMap<>(16, 0.75f, true);
+    private long cacheBytes;
 
     SongStreamService(PeakSoundPlugin plugin, SongStore store) {
         this.plugin = plugin;
@@ -44,15 +45,15 @@ final class SongStreamService {
         int total = Limits.chunkCount(song.sizeBytes(), Limits.DOWNLOAD_CHUNK_BYTES);
         if (request.index() >= total) return;
         UUID uuid = player.getUniqueId();
-        // Datei-Zugriff abseits des Haupt-Threads
+        // Datei-Zugriff abseits des Haupt-Threads; haeufig gespielte Songs liegen im Arbeitsspeicher (kein Festplattenzugriff je Chunk)
         Bukkit.getAsyncScheduler().runNow(plugin, task -> {
             byte[] data;
-            try (FileChannel ch = FileChannel.open(store.audioPath(song), StandardOpenOption.READ)) {
-                long offset = (long) request.index() * Limits.DOWNLOAD_CHUNK_BYTES;
-                int len = (int) Math.min(Limits.DOWNLOAD_CHUNK_BYTES, song.sizeBytes() - offset);
-                ByteBuffer buf = ByteBuffer.allocate(len);
-                while (buf.hasRemaining() && ch.read(buf, offset + buf.position()) >= 0) { /* weiterlesen */ }
-                data = buf.array();
+            try {
+                byte[] whole = songBytes(song);
+                int offset = request.index() * Limits.DOWNLOAD_CHUNK_BYTES;
+                int len = Math.min(Limits.DOWNLOAD_CHUNK_BYTES, whole.length - offset);
+                if (len <= 0) return;
+                data = java.util.Arrays.copyOfRange(whole, offset, offset + len);
             } catch (IOException e) {
                 plugin.getLogger().log(Level.WARNING, "Song konnte nicht gelesen werden: " + hash, e);
                 Bukkit.getScheduler().runTask(plugin, () -> {
@@ -68,6 +69,26 @@ final class SongStreamService {
         });
     }
 
+    /** Die ganze Datei, aus dem LRU-Cache oder von der Platte (dann wird sie zwischengespeichert). */
+    private byte[] songBytes(Song song) throws IOException {
+        synchronized (cache) {
+            byte[] cached = cache.get(song.hash());
+            if (cached != null) return cached;
+        }
+        byte[] data = java.nio.file.Files.readAllBytes(store.audioPath(song));
+        synchronized (cache) {
+            cache.put(song.hash(), data);
+            cacheBytes += data.length;
+            var it = cache.entrySet().iterator();
+            while (cacheBytes > MAX_CACHE_BYTES && it.hasNext()) { // aelteste zuerst entfernen, den frischen Eintrag behalten
+                var e = it.next();
+                if (e.getValue() == data) continue;
+                cacheBytes -= e.getValue().length;
+                it.remove();
+            }
+        }
+        return data;
+    }
     /** Cover-Bild fuer den Platten-Tooltip. Leer, wenn der Song keins hat. */
     void onCover(Player player, Packet.CoverRequest request) {
         if (!allow(player.getUniqueId()) || !SongStore.validHash(request.hash())) return;

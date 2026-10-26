@@ -75,7 +75,7 @@ final class PreviewPlayer {
             stop();
             return;
         }
-        AL10.alSourcef(source, AL10.AL_GAIN, Minecraft.getInstance().options.getFinalSoundSourceVolume(SoundSource.RECORDS));
+        AL10.alSourcef(source, AL10.AL_GAIN, Minecraft.getInstance().options.getFinalSoundSourceVolume(SoundSource.RECORDS) * ClientSettings.volumeFactor());
     }
 
     private static void start(String hash, Mono mono) {
@@ -93,7 +93,7 @@ final class PreviewPlayer {
         AL10.alSourcei(source, AL10.AL_SOURCE_RELATIVE, AL10.AL_TRUE); // direkt am Ohr, ohne Entfernung
         AL10.alSource3f(source, AL10.AL_POSITION, 0f, 0f, 0f);
         AL10.alSourcef(source, AL10.AL_ROLLOFF_FACTOR, 0f);
-        AL10.alSourcef(source, AL10.AL_GAIN, Minecraft.getInstance().options.getFinalSoundSourceVolume(SoundSource.RECORDS));
+        AL10.alSourcef(source, AL10.AL_GAIN, Minecraft.getInstance().options.getFinalSoundSourceVolume(SoundSource.RECORDS) * ClientSettings.volumeFactor());
         AL10.alSourcePlay(source);
         loadingHash = null;
         if (AL10.alGetError() != AL10.AL_NO_ERROR) {

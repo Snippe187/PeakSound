@@ -3,7 +3,8 @@
   "package": "de.peaksound.mod.client.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "ItemStackMixin"
+    "ItemStackMixin",
+    "SoundOptionsScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

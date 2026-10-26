@@ -8,8 +8,9 @@ import de.peaksound.protocol.ChannelMixer;
 import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.SpeakerChannel;
 import de.peaksound.protocol.SyncMath;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ShortBuffer;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -23,10 +24,6 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.AL11;
 import org.lwjgl.openal.ALC10;
-import org.lwjgl.stb.STBVorbis;
-import org.lwjgl.stb.STBVorbisInfo;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
 
 /**
  * Ein laufender Song mit allen seinen Schallquellen beim Client: eine Jukebox (Mono-Mix) oder mehrere
@@ -135,11 +132,17 @@ final class PlaybackSession {
         finished = true;
     }
 
-    /** Songdaten sind da: Decoder-Thread starten. */
-    void onData(byte[] data) {
-        if (stopped || decoderStarted) return;
+    /**
+     * Der Song-Strom steht bereit (noch nicht unbedingt komplett geladen): Decoder-Thread starten. Der Decoder blockiert
+     * nur, wenn er schneller ist als der Download, die Wiedergabe beginnt also nach den ersten Chunks.
+     */
+    void onStream(InputStream in) {
+        if (stopped || decoderStarted) {
+            try { in.close(); } catch (IOException ignored) { /* Strom wird nicht gebraucht */ }
+            return;
+        }
         decoderStarted = true;
-        decoder = Thread.ofPlatform().name("PeakSound-Decoder").daemon(true).start(() -> decode(data));
+        decoder = Thread.ofPlatform().name("PeakSound-Decoder").daemon(true).start(() -> decode(in));
     }
 
     private long expectedFrame() {
@@ -148,12 +151,15 @@ final class PlaybackSession {
 
     // ---- Decoder-Thread ----
 
-    private void decode(byte[] data) {
-        try {
-            AudioFormat format = AudioFormat.detect(data).orElseThrow(() -> new AudioException("Format"));
+    private void decode(InputStream raw) {
+        try (BufferedInputStream in = new BufferedInputStream(raw, 1 << 16)) {
+            // Format an den ersten Bytes erkennen (wartet auf die ersten Chunks)
+            in.mark(32);
+            byte[] head = in.readNBytes(16);
+            in.reset();
+            AudioFormat format = AudioFormat.detect(head).orElseThrow(() -> new AudioException("Format"));
             vorbisOrder = format == AudioFormat.OGG;
-            if (format == AudioFormat.OGG) decodeVorbis(data);
-            else decodePcm(data, format);
+            decodeStream(in, format);
             decoded.put(END);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -162,8 +168,8 @@ final class PlaybackSession {
         }
     }
 
-    private void decodePcm(byte[] data, AudioFormat format) throws Exception {
-        try (PcmSource src = PcmSource.open(data, format)) {
+    private void decodeStream(InputStream in, AudioFormat format) throws Exception {
+        try (PcmSource src = PcmSource.open(in, format)) {
             int channels = src.channels();
             int rate = src.sampleRate();
             int blockFrames = Math.max(1024, rate / 4);
@@ -181,42 +187,6 @@ final class PlaybackSession {
             }
         }
     }
-
-    private void decodeVorbis(byte[] data) throws Exception {
-        ByteBuffer file = MemoryUtil.memAlloc(data.length).put(data).flip();
-        long handle = 0;
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer error = stack.mallocInt(1);
-            handle = STBVorbis.stb_vorbis_open_memory(file, error, null);
-            if (handle == 0) throw new AudioException("Ogg Vorbis nicht lesbar: " + error.get(0));
-            STBVorbisInfo info = STBVorbisInfo.malloc(stack);
-            STBVorbis.stb_vorbis_get_info(handle, info);
-            int channels = info.channels();
-            int rate = info.sample_rate();
-            sourceChannels = channels;
-            sampleRate = rate;
-            int blockFrames = Math.max(1024, rate / 4);
-            ShortBuffer pcm = MemoryUtil.memAllocShort(blockFrames * channels);
-            try {
-                long skip = skipTarget();
-                if (skip > 0) STBVorbis.stb_vorbis_seek(handle, (int) skip); // springt zum naechsten Vorbis-Paket
-                long position = skip > 0 ? STBVorbis.stb_vorbis_get_sample_offset(handle) : 0;
-                int n;
-                while (!stopped && (n = STBVorbis.stb_vorbis_get_samples_short_interleaved(handle, channels, pcm)) > 0) {
-                    short[] raw = new short[n * channels];
-                    pcm.get(0, raw);
-                    decoded.put(new Block(position, raw, n));
-                    position += n;
-                }
-            } finally {
-                MemoryUtil.memFree(pcm);
-            }
-        } finally {
-            if (handle != 0) STBVorbis.stb_vorbis_close(handle);
-            MemoryUtil.memFree(file);
-        }
-    }
-
     /** Erster Frame, der noch gespielt werden muss (kleine Reserve, damit der Aufholmechanismus nur noch feinjustiert). */
     private long skipTarget() {
         return Math.max(0, expectedFrame() - sampleRate / 2);
@@ -361,7 +331,7 @@ final class PlaybackSession {
         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
         AL10.alSource3f(e.source, AL10.AL_POSITION, (float) e.x, (float) e.y, (float) e.z);
         float master = Minecraft.getInstance().options.getFinalSoundSourceVolume(SoundSource.RECORDS);
-        AL10.alSourcef(e.source, AL10.AL_GAIN, (float) (master * e.volume / 100.0 * attenuation(distance, e.range)));
+        AL10.alSourcef(e.source, AL10.AL_GAIN, (float) (master * ClientSettings.volumeFactor() * e.volume / 100.0 * attenuation(distance, e.range)));
     }
 
     /** 1 nahe an der Quelle, sanft fallend bis 0 an der Reichweite. */

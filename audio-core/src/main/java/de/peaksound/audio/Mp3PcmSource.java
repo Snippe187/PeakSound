@@ -1,7 +1,7 @@
 package de.peaksound.audio;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import javazoom.jl.decoder.Bitstream;
 import javazoom.jl.decoder.BitstreamException;
 import javazoom.jl.decoder.Decoder;
@@ -19,8 +19,8 @@ final class Mp3PcmSource implements PcmSource {
     private int pendingPos;
     private boolean eof;
 
-    Mp3PcmSource(byte[] data) throws AudioException {
-        bitstream = new Bitstream(new ByteArrayInputStream(data));
+    Mp3PcmSource(InputStream in) throws AudioException {
+        bitstream = new Bitstream(in);
         // Ersten Frame lesen, damit Samplerate und Kanalzahl bekannt sind
         try {
             if (!fill()) throw new AudioException("MP3 enthaelt keine Frames");

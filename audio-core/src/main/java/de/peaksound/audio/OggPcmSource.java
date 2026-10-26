@@ -8,7 +8,6 @@ import com.jcraft.jorbis.Block;
 import com.jcraft.jorbis.Comment;
 import com.jcraft.jorbis.DspState;
 import com.jcraft.jorbis.Info;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -36,8 +35,8 @@ final class OggPcmSource implements PcmSource {
     private int pendingPos;
     private boolean eof;
 
-    OggPcmSource(byte[] data) throws AudioException {
-        in = new ByteArrayInputStream(data);
+    OggPcmSource(InputStream source) throws AudioException {
+        in = source;
         try {
             oy.init();
             readMore();
