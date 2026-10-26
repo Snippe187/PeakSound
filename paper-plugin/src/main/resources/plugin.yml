@@ -4,3 +4,9 @@ main: de.peaksound.plugin.PeakSoundPlugin
 api-version: '26.2'
 description: 3D-Audio, Schallplatten, Jukeboxen und Lautsprecher fuer die PeakSound-Mod.
 softdepend: [voicechat]
+# Werden von Paper beim ersten Start von Maven Central geladen (eigene Jars, LGPL bleibt austauschbar).
+libraries:
+  - net.jthink:jaudiotagger:3.0.1
+  - com.googlecode.soundlibs:jlayer:1.0.1.4
+  - org.jflac:jflac-codec:1.5.2
+  - net.sourceforge.javaflacencoder:java-flac-encoder:0.3.7

@@ -1,6 +1,7 @@
 package de.peaksound.audio;
 
 import de.peaksound.protocol.AudioFormat;
+import de.peaksound.protocol.Limits;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,6 +56,23 @@ public final class AudioInspector {
         return inspect(file, format);
     }
 
+    /**
+     * Exakte Laenge in Millisekunden durch Zaehlen der decodierten Frames. Header-Angaben koennen bei
+     * MP3 ohne VBR-Kopf falsch sein. OGG wird nicht decodiert (dort ist die Header-Laenge exakt).
+     */
+    public static int measureExactMs(byte[] data, AudioFormat format) throws AudioException {
+        if (format == AudioFormat.OGG) return inspect(data).durationMs();
+        try (PcmSource source = PcmSource.open(data, format)) {
+            short[] buf = new short[4096 * Math.max(1, source.channels())];
+            long frames = 0;
+            int n;
+            while ((n = source.read(buf, 4096)) > 0) frames += n;
+            return (int) Math.min(Integer.MAX_VALUE, frames * 1000L / Math.max(1, source.sampleRate()));
+        } catch (IOException e) {
+            throw new AudioException("Audio nicht decodierbar", e);
+        }
+    }
+
     private static AudioInfo inspect(Path file, AudioFormat format) throws AudioException {
         try {
             AudioFile audio = AudioFileIO.readAs(file.toFile(), format.extension());
@@ -85,11 +103,10 @@ public final class AudioInspector {
         try { return Integer.parseInt(s.trim()); } catch (NumberFormatException e) { return fallback; }
     }
 
-    private static String clean(String s) {
+    /** Steuerzeichen entfernen und Laenge begrenzen: Der Text landet in Itemnamen und im Chat. */
+    public static String clean(String s) {
         if (s == null) return "";
-        // Steuerzeichen entfernen, Laenge begrenzen (landet in Itemnamen und Chat)
         String t = s.replaceAll("\\p{Cntrl}", " ").trim();
-        return t.length() > de.peaksound.protocol.Limits.MAX_TEXT
-                ? t.substring(0, de.peaksound.protocol.Limits.MAX_TEXT) : t;
+        return t.length() > Limits.MAX_TEXT ? t.substring(0, Limits.MAX_TEXT) : t;
     }
 }

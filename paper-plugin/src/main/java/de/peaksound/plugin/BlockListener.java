@@ -30,10 +30,12 @@ import org.bukkit.inventory.EquipmentSlot;
 final class BlockListener implements Listener {
     private final PeakItems items;
     private final BlockRegistry registry;
+    private final PlaybackManager playback;
 
-    BlockListener(PeakItems items, BlockRegistry registry) {
+    BlockListener(PeakItems items, BlockRegistry registry, PlaybackManager playback) {
         this.items = items;
         this.registry = registry;
+        this.playback = playback;
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -63,6 +65,9 @@ final class BlockListener implements Listener {
         Block block = event.getBlock();
         Optional<PeakBlockType> type = registry.get(block);
         if (type.isEmpty()) return;
+        // Eingelegte Platte faellt heraus, die Wiedergabe endet
+        playback.eject(block).ifPresent(record ->
+                block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), record));
         registry.remove(block);
         // Statt des Vanilla-Drops faellt das PeakSound-Item (nicht im Kreativmodus)
         event.setDropItems(false);

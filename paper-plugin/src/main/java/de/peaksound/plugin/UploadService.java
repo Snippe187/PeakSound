@@ -1,0 +1,273 @@
+package de.peaksound.plugin;
+
+import de.peaksound.audio.AudioException;
+import de.peaksound.audio.AudioInfo;
+import de.peaksound.audio.AudioInspector;
+import de.peaksound.audio.Transcoder;
+import de.peaksound.protocol.AudioFormat;
+import de.peaksound.protocol.ChunkAssembler;
+import de.peaksound.protocol.Limits;
+import de.peaksound.protocol.MalformedPacketException;
+import de.peaksound.protocol.Packet;
+import de.peaksound.protocol.Packet.UploadReject.Reason;
+import de.peaksound.protocol.PeakItemType;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.HexFormat;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+
+/**
+ * Nimmt Uploads entgegen und validiert alles serverseitig: Ticket, Platte in der Hand, Rate-Limit,
+ * Quota, Speicher, Chunk-Reihenfolge, Format, Laenge. Decodierung und Datei-I/O laufen asynchron.
+ */
+final class UploadService {
+    private static final long TICKET_LIFETIME_MS = 5 * 60_000L;
+
+    private record Ticket(UUID player, long expiresAt) {}
+
+    private static final class Session {
+        final int id;
+        final UUID player;
+        final String fallbackTitle;
+        final ChunkAssembler assembler;
+        int lastAcked;
+
+        Session(int id, UUID player, String fallbackTitle, ChunkAssembler assembler) {
+            this.id = id;
+            this.player = player;
+            this.fallbackTitle = fallbackTitle;
+            this.assembler = assembler;
+        }
+    }
+
+    /** Ergebnis der asynchronen Verarbeitung. */
+    private record Outcome(Reason reason, int arg, Song song, boolean added) {
+        static Outcome fail(Reason reason, int arg) { return new Outcome(reason, arg, null, false); }
+    }
+
+    private final PeakSoundPlugin plugin;
+    private final PeakItems items;
+    private final SongStore store;
+    private final Transcoder transcoder;
+    private final SecureRandom random = new SecureRandom();
+    private final Map<Integer, Ticket> tickets = new ConcurrentHashMap<>();
+    private final Map<UUID, Session> sessions = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> lastUpload = new ConcurrentHashMap<>();
+    private final AtomicInteger processing = new AtomicInteger();
+    private int nextUploadId = 1;
+
+    UploadService(PeakSoundPlugin plugin, PeakItems items, SongStore store, Transcoder transcoder) {
+        this.plugin = plugin;
+        this.items = items;
+        this.store = store;
+        this.transcoder = transcoder;
+    }
+
+    /** Gibt dem Spieler ein Ticket und oeffnet sein Upload-Fenster. Ein Spieler hat hoechstens ein Ticket. */
+    void openUpload(Player player) {
+        tickets.values().removeIf(t -> t.player().equals(player.getUniqueId()) || t.expiresAt() < System.currentTimeMillis());
+        int ticket = random.nextInt(Integer.MAX_VALUE - 1) + 1;
+        tickets.put(ticket, new Ticket(player.getUniqueId(), System.currentTimeMillis() + TICKET_LIFETIME_MS));
+        Net.send(plugin, player, new Packet.OpenUpload(ticket));
+    }
+
+    void onStart(Player player, Packet.UploadStart start) {
+        UUID id = player.getUniqueId();
+        Ticket ticket = tickets.remove(start.ticket());
+        boolean holdingBlank = items.typeOf(player.getInventory().getItemInMainHand())
+                .filter(t -> t == PeakItemType.BLANK_RECORD).isPresent();
+        if (ticket == null || !ticket.player().equals(id) || ticket.expiresAt() < System.currentTimeMillis() || !holdingBlank) {
+            reject(player, 0, Reason.NO_TICKET, 0);
+            return;
+        }
+        if (sessions.containsKey(id) || processing.get() >= plugin.getConfig().getInt("upload.max-concurrent", 3)) {
+            reject(player, 0, Reason.BUSY, 0);
+            return;
+        }
+        long cooldownMs = plugin.getConfig().getLong("upload.cooldown-seconds", 60) * 1000L;
+        long since = System.currentTimeMillis() - lastUpload.getOrDefault(id, 0L);
+        if (cooldownMs > 0 && since < cooldownMs) {
+            reject(player, 0, Reason.RATE_LIMIT, (int) ((cooldownMs - since + 999) / 1000));
+            return;
+        }
+        int maxSongs = plugin.getConfig().getInt("upload.max-songs-per-player", 10);
+        if (maxSongs > 0 && store.countByUploader(id) >= maxSongs) {
+            reject(player, 0, Reason.QUOTA_REACHED, maxSongs);
+            return;
+        }
+        if (store.totalBytes() >= maxStorageBytes()) {
+            reject(player, 0, Reason.STORAGE_FULL, 0);
+            return;
+        }
+        int uploadId = nextUploadId++;
+        String fallback = AudioInspector.clean(start.fallbackTitle());
+        sessions.put(id, new Session(uploadId, id, fallback, new ChunkAssembler(start.fileSize(), Limits.UPLOAD_CHUNK_BYTES)));
+        lastUpload.put(id, System.currentTimeMillis());
+        Net.send(plugin, player, new Packet.UploadAccept(uploadId, Limits.UPLOAD_CHUNK_BYTES, Limits.UPLOAD_WINDOW));
+    }
+
+    void onChunk(Player player, Packet.UploadChunk chunk) {
+        Session s = sessions.get(player.getUniqueId());
+        if (s == null || s.id != chunk.uploadId()) return; // veraltet oder erfunden: ignorieren
+        try {
+            s.assembler.accept(chunk.index(), chunk.data());
+        } catch (MalformedPacketException e) {
+            sessions.remove(player.getUniqueId());
+            reject(player, s.id, Reason.CORRUPT, 0);
+            return;
+        }
+        int next = s.assembler.nextIndex();
+        if (s.assembler.complete()) {
+            Net.send(plugin, player, new Packet.UploadAck(s.id, next));
+            sessions.remove(player.getUniqueId());
+            startProcessing(player, s);
+        } else if (next - s.lastAcked >= Limits.UPLOAD_WINDOW / 2) {
+            s.lastAcked = next;
+            Net.send(plugin, player, new Packet.UploadAck(s.id, next));
+        }
+    }
+
+    void onQuit(Player player) {
+        sessions.remove(player.getUniqueId());
+        tickets.values().removeIf(t -> t.player().equals(player.getUniqueId()));
+    }
+
+    private long maxStorageBytes() {
+        return plugin.getConfig().getLong("upload.max-storage-mb", 2048) * 1024L * 1024L;
+    }
+
+    private void reject(Player player, int uploadId, Reason reason, int arg) {
+        Net.send(plugin, player, new Packet.UploadReject(uploadId, reason, arg));
+        player.sendMessage(Messages.rejected(player, reason, arg));
+    }
+
+    private void startProcessing(Player player, Session s) {
+        processing.incrementAndGet();
+        UUID uuid = player.getUniqueId();
+        String uploaderName = player.getName();
+        byte[] data = s.assembler.result();
+        Bukkit.getAsyncScheduler().runNow(plugin, task -> {
+            Outcome outcome;
+            try {
+                outcome = process(data, s.fallbackTitle, uuid, uploaderName);
+            } catch (RuntimeException | IOException e) {
+                plugin.getLogger().log(Level.SEVERE, "Upload-Verarbeitung fehlgeschlagen", e);
+                outcome = Outcome.fail(Reason.INTERNAL, 0);
+            }
+            Outcome result = outcome;
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                processing.decrementAndGet();
+                Player online = Bukkit.getPlayer(uuid);
+                if (online != null) finish(online, s.id, result);
+            });
+        });
+    }
+
+    /** Laeuft asynchron. */
+    private Outcome process(byte[] data, String fallbackTitle, UUID uploader, String uploaderName) throws IOException {
+        int maxMs = Limits.MAX_SONG_SECONDS * 1000;
+        AudioFormat format = AudioFormat.detect(data).orElse(null);
+        if (format == null) return Outcome.fail(Reason.UNSUPPORTED_FORMAT, 0);
+        AudioInfo info;
+        try {
+            info = AudioInspector.inspect(data);
+        } catch (AudioException e) {
+            return Outcome.fail(Reason.CORRUPT, 0);
+        }
+        if (info.durationMs() > maxMs + 1000) return Outcome.fail(Reason.TOO_LONG, Limits.MAX_SONG_SECONDS);
+        if (info.bitsPerSample() > 24 && format == AudioFormat.FLAC) return Outcome.fail(Reason.UNSUPPORTED_FORMAT, 0);
+
+        Transcoder.Result stored;
+        AudioInfo storedInfo;
+        int exactMs;
+        try {
+            stored = transcoder.transcode(data, format);
+            storedInfo = stored.data() == data ? info : AudioInspector.inspect(stored.data());
+            // Header-Angaben koennen luegen (z. B. MP3 ohne VBR-Kopf): die echte Laenge durch Decodieren messen
+            exactMs = AudioInspector.measureExactMs(stored.data(), stored.format());
+        } catch (AudioException e) {
+            return Outcome.fail(Reason.CORRUPT, 0);
+        }
+        if (exactMs > maxMs + 1000) return Outcome.fail(Reason.TOO_LONG, Limits.MAX_SONG_SECONDS);
+
+        String hash = sha256(stored.data());
+        String title = !info.title().isBlank() ? info.title()
+                : !fallbackTitle.isBlank() ? fallbackTitle : "Unknown";
+        int channels = storedInfo.channels();
+        Song.Status status = channels > 2 ? Song.Status.PENDING : Song.Status.OK;
+        Song song = new Song(hash, title, info.artist(), uploader, uploaderName, channels, exactMs,
+                stored.data().length, stored.format().extension(), status, System.currentTimeMillis(),
+                info.cover().length > 0);
+
+        SongStore.AddResult added = store.add(song, stored.data(), info.cover(),
+                plugin.getConfig().getInt("upload.max-songs-per-player", 10), maxStorageBytes());
+        return switch (added) {
+            case ADDED -> new Outcome(null, 0, song, true);
+            case ALREADY_PRESENT -> new Outcome(null, 0, store.get(hash).orElse(song), false);
+            case QUOTA_REACHED -> Outcome.fail(Reason.QUOTA_REACHED, plugin.getConfig().getInt("upload.max-songs-per-player", 10));
+            case STORAGE_FULL -> Outcome.fail(Reason.STORAGE_FULL, 0);
+        };
+    }
+
+    /** Laeuft auf dem Haupt-Thread. */
+    private void finish(Player player, int uploadId, Outcome outcome) {
+        if (outcome.reason() != null) {
+            reject(player, uploadId, outcome.reason(), outcome.arg());
+            return;
+        }
+        Song song = outcome.song();
+        boolean pending = song.status() == Song.Status.PENDING;
+        Net.send(plugin, player, new Packet.UploadResult(uploadId, pending, song.hash(), song.title(), song.artist(),
+                song.durationMs(), song.channels()));
+        if (pending) {
+            player.sendMessage(Messages.needsApproval(player));
+            return;
+        }
+        if (!writeRecord(player, song)) {
+            player.sendMessage(Messages.error(player, "Du hast keine leere Platte mehr. Der Song bleibt gespeichert.",
+                    "You no longer have a blank record. The song stays stored."));
+            return;
+        }
+        player.sendMessage(Messages.uploaded(player, song.title()));
+    }
+
+    /** Verbraucht eine leere Platte (bevorzugt in der Hand) und gibt die beschriebene Platte. */
+    private boolean writeRecord(Player player, Song song) {
+        PlayerInventory inv = player.getInventory();
+        ItemStack hand = inv.getItemInMainHand();
+        int slot = items.typeOf(hand).filter(t -> t == PeakItemType.BLANK_RECORD).isPresent() ? inv.getHeldItemSlot() : -1;
+        if (slot < 0) {
+            for (int i = 0; i < inv.getSize(); i++) {
+                if (items.typeOf(inv.getItem(i)).filter(t -> t == PeakItemType.BLANK_RECORD).isPresent()) {
+                    slot = i;
+                    break;
+                }
+            }
+        }
+        if (slot < 0) return false;
+        ItemStack blank = inv.getItem(slot);
+        blank.setAmount(blank.getAmount() - 1);
+        inv.setItem(slot, blank.getAmount() <= 0 ? null : blank);
+        ItemStack written = items.createWritten(new PeakItems.Written(song.hash(), song.title(), song.artist(), song.uploaderName()));
+        inv.addItem(written).values().forEach(rest -> player.getWorld().dropItem(player.getLocation(), rest));
+        return true;
+    }
+
+    private static String sha256(byte[] data) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(data));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+}
