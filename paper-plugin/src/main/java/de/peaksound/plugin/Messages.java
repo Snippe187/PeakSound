@@ -56,6 +56,7 @@ final class Messages {
             case SPEAKER -> t(p, "Lautsprecher", "Speaker");
             case DJ_DESK -> t(p, "DJ-Pult", "DJ desk");
             case SPOTLIGHT -> t(p, "Scheinwerfer", "Spotlight");
+            case MICROPHONE -> t(p, "Mikrofon", "Microphone");
         };
     }
 

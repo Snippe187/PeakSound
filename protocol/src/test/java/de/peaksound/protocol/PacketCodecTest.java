@@ -20,6 +20,7 @@ class PacketCodecTest {
                     LightSettings.LightEffect.SWEEP, LightSettings.LightBand.HIGH, 270, -30, 7)),
             new Packet.AnalysisRequest("a".repeat(64)),
             new Packet.DjRequest(1, 2, 3),
+            new Packet.MicUpdate(4, 5, 6, new MicSettings(true, 8, 150, true, 25)),
             new Packet.DjUpdate(1, 2, 3, new DjSettings(60, 8, 90, 70, true)),
             new Packet.DjDeckAction(1, 2, 3, 1, Packet.DjDeckAction.Action.PLAY, 4),
             new Packet.AdminAction(Packet.AdminAction.Action.SET_PLAYER_LIMIT, "", 12345L, -9876L, 25),
@@ -190,6 +191,13 @@ class PacketCodecTest {
                 new Packet.PlaylistEntry("A", "", 1, true))).encode();
         state[16] = 9; // current = 9 (letztes Byte des Int-Felds)
         assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeClientbound(state));
+    }
+
+    @Test
+    void rejectsInvalidMicSettings() {
+        byte[] bad = new Packet.MicUpdate(0, 0, 0, MicSettings.defaults()).encode();
+        bad[bad.length - 1] = 101; // Ducking-Pegel ueber 100 %
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(bad));
     }
 
     @Test

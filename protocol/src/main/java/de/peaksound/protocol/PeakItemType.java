@@ -14,7 +14,8 @@ public enum PeakItemType {
     JUKEBOX("jukebox", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.JUKEBOX),
     SPEAKER("speaker", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.SPEAKER),
     DJ_DESK("dj_desk", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.DJ_DESK),
-    SPOTLIGHT("spotlight", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.SPOTLIGHT);
+    SPOTLIGHT("spotlight", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.SPOTLIGHT),
+    MICROPHONE("microphone", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.MICROPHONE);
 
     private final String id;
     private final String carrier;

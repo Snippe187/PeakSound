@@ -2074,7 +2074,7 @@
       "model": "minecraft:block/note_block"
     },
     "instrument=bit,note=20,powered=true": {
-      "model": "minecraft:block/note_block"
+      "model": "peaksound:block/microphone"
     },
     "instrument=bit,note=21,powered=false": {
       "model": "minecraft:block/note_block"

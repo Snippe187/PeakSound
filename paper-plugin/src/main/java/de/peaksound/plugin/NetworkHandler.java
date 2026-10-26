@@ -34,6 +34,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     private AdminService admin;
     private LightService lights;
     private DjService dj;
+    private MicService mic;
     private final Map<UUID, Boolean> lastOperator = new ConcurrentHashMap<>();
 
     NetworkHandler(PeakSoundPlugin plugin, PeakRecipes recipes) {
@@ -43,7 +44,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
 
     /** Verbindet die Dienste (erst nach deren Erzeugung moeglich, da sie das NetworkHandler brauchen). */
     void wire(UploadService uploads, SongStreamService streams, PlaybackManager playback, JukeboxMenuService menu,
-              SpeakerMenuService speakerMenu, EditAccess access, AdminService admin, LightService lights, DjService dj) {
+              SpeakerMenuService speakerMenu, EditAccess access, AdminService admin, LightService lights, DjService dj, MicService mic) {
+        this.mic = mic;
         this.lights = lights;
         this.dj = dj;
         this.admin = admin;
@@ -90,6 +92,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             case Packet.AnalysisRequest request -> lights.onAnalysisRequest(player, request);
             case Packet.DjRequest request -> dj.onRequest(player, request);
             case Packet.DjUpdate update -> dj.onUpdate(player, update);
+            case Packet.MicUpdate update -> mic.onUpdate(player, update);
             case Packet.DjDeckAction action -> dj.onDeckAction(player, action);
             case Packet.Hello ignored -> { /* oben behandelt */ }
         }

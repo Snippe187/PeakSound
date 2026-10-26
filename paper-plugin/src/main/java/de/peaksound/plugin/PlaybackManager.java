@@ -120,12 +120,15 @@ final class PlaybackManager {
         this.analysis = analysis;
     }
 
+    /** Lautstaerke-Faktor (Prozent) je Jukebox, gesetzt vom Mikrofon-Ducking (wirkt zusaetzlich zum DJ-Faktor). */
+    private final Map<BlockRegistry.Key, Integer> duckGain = new ConcurrentHashMap<>();
+
     private int gain(BlockRegistry.Key jukebox) {
-        return deckGain.getOrDefault(jukebox, 100);
+        return deckGain.getOrDefault(jukebox, 100) * duckGain.getOrDefault(jukebox, 100) / 100;
     }
 
     int deckGainOf(BlockRegistry.Key jukebox) {
-        return gain(jukebox);
+        return deckGain.getOrDefault(jukebox, 100);
     }
 
     /**
@@ -133,14 +136,23 @@ final class PlaybackManager {
      * betroffenen Schallquellen hoeren, in dieser Zeit (der Client rampt selbst, alle starten mit demselben Paket).
      */
     void setDeckGain(Collection<BlockRegistry.Key> jukeboxes, int percent, int durationMs) {
+        setGain(deckGain, jukeboxes, percent, durationMs);
+    }
+
+    /** Mikrofon-Ducking: Musik der Jukeboxen leiser stellen (100 = normal), mit kurzer Ueberblendung. */
+    void setDuckGain(Collection<BlockRegistry.Key> jukeboxes, int percent, int durationMs) {
+        setGain(duckGain, jukeboxes, percent, durationMs);
+    }
+
+    private void setGain(Map<BlockRegistry.Key, Integer> target, Collection<BlockRegistry.Key> jukeboxes, int percent, int durationMs) {
         int value = Math.max(0, Math.min(100, percent));
         boolean changed = false;
-        for (BlockRegistry.Key k : jukeboxes) changed |= gain(k) != value;
+        for (BlockRegistry.Key k : jukeboxes) changed |= target.getOrDefault(k, 100) != value;
         if (!changed) return;
         Map<BlockRegistry.Key, Emitter> before = effective().emitters();
         for (BlockRegistry.Key k : jukeboxes) {
-            if (value == 100) deckGain.remove(k);
-            else deckGain.put(k, value);
+            if (value == 100) target.remove(k);
+            else target.put(k, value);
         }
         if (durationMs <= 0) {
             Bukkit.getScheduler().runTask(plugin, this::tick); // sofort per PlaybackUpdate

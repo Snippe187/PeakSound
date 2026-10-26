@@ -9,10 +9,13 @@ java {
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://maven.maxhenkel.de/repository/public")
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:${property("paper_api_version")}")
+    // Simple Voice Chat ist optional (softdepend): nur zum Kompilieren, zur Laufzeit liefert es der Server
+    compileOnly("de.maxhenkel.voicechat:voicechat-api:2.6.25")
     implementation(project(":protocol"))
     implementation(project(":audio-core"))
 }

@@ -822,4 +822,39 @@ public sealed interface Packet {
             return new PlaybackStop(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in));
         }
     }
+
+    // ---- Mikrofon ----
+
+    /** Server -> Client: Mikrofon-Menue oeffnen. {@code voiceChat} = Simple Voice Chat laeuft auf dem Server. */
+    record OpenMicMenu(int x, int y, int z, MicSettings settings, boolean connected, boolean voiceChat) implements Clientbound {
+        public static final int ID = 42;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            return w.writeBoolean(connected).writeBoolean(voiceChat).toBytes();
+        }
+
+        static OpenMicMenu decode(ByteBuffer in) {
+            return new OpenMicMenu(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), MicSettings.read(in),
+                    PacketIO.readBoolean(in), PacketIO.readBoolean(in));
+        }
+    }
+
+    /** Client -> Server: geaenderte Mikrofon-Einstellungen. */
+    record MicUpdate(int x, int y, int z, MicSettings settings) implements Serverbound {
+        public static final int ID = 43;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            return w.toBytes();
+        }
+
+        static MicUpdate decode(ByteBuffer in) {
+            return new MicUpdate(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), MicSettings.read(in));
+        }
+    }
 }

@@ -65,6 +65,7 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
                 case "speaker" -> de.peaksound.protocol.PeakBlockType.SPEAKER;
                 case "dj_desk", "dj" -> de.peaksound.protocol.PeakBlockType.DJ_DESK;
                 case "spotlight" -> de.peaksound.protocol.PeakBlockType.SPOTLIGHT;
+                case "microphone", "mic" -> de.peaksound.protocol.PeakBlockType.MICROPHONE;
                 default -> de.peaksound.protocol.PeakBlockType.JUKEBOX;
             };
             PeakBlocks.install(block, type, registry);

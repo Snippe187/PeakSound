@@ -100,6 +100,7 @@ public final class PeakItems {
             case SPEAKER -> "Speaker";
             case DJ_DESK -> "DJ Desk";
             case SPOTLIGHT -> "Spotlight";
+            case MICROPHONE -> "Microphone";
         };
     }
 }

@@ -58,3 +58,12 @@ Testanlage im Spiel mit Befehl: `/peaksound place dj_desk|spotlight|jukebox X Y 
 - [ ] Farben: mehrere Farben wechseln sich ab; Effekt „Farbwechsel“ blendet weich über. Modi Dauerhaft / Blinkend / Im Takt (Bass, Mitten, Höhen).
 - [ ] Effekt Strobo: einmalige Warnung im Chat; Optionen → Musik & Geräusche → „PeakSound-Strobo-Effekte: Aus“ macht den Strobo gleichmäßig hell.
 - [ ] Spielt die Jukebox nichts, ist der Scheinwerfer im Modus „Im Takt“ aus. Server neu starten: Einstellungen bleiben, keine Lichtblöcke bleiben zurück.
+
+## Phase 10 – Mikrofon (Simple Voice Chat)
+Voraussetzung: Simple Voice Chat (Paper-Plugin, Version 2.6.23 oder neuer) im Ordner `plugins` des Servers und die Mod bei jedem Spieler. Ohne das Plugin steht im Server-Log „Simple Voice Chat nicht installiert“.
+- [ ] Rezeptbuch zeigt das Mikrofon (Eisenbarren oben/unten, Redstone-Staub links/rechts, Stock in der Mitte).
+- [ ] Mikrofon per Staub an Lautsprecher oder Jukebox anschließen, Peak-Tuner → Menü (an/aus, Reichweite, Lautstärke, Ducking).
+- [ ] Spieler A spricht nahe am Mikrofon: Spieler B hört die Stimme räumlich aus den Lautsprechern (nicht aus A). A hört sich nicht selbst verzögert.
+- [ ] Lautstärke 200 % / 50 % wirkt. Mikrofon aus: nichts wird übertragen. Weiter als die Sprechreichweite weg: nichts.
+- [ ] Ducking an: Die Musik wird beim Sprechen leiser (Pegel einstellbar) und blendet danach wieder auf.
+- [ ] Ohne Voice-Chat-Plugin: Mikrofon-Menü zeigt den Hinweis, sonst keine Fehler.

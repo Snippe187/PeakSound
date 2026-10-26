@@ -66,6 +66,8 @@ public final class PacketCodec {
                 case Packet.DjUpdate.ID -> Packet.DjUpdate.decode(in);
                 case Packet.DjDeckAction.ID -> Packet.DjDeckAction.decode(in);
                 case Packet.PlaybackFade.ID -> Packet.PlaybackFade.decode(in);
+                case Packet.OpenMicMenu.ID -> Packet.OpenMicMenu.decode(in);
+                case Packet.MicUpdate.ID -> Packet.MicUpdate.decode(in);
                 case Packet.AdminListRequest.ID -> Packet.AdminListRequest.decode(in);
                 case Packet.AdminSongs.ID -> Packet.AdminSongs.decode(in);
                 case Packet.AdminAction.ID -> Packet.AdminAction.decode(in);

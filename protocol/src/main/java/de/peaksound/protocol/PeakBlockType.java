@@ -12,7 +12,8 @@ public enum PeakBlockType {
     JUKEBOX("jukebox", "bit", 23),
     SPEAKER("speaker", "bit", 24),
     DJ_DESK("dj_desk", "bit", 21),
-    SPOTLIGHT("spotlight", "bit", 22);
+    SPOTLIGHT("spotlight", "bit", 22),
+    MICROPHONE("microphone", "bit", 20);
 
     /** Vanilla-Block, der als Traeger dient. */
     public static final String CARRIER_MATERIAL = "NOTE_BLOCK";

@@ -77,6 +77,15 @@ public final class PeakRecipes {
         spotlight.setCategory(CraftingBookCategory.REDSTONE);
         add(spotlight);
 
+        // Mikrofon: Eisenbarren oben und unten, Redstone-Staub links und rechts, Stock in der Mitte
+        ShapedRecipe microphone = new ShapedRecipe(key("microphone"), items.create(PeakItemType.MICROPHONE, 1));
+        microphone.shape(" I ", "RSR", " I ");
+        microphone.setIngredient('I', Material.IRON_INGOT);
+        microphone.setIngredient('R', Material.REDSTONE);
+        microphone.setIngredient('S', Material.STICK);
+        microphone.setCategory(CraftingBookCategory.REDSTONE);
+        add(microphone);
+
         // Holzhacke + Redstone-Staub
         ShapelessRecipe tuner = new ShapelessRecipe(key("peak_tuner"), items.create(PeakItemType.PEAK_TUNER, 1));
         tuner.addIngredient(Material.WOODEN_HOE);

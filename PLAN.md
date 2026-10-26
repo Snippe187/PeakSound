@@ -83,4 +83,9 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [ ] Manuelle Abnahme
 
 ## Phase 10 – Simple Voice Chat und Mikrofon
-## Phase 10 – Simple Voice Chat und Mikrofon
+- [x] Kompatibilität geprüft: Simple Voice Chat (Bukkit/Paper) 2.6.23 und neuer unterstützt Minecraft 26.2; API 2.6.25 (Maven maven.maxhenkel.de)
+- [x] Optionale Abhängigkeit (softdepend): ohne Simple Voice Chat läuft alles andere unverändert, der Mikrofon-Block tut dann nichts (Menü weist darauf hin)
+- [x] Protokoll: MicSettings, Pakete OpenMicMenu/MicUpdate, Tests
+- [x] Plugin: Mikrofon-Block (Rezept, Redstone-Netz), Zuordnung Spieler → Mikrofone auf dem Hauptthread, Stimme über angeschlossene Lautsprecher (3D, je Lautsprecher ein ortsgebundener Kanal), Lautstärke, Ducking der Musik
+- [x] Mod: Mikrofon-Menü (an/aus, Sprechreichweite, Lautstärke, Ducking)
+- [ ] Manuelle Abnahme (braucht Simple Voice Chat auf Server und Client)

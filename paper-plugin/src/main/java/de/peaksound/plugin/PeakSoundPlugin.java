@@ -17,6 +17,8 @@ public final class PeakSoundPlugin extends JavaPlugin {
     private BlockSettingsStore<de.peaksound.protocol.LightSettings> lightStore;
     private BlockSettingsStore<de.peaksound.protocol.DjSettings> djStore;
     private LightService lightService;
+    private BlockSettingsStore<de.peaksound.protocol.MicSettings> micStore;
+    private MicService micService;
 
     SongStore songs() { return songs; }
 
@@ -76,15 +78,27 @@ public final class PeakSoundPlugin extends JavaPlugin {
         lightService = new LightService(this, blocks, networks, lightStore, playback, analysis, songs, network, access);
         lightService.cleanupLeftovers();
         DjService dj = new DjService(this, blocks, networks, djStore, playback, playlist, jukeboxSettings, access);
-        network.wire(uploads, streams, playback, menu, speakerMenu, access, admin, lightService, dj);
+        micStore = new BlockSettingsStore<>(this, "microphones.json", de.peaksound.protocol.MicSettings.class,
+                de.peaksound.protocol.MicSettings.defaults(), de.peaksound.protocol.MicSettings::sanitized);
+        micStore.load();
+        micStore.startAutosave();
+        micService = new MicService(this, blocks, networks, micStore, speakers, jukeboxSettings, playback, access);
+        if (Bukkit.getPluginManager().getPlugin("voicechat") != null) {
+            getLogger().info(VoiceChatHook.register(this, micService)
+                    ? "Simple Voice Chat gefunden: Mikrofon-Bloecke sind aktiv."
+                    : "Simple Voice Chat gefunden, aber die Anbindung ist fehlgeschlagen.");
+        } else {
+            getLogger().info("Simple Voice Chat nicht installiert: Mikrofon-Bloecke bleiben ohne Funktion.");
+        }
+        network.wire(uploads, streams, playback, menu, speakerMenu, access, admin, lightService, dj, micService);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, PeakIds.CHANNEL, network);
         getServer().getMessenger().registerOutgoingPluginChannel(this, PeakIds.CHANNEL);
 
-        SettingsClipboard clipboard = new SettingsClipboard(items, jukeboxSettings, playback, speakers, lightService, dj);
+        SettingsClipboard clipboard = new SettingsClipboard(items, jukeboxSettings, playback, speakers, lightService, dj, micService);
         getServer().getPluginManager().registerEvents(clipboard, this);
         getServer().getPluginManager().registerEvents(network, this);
-        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj), this);
+        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj, micService), this);
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(new NetworkListener(networks, equalizer), this);
         PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj);
@@ -99,6 +113,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, playback::fastTick, 2L, 2L);
         Bukkit.getScheduler().runTaskTimer(this, lightService::tick, 10L, 10L);
         Bukkit.getScheduler().runTaskTimer(this, dj::tick, 20L, 20L);
+        Bukkit.getScheduler().runTaskTimer(this, micService::tick, 5L, 5L);
         // Lautsprecher-Nummern und Standard-Kanaele abgleichen (nutzt den Netz-Cache, rechnet nur bei Aenderungen)
         Bukkit.getScheduler().runTaskTimer(this, speakers::refresh, 20L, 20L);
         // Verbindungsanzeige fuer Spieler mit Peak-Tuner in der Hand
@@ -119,5 +134,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         if (lightStore != null) lightStore.saveNow();
         if (djStore != null) djStore.saveNow();
         if (lightService != null) lightService.shutdown();
+        if (micService != null) micService.shutdown();
+        if (micStore != null) micStore.saveNow();
     }
 }

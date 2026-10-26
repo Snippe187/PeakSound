@@ -35,10 +35,12 @@ final class BlockListener implements Listener {
     private final SettingsClipboard clipboard;
     private final LightService lights;
     private final DjService dj;
+    private final MicService mic;
 
     BlockListener(PeakItems items, BlockRegistry registry, PlaybackManager playback, JukeboxSettingsStore settings,
                   JukeboxMenuService menu, NetworkHandler network, SpeakerService speakers, SpeakerMenuService speakerMenu,
-                  SettingsClipboard clipboard, LightService lights, DjService dj) {
+                  SettingsClipboard clipboard, LightService lights, DjService dj, MicService mic) {
+        this.mic = mic;
         this.clipboard = clipboard;
         this.lights = lights;
         this.dj = dj;
@@ -77,6 +79,7 @@ final class BlockListener implements Listener {
         speakers.remove(block);
         if (type.get() == PeakBlockType.SPOTLIGHT) lights.remove(block);
         if (type.get() == PeakBlockType.DJ_DESK) dj.remove(block);
+        if (type.get() == PeakBlockType.MICROPHONE) mic.remove(block);
         registry.remove(block);
         // Statt des Vanilla-Drops faellt das PeakSound-Item (nicht im Kreativmodus)
         event.setDropItems(false);
@@ -144,6 +147,8 @@ final class BlockListener implements Listener {
                 lights.open(player, block);
             } else if (type.get() == PeakBlockType.DJ_DESK && network.hasMod(player)) {
                 dj.open(player, block);
+            } else if (type.get() == PeakBlockType.MICROPHONE && network.hasMod(player)) {
+                mic.open(player, block);
             } else {
                 player.sendActionBar(Messages.tunerInfo(player, Messages.blockName(player, type.get()),
                         block.getX(), block.getY(), block.getZ()));

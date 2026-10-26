@@ -144,5 +144,17 @@
   "peaksound.menu.dj.fade": "Fade time: %d s",
   "peaksound.menu.dj.swap": "Swap decks: %s",
   "peaksound.menu.dj.volume.a": "Deck A volume: %d %%",
-  "peaksound.menu.dj.volume.b": "Deck B volume: %d %%"
+  "peaksound.menu.dj.volume.b": "Deck B volume: %d %%",
+
+  "item.peaksound.microphone": "Microphone",
+  "peaksound.menu.mic.title": "Microphone",
+  "peaksound.menu.mic.enabled": "Microphone: %s",
+  "peaksound.menu.mic.range": "Speaking range: %d blocks",
+  "peaksound.menu.mic.volume": "Voice volume: %d %%",
+  "peaksound.menu.mic.ducking": "Lower music while speaking: %s",
+  "peaksound.menu.mic.duck": "Music while speaking: %d %%",
+  "peaksound.menu.mic.novoice": "Simple Voice Chat is not installed on this server",
+  "peaksound.menu.mic.connected": "Connected to speakers",
+  "peaksound.menu.mic.unconnected": "Not connected: link it to speakers or a jukebox with redstone dust",
+  "peaksound.menu.mic.hint": "Players need the Simple Voice Chat mod to speak and listen."
 }

@@ -144,5 +144,17 @@
   "peaksound.menu.dj.fade": "\u00dcberblendzeit: %d s",
   "peaksound.menu.dj.swap": "Decks tauschen: %s",
   "peaksound.menu.dj.volume.a": "Lautst\u00e4rke Deck A: %d %%",
-  "peaksound.menu.dj.volume.b": "Lautst\u00e4rke Deck B: %d %%"
+  "peaksound.menu.dj.volume.b": "Lautst\u00e4rke Deck B: %d %%",
+
+  "item.peaksound.microphone": "Mikrofon",
+  "peaksound.menu.mic.title": "Mikrofon",
+  "peaksound.menu.mic.enabled": "Mikrofon: %s",
+  "peaksound.menu.mic.range": "Sprechreichweite: %d Bl\u00f6cke",
+  "peaksound.menu.mic.volume": "Stimmenlautst\u00e4rke: %d %%",
+  "peaksound.menu.mic.ducking": "Musik beim Sprechen leiser: %s",
+  "peaksound.menu.mic.duck": "Musik beim Sprechen: %d %%",
+  "peaksound.menu.mic.novoice": "Simple Voice Chat ist auf diesem Server nicht installiert",
+  "peaksound.menu.mic.connected": "Mit Lautsprechern verbunden",
+  "peaksound.menu.mic.unconnected": "Nicht verbunden: per Redstone-Staub an Lautsprecher oder Jukebox anschlie\u00dfen",
+  "peaksound.menu.mic.hint": "Zum Sprechen und H\u00f6ren braucht man die Simple-Voice-Chat-Mod."
 }
