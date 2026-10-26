@@ -4,5 +4,24 @@
   "item.peaksound.written_record": "Beschriebene Schallplatte",
   "item.peaksound.peak_tuner": "Peak-Tuner",
   "item.peaksound.jukebox": "PeakSound-Jukebox",
-  "item.peaksound.speaker": "Lautsprecher"
+  "item.peaksound.speaker": "Lautsprecher",
+
+  "peaksound.upload.title": "Schallplatte brennen",
+  "peaksound.upload.hint": "Datei wählen oder in dieses Fenster ziehen (MP3, FLAC, WAV, OGG)",
+  "peaksound.upload.choose": "Datei wählen ...",
+  "peaksound.upload.dialog": "Musikdatei wählen",
+  "peaksound.upload.start": "Hochladen",
+  "peaksound.upload.details": "%1$d:%2$s min · %3$d Kanäle · %4$s kHz",
+  "peaksound.upload.multichannel.1": "Warnung: Mehrkanal-Datei. Sie wird hochgeladen, bleibt aber gesperrt,",
+  "peaksound.upload.multichannel.2": "bis der Server-Owner sie freigibt.",
+  "peaksound.upload.processing": "Der Server verarbeitet die Datei ...",
+  "peaksound.upload.error.large": "Die Datei ist zu groß.",
+  "peaksound.upload.error.long": "Der Song ist zu lang (maximal %d Minuten).",
+  "peaksound.upload.error.format": "Diese Datei ist nicht lesbar oder wird nicht unterstützt.",
+  "peaksound.upload.error.rate": "Bitte warte noch %d Sekunden bis zum nächsten Upload.",
+  "peaksound.upload.error.quota": "Du hast dein Limit von %d Songs erreicht.",
+  "peaksound.upload.error.storage": "Der Speicher des Servers ist voll.",
+  "peaksound.upload.error.ticket": "Der Upload ist abgelaufen. Klicke die Jukebox mit Shift erneut an.",
+  "peaksound.upload.error.busy": "Der Server ist ausgelastet. Versuche es gleich noch einmal.",
+  "peaksound.upload.error.internal": "Interner Fehler. Bitte informiere einen Admin."
 }

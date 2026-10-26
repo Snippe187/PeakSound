@@ -14,6 +14,14 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [x] Phase-1-Abnahme: Build, Server startet, Client verbindet, Checkliste (manuell bestätigt)
 
 ## Phase 2 – Upload, Speicherung, 3D-Audio im Multiplayer
+- [x] Protokoll: Upload-/Stream-/Wiedergabe-Pakete, Chunk-Assembler, Richtungsprüfung, Tests
+- [x] audio-core: Tags/Cover/Länge (jaudiotagger), MP3/FLAC/WAV-Decoder, FLAC-Encoder, ffmpeg-optional-Transcoder, Tests
+- [x] Plugin: Song-Speicher (Hash), Upload mit Ticket/Rate-Limit/Quota/Speicher-Limit, Mehrkanal → gesperrt
+- [x] Plugin: Platten (beschreiben, einlegen, entnehmen, kopieren), Wiedergabe-Verwaltung, Chunk-Streaming
+- [x] Mod: Upload-Fenster (natives Dateifenster + Drag-and-Drop), Cache mit Hash-Prüfung, 3D-Wiedergabe (OpenAL, synchron)
+- [ ] Manuelle Abnahme (Upload, Wiedergabe, Einstieg mitten im Song, Mehrkanal-Sperre)
+- Bewusst verschoben: Wiedergabe startet nach vollständigem Download (progressives Streaming → Phase 8);
+  Cover im Platten-Tooltip → Phase 3; Mehrkanal-Freigabe im OP-Menü → Phase 7; Lautsprecher/Surround → Phase 6.
 ## Phase 3 – Jukebox-Menü
 ## Phase 4 – Hopper-Playlist und Kisten-Erweiterung
 ## Phase 5 – Redstone-Verbund und Comparator-Equalizer

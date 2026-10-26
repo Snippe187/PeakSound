@@ -4,5 +4,24 @@
   "item.peaksound.written_record": "Written Record",
   "item.peaksound.peak_tuner": "Peak Tuner",
   "item.peaksound.jukebox": "PeakSound Jukebox",
-  "item.peaksound.speaker": "Speaker"
+  "item.peaksound.speaker": "Speaker",
+
+  "peaksound.upload.title": "Burn a record",
+  "peaksound.upload.hint": "Choose a file or drag it into this window (MP3, FLAC, WAV, OGG)",
+  "peaksound.upload.choose": "Choose file...",
+  "peaksound.upload.dialog": "Choose a music file",
+  "peaksound.upload.start": "Upload",
+  "peaksound.upload.details": "%1$d:%2$s min · %3$d channels · %4$s kHz",
+  "peaksound.upload.multichannel.1": "Warning: multichannel file. It will be uploaded but locked",
+  "peaksound.upload.multichannel.2": "until the server owner approves it.",
+  "peaksound.upload.processing": "The server is processing the file...",
+  "peaksound.upload.error.large": "The file is too large.",
+  "peaksound.upload.error.long": "The song is too long (maximum %d minutes).",
+  "peaksound.upload.error.format": "This file could not be read or is not supported.",
+  "peaksound.upload.error.rate": "Please wait %d more seconds before uploading again.",
+  "peaksound.upload.error.quota": "You have reached your limit of %d songs.",
+  "peaksound.upload.error.storage": "The server storage is full.",
+  "peaksound.upload.error.ticket": "The upload expired. Shift-click the jukebox again.",
+  "peaksound.upload.error.busy": "The server is busy. Try again shortly.",
+  "peaksound.upload.error.internal": "Internal error. Please tell an admin."
 }
