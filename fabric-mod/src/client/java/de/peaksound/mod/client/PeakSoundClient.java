@@ -19,6 +19,17 @@ public final class PeakSoundClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         PeakCreativeTab.register();
+        // Alternative zum Button im Escape-Menue (z. B. wenn ein Launcher das Pausenmenue ersetzt): /peaksoundadmin
+        net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
+                dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("peaksoundadmin").executes(context -> {
+                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                    if (!ServerState.operator()) {
+                        context.getSource().sendFeedback(Component.translatable("peaksound.admin.denied"));
+                    } else {
+                        mc.execute(() -> AdminScreen.open(null));
+                    }
+                    return 1;
+                })));
         ClientNetwork.register();
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {

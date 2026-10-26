@@ -75,3 +75,7 @@ Das Zip enthält zwei Ordner: `world/` und `plugins/PeakSound/`. Bei **gestoppte
 
 Die Karte neu aufbauen (z. B. nach eigenen Änderungen): `powershell -File tools\build_showroom.ps1` auf dem Testserver
 des Projekts.
+
+## Admin-Menü
+
+Operator werden (`op DeinName` in der Server-Konsole), dann im Spiel entweder im Pausenmenü (Esc) unten rechts auf **PeakSound: Songs** klicken oder den Befehl `/peaksoundadmin` im Chat eingeben (der zweite Weg geht auch, wenn ein Launcher das Pausenmenü verändert).

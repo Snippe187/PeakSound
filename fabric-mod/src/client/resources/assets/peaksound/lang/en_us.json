@@ -162,5 +162,7 @@
   "peaksound.speaker.kind.full": "Full range",
   "peaksound.speaker.kind.woofer": "Woofer (lows)",
   "peaksound.speaker.kind.tweeter": "Tweeter (highs)",
-  "peaksound.speaker.kind.subwoofer": "Subwoofer (deep bass)"
+  "peaksound.speaker.kind.subwoofer": "Subwoofer (deep bass)",
+
+  "peaksound.admin.denied": "PeakSound: you are not an operator on this server (or the server has no PeakSound plugin)."
 }

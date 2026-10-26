@@ -162,5 +162,7 @@
   "peaksound.speaker.kind.full": "Vollbereich",
   "peaksound.speaker.kind.woofer": "Tiefton\u00e4r (Tiefen)",
   "peaksound.speaker.kind.tweeter": "Hochton\u00e4r (H\u00f6hen)",
-  "peaksound.speaker.kind.subwoofer": "Subwoofer (Tiefbass)"
+  "peaksound.speaker.kind.subwoofer": "Subwoofer (Tiefbass)",
+
+  "peaksound.admin.denied": "PeakSound: Du bist auf diesem Server kein Operator (oder der Server hat das PeakSound-Plugin nicht)."
 }
