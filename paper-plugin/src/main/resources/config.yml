@@ -9,6 +9,8 @@ non-mod-hint:
 upload:
   # Mindestabstand zwischen zwei Uploads eines Spielers in Sekunden (0 = aus). Schutz gegen Spam.
   cooldown-seconds: 60
+  # Laengster erlaubter Song in Sekunden (240 = 4 Minuten, hoechstens 3600). Laengere Songs brauchen mehr Speicher.
+  max-song-seconds: 240
   # Maximale Anzahl Songs pro Spieler (neu hochgeladene, nicht doppelte Songs).
   max-songs-per-player: 10
   # Serverweites Speicher-Limit fuer alle Songs in Megabyte.

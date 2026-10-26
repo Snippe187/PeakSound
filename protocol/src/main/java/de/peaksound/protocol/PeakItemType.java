@@ -10,7 +10,8 @@ import java.util.Optional;
 public enum PeakItemType {
     BLANK_RECORD("blank_record", "DISC_FRAGMENT_5", null),
     WRITTEN_RECORD("written_record", "DISC_FRAGMENT_5", null),
-    PEAK_TUNER("peak_tuner", "BREEZE_ROD", null),
+    // Traegeritem ohne Crafting-Verwendung (kein Windladungs-Rezept wie beim Breeze-Stab)
+    PEAK_TUNER("peak_tuner", "TRIAL_KEY", null),
     JUKEBOX("jukebox", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.JUKEBOX),
     SPEAKER("speaker", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.SPEAKER),
     DJ_DESK("dj_desk", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.DJ_DESK),

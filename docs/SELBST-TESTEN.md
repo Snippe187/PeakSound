@@ -79,3 +79,7 @@ des Projekts.
 ## Admin-Menü
 
 Operator werden (`op DeinName` in der Server-Konsole), dann im Spiel entweder im Pausenmenü (Esc) unten rechts auf **PeakSound: Songs** klicken oder den Befehl `/peaksoundadmin` im Chat eingeben (der zweite Weg geht auch, wenn ein Launcher das Pausenmenü verändert).
+
+## Songlaenge
+
+Standard sind 4 Minuten. Fuer laengere Songs in `plugins/PeakSound/config.yml` `upload.max-song-seconds` erhoehen (z. B. `400` fuer gut 6 Minuten, hoechstens 3600) und den Server neu starten. Die Dateigroesse ist auf 64 MB begrenzt (eine WAV-Datei von 6 Minuten ist zu gross, MP3, OGG oder FLAC passen).

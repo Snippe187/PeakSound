@@ -81,6 +81,11 @@ final class DebugReport {
             autoDone = true;
             run();
         }
+        if (AUTO && autoTicks == 260 && Minecraft.getInstance().player != null) { // Inventar mit Rezeptbuch oeffnen (Absturztest und Screenshot)
+            Minecraft mc = Minecraft.getInstance();
+            mc.setScreenAndShow(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player));
+        }
+        if (AUTO && autoTicks >= 200 && autoTicks < 400) autoTicks++;
         if (waiting && System.currentTimeMillis() > deadline) {
             waiting = false;
             finish(null, "Keine Antwort vom Server innerhalb von " + SERVER_TIMEOUT_MS / 1000 + " s (Plugin zu alt oder haengt).");
@@ -106,6 +111,7 @@ final class DebugReport {
         section(sb, "Client: Wiedergabe", AudioEngine::debug);
         section(sb, "Client: Song-Cache", SongLibrary::debug);
         section(sb, "Client: Lichtshow", LightShow::debug);
+        section(sb, "Client: Rezeptbuch", DebugReport::recipes);
         section(sb, "Client: Einstellungen", () -> "  PeakSound-Lautstaerke=" + ClientSettings.volumePercent() + " % Strobo erlaubt=" + ClientSettings.strobeAllowed() + "\n");
         section(sb, "Client: Geladene Mods", DebugReport::mods);
         section(sb, "Client: Log-Auszug (PeakSound, Mixin, Fehler; neueste zuletzt)", DebugReport::clientLog);
@@ -225,6 +231,19 @@ final class DebugReport {
                 .append(Minecraft.getInstance().options.getFinalSoundSourceVolume(net.minecraft.sounds.SoundSource.RECORDS)).append('\n');
         sb.append("  Minecraft-Lautstaerke Master: ")
                 .append(Minecraft.getInstance().options.getFinalSoundSourceVolume(net.minecraft.sounds.SoundSource.MASTER)).append('\n');
+        return sb.toString();
+    }
+
+    private static String recipes() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return "  kein Spieler\n";
+        var book = mc.player.getRecipeBook();
+        var mine = book.getCollection(PeakRecipeCategory.PEAKSOUND);
+        StringBuilder sb = new StringBuilder("  Rezeptgruppen im Reiter PeakSound: " + mine.size() + " (erwartet: 7)\n");
+        for (var collection : mine) {
+            for (var entry : collection.getRecipes()) sb.append("    ").append(entry.display().getClass().getSimpleName()).append('\n');
+        }
+        sb.append("  Rezepte insgesamt im Buch: ").append(book.getCollections().size()).append(" Gruppen\n");
         return sb.toString();
     }
 

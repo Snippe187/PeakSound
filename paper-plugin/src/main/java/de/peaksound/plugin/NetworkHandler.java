@@ -158,7 +158,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         if (!pendingAck.remove(player.getUniqueId())) return;
         if (h.compatible()) playback.forget(player); // Client startet leer: laufende Jukeboxen erneut melden
         Net.send(plugin, player, new Packet.HelloAck(PeakIds.PROTOCOL_VERSION, h.compatible(),
-                h.compatible() && Permissions.admin(player), System.currentTimeMillis(), Limits.MAX_SONG_SECONDS));
+                h.compatible() && Permissions.admin(player), System.currentTimeMillis(), UploadService.maxSongSeconds(plugin)));
         if (h.compatible()) lastOperator.put(player.getUniqueId(), Permissions.admin(player));
     }
 

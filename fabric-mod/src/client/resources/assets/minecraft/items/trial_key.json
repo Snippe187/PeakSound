@@ -14,7 +14,7 @@
     ],
     "fallback": {
       "type": "minecraft:model",
-      "model": "minecraft:item/breeze_rod"
+      "model": "minecraft:item/trial_key"
     }
   }
 }

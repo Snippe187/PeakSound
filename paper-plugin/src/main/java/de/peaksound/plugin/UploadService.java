@@ -180,8 +180,14 @@ final class UploadService {
     }
 
     /** Laeuft asynchron. */
+    /** Hoechste Songlaenge in Sekunden: Config upload.max-song-seconds (Standard 240, erlaubt 30 bis 3600). */
+    static int maxSongSeconds(PeakSoundPlugin plugin) {
+        return Math.max(30, Math.min(3600, plugin.getConfig().getInt("upload.max-song-seconds", Limits.MAX_SONG_SECONDS)));
+    }
+
     private Outcome process(byte[] data, String fallbackTitle, UUID uploader, String uploaderName) throws IOException {
-        int maxMs = Limits.MAX_SONG_SECONDS * 1000;
+        int maxSeconds = maxSongSeconds(plugin);
+        int maxMs = maxSeconds * 1000;
         AudioFormat format = AudioFormat.detect(data).orElse(null);
         if (format == null) return Outcome.fail(Reason.UNSUPPORTED_FORMAT, 0);
         AudioInfo info;
@@ -190,7 +196,7 @@ final class UploadService {
         } catch (AudioException e) {
             return Outcome.fail(Reason.CORRUPT, 0);
         }
-        if (info.durationMs() > maxMs + 1000) return Outcome.fail(Reason.TOO_LONG, Limits.MAX_SONG_SECONDS);
+        if (info.durationMs() > maxMs + 1000) return Outcome.fail(Reason.TOO_LONG, maxSeconds);
         if (info.bitsPerSample() > 24 && format == AudioFormat.FLAC) return Outcome.fail(Reason.UNSUPPORTED_FORMAT, 0);
 
         Transcoder.Result stored;
@@ -204,7 +210,7 @@ final class UploadService {
         } catch (AudioException e) {
             return Outcome.fail(Reason.CORRUPT, 0);
         }
-        if (exactMs > maxMs + 1000) return Outcome.fail(Reason.TOO_LONG, Limits.MAX_SONG_SECONDS);
+        if (exactMs > maxMs + 1000) return Outcome.fail(Reason.TOO_LONG, maxSeconds);
 
         String hash = sha256(stored.data());
         String title = !info.title().isBlank() ? info.title()

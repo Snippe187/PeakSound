@@ -72,7 +72,7 @@ function itemDef(file, vanillaModel, cases) {
 }
 itemDef("disc_fragment_5.json", "minecraft:item/disc_fragment_5",
   { blank_record: "peaksound:item/blank_record", written_record: "peaksound:item/written_record" });
-itemDef("breeze_rod.json", "minecraft:item/breeze_rod", { peak_tuner: "peaksound:item/peak_tuner" });
+itemDef("trial_key.json", "minecraft:item/trial_key", { peak_tuner: "peaksound:item/peak_tuner" });
 itemDef("note_block.json", "minecraft:block/note_block",
   { jukebox: "peaksound:block/jukebox", speaker: "peaksound:block/speaker",
     dj_desk: "peaksound:block/dj_desk", spotlight: "peaksound:block/spotlight", microphone: "peaksound:block/microphone" });
