@@ -73,6 +73,15 @@ final class PlaybackManager {
         }
     }
 
+    /** Was der Client einer Schallquelle zuletzt gemeldet bekam: Song@Start#Kanal (erkennt Songwechsel) sowie Reichweite und Lautstaerke. */
+    private record Heard(String signature, int range, int volume) {}
+
+    /** Eine Schallquelle: Jukebox (Kanal 0, Mono-Mix) oder Lautsprecher (Kanal 1-12) mit Reichweite und Lautstaerke. */
+    record Emitter(BlockRegistry.Key key, State state, int channel, int range, int volume) {}
+
+    /** Ergebnis von {@link #effective()}: Jukeboxen mit ihrem Song und die tatsaechlichen Schallquellen. */
+    record Effective(Map<BlockRegistry.Key, State> jukeboxes, Map<BlockRegistry.Key, Emitter> emitters) {}
+
     /** Spieler hoeren eine Jukebox schon ab dieser Entfernung (Reichweite + Vorlauf zum Laden). */
     private static final int PRELOAD_MARGIN = 8;
     /** Erst ab dieser zusaetzlichen Entfernung wird der Client wieder entlastet. */
@@ -85,15 +94,17 @@ final class PlaybackManager {
     private final PlaylistService playlist;
     private final NetworkRegistry networks;
     private final EqualizerService equalizer;
+    private final SpeakerService speakers;
     private final Map<BlockRegistry.Key, State> states = new ConcurrentHashMap<>();
-    /** Pro Spieler: welche Jukeboxen er gerade vom Server gemeldet bekam (Wert = Song@Start, erkennt Songwechsel im Netz). */
-    private final Map<UUID, Map<BlockRegistry.Key, String>> heard = new ConcurrentHashMap<>();
+    /** Pro Spieler: welche Schallquellen er gerade vom Server gemeldet bekam. */
+    private final Map<UUID, Map<BlockRegistry.Key, Heard>> heard = new ConcurrentHashMap<>();
     /** Fuer welche Jukeboxen der Spieler "Jetzt laeuft" schon gesehen hat (bis er wieder weit weg ist). */
     private final Map<UUID, Set<BlockRegistry.Key>> announced = new ConcurrentHashMap<>();
 
     PlaybackManager(PeakSoundPlugin plugin, NetworkHandler network, JukeboxSettingsStore settings, AnalysisStore analysis,
-                    PlaylistService playlist, NetworkRegistry networks, EqualizerService equalizer) {
+                    PlaylistService playlist, NetworkRegistry networks, EqualizerService equalizer, SpeakerService speakers) {
         this.plugin = plugin;
+        this.speakers = speakers;
         this.playlist = playlist;
         this.networks = networks;
         this.equalizer = equalizer;
@@ -243,25 +254,15 @@ final class PlaybackManager {
         return true;
     }
 
-    /** Neue Einstellungen uebernehmen und laufende Wiedergabe beim Client nachziehen. */
+    /** Neue Einstellungen uebernehmen; laufende Wiedergabe wird sofort nachgezogen (naechster Abgleich). */
     void applySettings(Block block, JukeboxSettings updated) {
-        BlockRegistry.Key key = BlockRegistry.Key.of(block);
-        JukeboxSettings old = settings.get(key);
         settings.set(block, updated);
-        JukeboxSettings now = settings.get(key);
-        State s = states.get(key);
-        if (s == null || !s.playing || (old.range() == now.range() && old.volume() == now.volume())) return;
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            Map<BlockRegistry.Key, String> hearing = heard.get(p.getUniqueId());
-            if (hearing != null && hearing.containsKey(key)) {
-                Net.send(plugin, p, new Packet.PlaybackUpdate(key.x(), key.y(), key.z(), now.range(), now.volume()));
-            }
-        }
+        Bukkit.getScheduler().runTask(plugin, this::tick);
     }
 
     private void stopFor(BlockRegistry.Key key) {
         for (Player p : Bukkit.getOnlinePlayers()) {
-            Map<BlockRegistry.Key, String> hearing = heard.get(p.getUniqueId());
+            Map<BlockRegistry.Key, Heard> hearing = heard.get(p.getUniqueId());
             if (hearing != null && hearing.remove(key) != null) {
                 Net.send(plugin, p, new Packet.PlaybackStop(key.x(), key.y(), key.z()));
             }
@@ -271,18 +272,23 @@ final class PlaybackManager {
     }
 
     /**
-     * Welcher Song ist an welcher Jukebox zu hoeren? Jukeboxen eines Redstone-Netzes spielen alle den Song des
-     * "Anfuehrers" (der am laengsten laufende), jede mit eigener Reichweite und Lautstaerke. So vergroessert ein
-     * Netz die Reichweite, und alle hoeren dasselbe zur selben Zeit.
+     * Was ist wo zu hoeren? Jukeboxen eines Redstone-Netzes spielen den Song des "Anfuehrers" (der am laengsten
+     * laufende), jede mit eigener Reichweite und Lautstaerke; so vergroessert ein Netz die Reichweite, und alle
+     * hoeren dasselbe zur selben Zeit. Haengen Lautsprecher im Netz, schweigen die Jukeboxen: Dann ist jeder
+     * Lautsprecher eine eigene Schallquelle fuer seinen Kanal (Lautsprecher-Lautstaerke mal Jukebox-Lautstaerke,
+     * Reichweite der naechsten Jukebox).
      */
-    Map<BlockRegistry.Key, State> effectiveStates() {
-        Map<BlockRegistry.Key, State> result = new HashMap<>();
+    Effective effective() {
+        Map<BlockRegistry.Key, State> jukeboxes = new HashMap<>();
+        Map<BlockRegistry.Key, Emitter> emitters = new HashMap<>();
         Set<NetworkRegistry.Net> seen = new HashSet<>();
         for (Map.Entry<BlockRegistry.Key, State> e : states.entrySet()) {
             if (!e.getValue().playing) continue;
             NetworkRegistry.Net net = networks.networkOf(e.getKey());
             if (net == null) { // Chunk nicht geladen oder Block weg: nur die eigene Jukebox
-                result.putIfAbsent(e.getKey(), e.getValue());
+                jukeboxes.putIfAbsent(e.getKey(), e.getValue());
+                JukeboxSettings cfg = settings.get(e.getKey());
+                emitters.putIfAbsent(e.getKey(), new Emitter(e.getKey(), e.getValue(), 0, cfg.range(), cfg.volume()));
                 continue;
             }
             if (!seen.add(net)) continue;
@@ -294,9 +300,23 @@ final class PlaybackManager {
             }
             State leader = SyncMath.pickLeader(candidates).map(c -> states.get(c.key())).orElse(null);
             if (leader == null) continue;
-            for (BlockRegistry.Key member : members) result.put(member, leader);
+            for (BlockRegistry.Key member : members) jukeboxes.put(member, leader);
+
+            List<SpeakerService.Speaker> netSpeakers = speakers.speakersOf(net).stream().filter(sp -> sp.number() > 0).toList();
+            if (netSpeakers.isEmpty()) {
+                for (BlockRegistry.Key member : members) {
+                    JukeboxSettings cfg = settings.get(member);
+                    emitters.put(member, new Emitter(member, leader, 0, cfg.range(), cfg.volume()));
+                }
+            } else {
+                for (SpeakerService.Speaker sp : netSpeakers) {
+                    JukeboxSettings cfg = settings.get(sp.jukebox());
+                    int volume = cfg.volume() * sp.settings().volume() / 100;
+                    emitters.put(sp.key(), new Emitter(sp.key(), leader, sp.settings().channel().ordinal() + 1, cfg.range(), volume));
+                }
+            }
         }
-        return result;
+        return new Effective(jukeboxes, emitters);
     }
 
     /** Wird alle 10 Ticks aufgerufen: Songende erkennen und Spieler in Reichweite informieren. */
@@ -313,62 +333,60 @@ final class PlaybackManager {
         }
         if (changed) save();
 
-        Map<BlockRegistry.Key, State> effective = effectiveStates();
+        Effective effective = effective();
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (!network.hasMod(p)) {
-                announceOnly(p, effective);
-                continue;
-            }
-            Map<BlockRegistry.Key, String> hearing = heard.computeIfAbsent(p.getUniqueId(), k -> new HashMap<>());
-            Set<BlockRegistry.Key> shown = announced.computeIfAbsent(p.getUniqueId(), k -> new HashSet<>());
+            announce(p, effective.jukeboxes());
+            if (!network.hasMod(p)) continue;
+            Map<BlockRegistry.Key, Heard> hearing = heard.computeIfAbsent(p.getUniqueId(), k -> new HashMap<>());
             UUID world = p.getWorld().getUID();
             Location loc = p.getLocation();
-            for (Map.Entry<BlockRegistry.Key, State> e : effective.entrySet()) {
-                BlockRegistry.Key key = e.getKey();
-                State s = e.getValue();
-                JukeboxSettings cfg = settings.get(key);
+            for (Emitter em : effective.emitters().values()) {
+                BlockRegistry.Key key = em.key();
+                State s = em.state();
                 double d2 = distanceSquared(key, world, loc);
-                String signature = s.hash + "@" + s.startedAt;
-                String known = hearing.get(key);
+                String signature = s.hash + "@" + s.startedAt + "#" + em.channel();
+                Heard known = hearing.get(key);
                 if (known == null) {
-                    if (d2 <= sq(cfg.range() + PRELOAD_MARGIN)) {
-                        sendStart(p, key, s, cfg, now);
-                        hearing.put(key, signature);
+                    if (d2 <= sq(em.range() + PRELOAD_MARGIN)) {
+                        sendStart(p, em, now);
+                        hearing.put(key, new Heard(signature, em.range(), em.volume()));
                     }
-                } else if (d2 > sq(cfg.range() + RELEASE_MARGIN)) {
+                } else if (d2 > sq(em.range() + RELEASE_MARGIN)) {
                     Net.send(plugin, p, new Packet.PlaybackStop(key.x(), key.y(), key.z()));
                     hearing.remove(key);
-                } else if (!known.equals(signature)) {
-                    sendStart(p, key, s, cfg, now); // der Anfuehrer des Netzes hat gewechselt: neuer Song
-                    hearing.put(key, signature);
+                } else if (!known.signature().equals(signature)) {
+                    sendStart(p, em, now); // Anfuehrer oder Kanal hat gewechselt: neu beginnen
+                    hearing.put(key, new Heard(signature, em.range(), em.volume()));
+                } else if (known.range() != em.range() || known.volume() != em.volume()) {
+                    Net.send(plugin, p, new Packet.PlaybackUpdate(key.x(), key.y(), key.z(), em.range(), em.volume()));
+                    hearing.put(key, new Heard(signature, em.range(), em.volume()));
                 }
-                updateAnnouncement(p, key, s, cfg, d2, shown);
             }
-            // Jukeboxen, die nicht mehr spielen (Anfuehrer beendet, Platte entnommen): Client entlasten
+            // Schallquellen, die nicht mehr spielen (Anfuehrer beendet, Platte entnommen): Client entlasten
             hearing.entrySet().removeIf(en -> {
-                if (effective.containsKey(en.getKey())) return false;
+                if (effective.emitters().containsKey(en.getKey())) return false;
                 Net.send(plugin, p, new Packet.PlaybackStop(en.getKey().x(), en.getKey().y(), en.getKey().z()));
                 return true;
             });
         }
     }
 
-    private void sendStart(Player p, BlockRegistry.Key key, State s, JukeboxSettings cfg, long now) {
+    private void sendStart(Player p, Emitter em, long now) {
+        State s = em.state();
         int offset = (int) Math.min(Integer.MAX_VALUE, now - s.startedAt);
-        Net.send(plugin, p, new Packet.PlaybackStart(key.x(), key.y(), key.z(), s.hash, offset, now,
-                s.durationMs, songChannels(s.hash), cfg.range(), cfg.volume()));
+        Net.send(plugin, p, new Packet.PlaybackStart(em.key().x(), em.key().y(), em.key().z(), s.hash, offset, now,
+                s.durationMs, songChannels(s.hash), em.range(), em.volume(), em.channel()));
     }
 
-    /** Spieler ohne Mod hoeren nichts, sehen aber trotzdem die "Jetzt laeuft"-Anzeige (Actionbar). */
-    private void announceOnly(Player p, Map<BlockRegistry.Key, State> effective) {
+    /** "Jetzt laeuft"-Anzeige (Actionbar) fuer alle Spieler, auch ohne Mod. */
+    private void announce(Player p, Map<BlockRegistry.Key, State> jukeboxes) {
         Set<BlockRegistry.Key> shown = announced.computeIfAbsent(p.getUniqueId(), k -> new HashSet<>());
         UUID world = p.getWorld().getUID();
         Location loc = p.getLocation();
-        for (Map.Entry<BlockRegistry.Key, State> e : effective.entrySet()) {
+        for (Map.Entry<BlockRegistry.Key, State> e : jukeboxes.entrySet()) {
             updateAnnouncement(p, e.getKey(), e.getValue(), settings.get(e.getKey()), distanceSquared(e.getKey(), world, loc), shown);
         }
     }
-
     private void updateAnnouncement(Player p, BlockRegistry.Key key, State s, JukeboxSettings cfg, double d2,
                                     Set<BlockRegistry.Key> shown) {
         if (!cfg.showNowPlaying()) return;
@@ -389,9 +407,9 @@ final class PlaybackManager {
      */
     void fastTick() {
         long now = System.currentTimeMillis();
-        Map<BlockRegistry.Key, State> effective = effectiveStates();
-        spawnBeatParticles(effective, now);
-        equalizer.update(effective, now);
+        Map<BlockRegistry.Key, State> jukeboxes = effective().jukeboxes();
+        spawnBeatParticles(jukeboxes, now);
+        equalizer.update(jukeboxes, now);
     }
 
     private void spawnBeatParticles(Map<BlockRegistry.Key, State> effective, long now) {
@@ -447,7 +465,7 @@ final class PlaybackManager {
 
     /** Beim Weltwechsel/Neuverbinden muss der Client neu informiert werden. */
     void forget(Player player) {
-        Map<BlockRegistry.Key, String> hearing = heard.get(player.getUniqueId());
+        Map<BlockRegistry.Key, Heard> hearing = heard.get(player.getUniqueId());
         if (hearing != null) hearing.clear();
         Set<BlockRegistry.Key> shown = announced.get(player.getUniqueId());
         if (shown != null) shown.clear();

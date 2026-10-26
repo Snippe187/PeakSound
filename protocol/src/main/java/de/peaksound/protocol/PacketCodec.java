@@ -50,6 +50,10 @@ public final class PacketCodec {
                 case Packet.PlaylistRequest.ID -> Packet.PlaylistRequest.decode(in);
                 case Packet.PlaylistAction.ID -> Packet.PlaylistAction.decode(in);
                 case Packet.PlaylistState.ID -> Packet.PlaylistState.decode(in);
+                case Packet.OpenSpeakerMenu.ID -> Packet.OpenSpeakerMenu.decode(in);
+                case Packet.SpeakerUpdate.ID -> Packet.SpeakerUpdate.decode(in);
+                case Packet.SpeakerOverviewRequest.ID -> Packet.SpeakerOverviewRequest.decode(in);
+                case Packet.SpeakerOverview.ID -> Packet.SpeakerOverview.decode(in);
                 case Packet.CoverData.ID -> Packet.CoverData.decode(in);
                 default -> throw new MalformedPacketException("Unbekannte Paket-ID " + id);
             };

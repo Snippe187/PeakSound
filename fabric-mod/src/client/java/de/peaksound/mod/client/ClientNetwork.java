@@ -46,6 +46,8 @@ public final class ClientNetwork {
             case Packet.OpenJukeboxMenu menu -> JukeboxMenuScreen.open(menu);
             case Packet.CoverData cover -> CoverCache.onData(cover);
             case Packet.PlaylistState state -> JukeboxMenuScreen.onPlaylist(state);
+            case Packet.OpenSpeakerMenu menu -> SpeakerMenuScreen.open(menu);
+            case Packet.SpeakerOverview overview -> JukeboxMenuScreen.onSpeakers(overview);
         }
     }
 }

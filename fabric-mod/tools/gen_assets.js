@@ -12,6 +12,30 @@ function write(file, content) {
 }
 const json = (file, obj) => write(file, JSON.stringify(obj, null, 2) + "\n");
 
+// ---------- PNG (nur fuer die selbst gezeichneten Ziffern-Overlays) ----------
+const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+const crc32 = b => { let c = 0xffffffff; for (const v of b) c = crcTable[(c ^ v) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+function chunk(type, data) {
+  const t = Buffer.from(type), len = Buffer.alloc(4), crc = Buffer.alloc(4);
+  len.writeUInt32BE(data.length); crc.writeUInt32BE(crc32(Buffer.concat([t, data])));
+  return Buffer.concat([len, t, data, crc]);
+}
+function png(size, px) {
+  const raw = Buffer.alloc(size * (size * 4 + 1));
+  let i = 0;
+  for (let y = 0; y < size; y++) {
+    raw[i++] = 0;
+    for (let x = 0; x < size; x++) {
+      const c = px(x, y);
+      if (c) { raw[i++] = c[0]; raw[i++] = c[1]; raw[i++] = c[2]; raw[i++] = 255; }
+      else { raw[i++] = 0; raw[i++] = 0; raw[i++] = 0; raw[i++] = 0; }
+    }
+  }
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(size, 0); ihdr.writeUInt32BE(size, 4); ihdr[8] = 8; ihdr[9] = 6;
+  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk("IHDR", ihdr), chunk("IDAT", zlib.deflateSync(raw, { level: 9 })), chunk("IEND", Buffer.alloc(0))]);
+}
+
 // ---------- Modelle ----------
 const cube = (side, top) => ({
   parent: "minecraft:block/cube",
@@ -46,6 +70,44 @@ itemDef("breeze_rod.json", "minecraft:item/breeze_rod", { peak_tuner: "peaksound
 itemDef("note_block.json", "minecraft:block/note_block",
   { jukebox: "peaksound:block/jukebox", speaker: "peaksound:block/speaker" });
 
+
+// ---------- Lautsprecher-Nummern 1-25: durchsichtige Ziffern-Overlays auf dem Vanilla-Notenblock ----------
+const DIGITS = {
+  0: ["111", "101", "101", "101", "111"], 1: ["010", "110", "010", "010", "111"], 2: ["111", "001", "111", "100", "111"],
+  3: ["111", "001", "111", "001", "111"], 4: ["101", "101", "111", "001", "001"], 5: ["111", "100", "111", "001", "111"],
+  6: ["111", "100", "111", "101", "111"], 7: ["111", "001", "001", "001", "001"], 8: ["111", "101", "111", "101", "111"],
+  9: ["111", "101", "111", "001", "111"]
+};
+function numberTexture(n) {
+  const text = String(n);
+  const scale = 2, glyphW = 3 * scale, glyphH = 5 * scale, gap = 2;
+  const totalW = text.length * glyphW + (text.length - 1) * gap;
+  const x0 = Math.floor((16 - totalW) / 2), y0 = Math.floor((16 - glyphH) / 2);
+  const lit = new Set();
+  [...text].forEach((ch, k) => {
+    DIGITS[ch].forEach((row, ry) => [...row].forEach((bit, rx) => {
+      if (bit !== "1") return;
+      for (let dy = 0; dy < scale; dy++) for (let dx = 0; dx < scale; dx++) lit.add((x0 + k * (glyphW + gap) + rx * scale + dx) + "," + (y0 + ry * scale + dy));
+    }));
+  });
+  return png(16, (x, y) => {
+    if (lit.has(x + "," + y)) return [255, 255, 255];
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (lit.has((x + dx) + "," + (y + dy))) return [20, 20, 20];
+    return null;
+  });
+}
+const MAX_SPEAKERS = 25;
+const face = t => ({ texture: t });
+for (let n = 1; n <= MAX_SPEAKERS; n++) {
+  write(path.join(PS, `textures/block/speaker_digit_${n}.png`), numberTexture(n));
+  json(path.join(PS, `models/block/speaker_${n}.json`), {
+    textures: { particle: "minecraft:block/note_block", base: "minecraft:block/note_block", num: `peaksound:block/speaker_digit_${n}` },
+    elements: [
+      { from: [0, 0, 0], to: [16, 16, 16], faces: { down: face("#base"), up: face("#base"), north: face("#base"), south: face("#base"), west: face("#base"), east: face("#base") } },
+      { from: [-0.01, -0.01, -0.01], to: [16.01, 16.01, 16.01], faces: { north: face("#num"), south: face("#num"), west: face("#num"), east: face("#num") } }
+    ]
+  });
+}
 // ---------- Notenblock-Blockstate: alle 1150 Zustaende, PeakSound-Zustaende mit eigenem Modell ----------
 const instruments = ["harp", "basedrum", "snare", "hat", "bass", "flute", "bell", "guitar", "chime", "xylophone",
   "iron_xylophone", "cow_bell", "didgeridoo", "bit", "banjo", "pling", "zombie", "skeleton", "creeper",
@@ -55,7 +117,9 @@ const variants = {};
 for (const inst of instruments) {
   for (let note = 0; note <= 24; note++) {
     for (const powered of ["false", "true"]) {
-      const model = special[`${inst}/${note}/${powered}`] || "minecraft:block/note_block";
+      let model = special[`${inst}/${note}/${powered}`] || "minecraft:block/note_block";
+      // Lautsprecher mit Nummer: custom_head + powered, Ton = Nummer - 1
+      if (inst === "custom_head" && powered === "true" && note < MAX_SPEAKERS) model = `peaksound:block/speaker_${note + 1}`;
       variants[`instrument=${inst},note=${note},powered=${powered}`] = { model };
     }
   }

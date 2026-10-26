@@ -13,6 +13,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
     private SongStore songs;
     private PlaybackManager playback;
     private JukeboxSettingsStore settingsStore;
+    private SpeakerStore speakerStoreRef;
 
     SongStore songs() { return songs; }
 
@@ -48,16 +49,23 @@ public final class PeakSoundPlugin extends JavaPlugin {
         NetworkRegistry networks = new NetworkRegistry(this, blocks);
         EqualizerService equalizer = new EqualizerService(this, blocks, analysis, ComparatorDriver.create(getLogger()).orElse(null));
         getLogger().info(equalizer.available() ? "Comparator-Equalizer bereit." : "Comparator-Equalizer ausgeschaltet.");
-        playback = new PlaybackManager(this, network, jukeboxSettings, analysis, playlist, networks, equalizer);
+        SpeakerStore speakerStore = new SpeakerStore(this);
+        speakerStore.load();
+        speakerStore.startAutosave();
+        this.speakerStoreRef = speakerStore;
+        SpeakerService speakers = new SpeakerService(this, blocks, networks, speakerStore);
+        playback = new PlaybackManager(this, network, jukeboxSettings, analysis, playlist, networks, equalizer, speakers);
         playback.load();
-        JukeboxMenuService menu = new JukeboxMenuService(this, blocks, jukeboxSettings, playback, playlist);
-        network.wire(uploads, streams, playback, menu);
+        EditAccess access = new EditAccess(blocks);
+        JukeboxMenuService menu = new JukeboxMenuService(this, blocks, jukeboxSettings, playback, playlist, access, speakers);
+        SpeakerMenuService speakerMenu = new SpeakerMenuService(this, access, speakers, jukeboxSettings);
+        network.wire(uploads, streams, playback, menu, speakerMenu, access);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, PeakIds.CHANNEL, network);
         getServer().getMessenger().registerOutgoingPluginChannel(this, PeakIds.CHANNEL);
 
         getServer().getPluginManager().registerEvents(network, this);
-        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network), this);
+        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu), this);
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(new NetworkListener(networks, equalizer), this);
         PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items);
@@ -70,6 +78,8 @@ public final class PeakSoundPlugin extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, playback::tick, 10L, 10L);
         // Partikel im Takt und Equalizer: feine Aufloesung, aber nur Nachschlagen in der vorberechneten Analyse
         Bukkit.getScheduler().runTaskTimer(this, playback::fastTick, 2L, 2L);
+        // Lautsprecher-Nummern und Standard-Kanaele abgleichen (nutzt den Netz-Cache, rechnet nur bei Aenderungen)
+        Bukkit.getScheduler().runTaskTimer(this, speakers::refresh, 20L, 20L);
     }
 
     @Override
@@ -79,5 +89,6 @@ public final class PeakSoundPlugin extends JavaPlugin {
         if (songs != null) songs.saveIfDirty();
         if (playback != null) playback.saveBlocking();
         if (settingsStore != null) settingsStore.saveNow();
+        if (speakerStoreRef != null) speakerStoreRef.saveNow();
     }
 }

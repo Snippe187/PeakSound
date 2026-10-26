@@ -47,6 +47,13 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [ ] Manuelle Abnahme
 - Hinweis: Der Comparator-Ausgang nutzt Paper-Interna (Reflection). Fehlen sie, schaltet sich nur der Equalizer ab.
 ## Phase 6 – Lautsprecher und Surround
+- [x] Protokoll: 12 Kanäle (7.1.4), Upmix und Mehrkanal-Zuordnung (ChannelLayout, WAV- und Vorbis-Reihenfolge), ChannelMixer, Lautsprecher-Pakete, Tests
+- [x] Plugin: Lautsprecher am Redstone-Netz, Nummern je System (auf der Textur), Standard-Kanäle, eigene Einstellungen
+- [x] Plugin: jeder Lautsprecher eine eigene Schallquelle (Jukebox schweigt, wenn Lautsprecher im Netz sind)
+- [x] Mod: Zahlen-Overlays auf dem Notenblock (25 Nummern), Lautsprecher-Menü, Reiter „Lautsprecher“ im Jukebox-Menü
+- [x] Mod: Mehrquellen-Wiedergabe (ein Decoder, je Lautsprecher eine OpenAL-Quelle mit eigener Kanalmischung)
+- [ ] Manuelle Abnahme
+- Grenze: Quelldateien haben höchstens 8 Kanäle (7.1), weil FLAC und Vorbis nicht mehr zulassen. Die Decken-Lautsprecher bekommen abgeleitete Signale.
 ## Phase 7 – OP-Menü, Freigabe-System, Limits
 ## Phase 8 – Optimierungen und Feinschliff
 ## Phase 9 – DJ-Pult und Scheinwerfer

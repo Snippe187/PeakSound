@@ -206,14 +206,14 @@ public sealed interface Packet {
      * {@code offsetMs + (jetzt - serverTimeMs)}, damit spaeter Hinzukommende richtig einsteigen.
      */
     record PlaybackStart(int x, int y, int z, String hash, int offsetMs, long serverTimeMs, int durationMs,
-                         int channels, int range, int volume) implements Clientbound {
+                         int channels, int range, int volume, int speakerChannel) implements Clientbound {
         public static final int ID = 13;
 
         @Override
         public byte[] encode() {
             return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeString(hash, Limits.HASH_LENGTH)
                     .writeInt(offsetMs).writeLong(serverTimeMs).writeInt(durationMs).writeInt(channels)
-                    .writeInt(range).writeInt(volume).toBytes();
+                    .writeInt(range).writeInt(volume).writeByte(speakerChannel).toBytes();
         }
 
         static PlaybackStart decode(ByteBuffer in) {
@@ -221,11 +221,18 @@ public sealed interface Packet {
                     PacketIO.readString(in, Limits.HASH_LENGTH), PacketIO.readIntRange(in, 0, Integer.MAX_VALUE),
                     PacketIO.readLong(in), PacketIO.readIntRange(in, 1, Integer.MAX_VALUE),
                     PacketIO.readIntRange(in, 1, 16), PacketIO.readIntRange(in, Limits.MIN_RANGE, Limits.MAX_RANGE),
-                    PacketIO.readIntRange(in, 0, 100));
+                    PacketIO.readIntRange(in, 0, 100), readSpeakerChannel(in));
         }
     }
 
-    /** Reichweite oder Lautstaerke einer spielenden Jukebox wurde geaendert (Menue). */
+    /** 0 = voller Mono-Mix (Jukebox ohne Lautsprecher), 1-12 = Lautsprecher-Kanal (Ordinal + 1). */
+    private static int readSpeakerChannel(ByteBuffer in) {
+        int v = PacketIO.readByte(in);
+        if (v > SpeakerChannel.values().length) throw new MalformedPacketException("Unbekannter Kanal");
+        return v;
+    }
+
+    /** Reichweite oder Lautstaerke einer spielenden Jukebox oder eines Lautsprechers wurde geaendert (Menue). */
     record PlaybackUpdate(int x, int y, int z, int range, int volume) implements Clientbound {
         public static final int ID = 15;
 
@@ -352,6 +359,95 @@ public sealed interface Packet {
             }
             if (current < -1 || current >= count) throw new MalformedPacketException("Ungueltiger Playlist-Index");
             return new PlaylistState(x, y, z, current, playing, java.util.List.copyOf(list));
+        }
+    }
+
+    // ---- Lautsprecher ----
+
+    /** Eintrag der Lautsprecher-Uebersicht im Jukebox-Menue. */
+    record SpeakerEntry(int number, String name, SpeakerChannel channel, int volume) {}
+
+    /** Server -> Client: Lautsprecher-Menue oeffnen. {@code number} 0 = nicht mit einer Jukebox verbunden. */
+    record OpenSpeakerMenu(int x, int y, int z, SpeakerSettings settings, int number, String jukeboxName)
+            implements Clientbound {
+        public static final int ID = 23;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            w.writeByte(number).writeString(jukeboxName, Limits.MAX_TEXT);
+            return w.toBytes();
+        }
+
+        static OpenSpeakerMenu decode(ByteBuffer in) {
+            int x = PacketIO.readInt(in), y = PacketIO.readInt(in), z = PacketIO.readInt(in);
+            SpeakerSettings s = SpeakerSettings.read(in);
+            int number = PacketIO.readByte(in);
+            if (number > SpeakerNumbering.MAX_NUMBER) throw new MalformedPacketException("Ungueltige Nummer");
+            return new OpenSpeakerMenu(x, y, z, s, number, PacketIO.readString(in, Limits.MAX_TEXT));
+        }
+    }
+
+    /** Client -> Server: geaenderte Lautsprecher-Einstellungen. Der Server prueft Entfernung, Block und Werte. */
+    record SpeakerUpdate(int x, int y, int z, SpeakerSettings settings) implements Serverbound {
+        public static final int ID = 24;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            return w.toBytes();
+        }
+
+        static SpeakerUpdate decode(ByteBuffer in) {
+            return new SpeakerUpdate(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), SpeakerSettings.read(in));
+        }
+    }
+
+    /** Client -> Server: Lautsprecher-Uebersicht der Jukebox an dieser Position anfordern. */
+    record SpeakerOverviewRequest(int x, int y, int z) implements Serverbound {
+        public static final int ID = 25;
+
+        @Override
+        public byte[] encode() { return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).toBytes(); }
+
+        static SpeakerOverviewRequest decode(ByteBuffer in) {
+            return new SpeakerOverviewRequest(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in));
+        }
+    }
+
+    /** Server -> Client: alle Lautsprecher, die mit dieser Jukebox verbunden sind. */
+    record SpeakerOverview(int x, int y, int z, java.util.List<SpeakerEntry> speakers) implements Clientbound {
+        public static final int ID = 26;
+
+        @Override
+        public byte[] encode() {
+            if (speakers.size() > SpeakerNumbering.MAX_NUMBER) throw new IllegalArgumentException("Zu viele Lautsprecher");
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeByte(speakers.size());
+            for (SpeakerEntry e : speakers) {
+                w.writeByte(e.number()).writeString(e.name(), SpeakerSettings.MAX_NAME)
+                        .writeByte(e.channel().ordinal()).writeByte(e.volume());
+            }
+            return w.toBytes();
+        }
+
+        static SpeakerOverview decode(ByteBuffer in) {
+            int x = PacketIO.readInt(in), y = PacketIO.readInt(in), z = PacketIO.readInt(in);
+            int count = PacketIO.readByte(in);
+            if (count > SpeakerNumbering.MAX_NUMBER) throw new MalformedPacketException("Zu viele Lautsprecher");
+            java.util.List<SpeakerEntry> list = new java.util.ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                int number = PacketIO.readByte(in);
+                String name = PacketIO.readString(in, SpeakerSettings.MAX_NAME);
+                SpeakerChannel channel = SpeakerChannel.byOrdinal(PacketIO.readByte(in));
+                int volume = PacketIO.readByte(in);
+                if (number < 1 || number > SpeakerNumbering.MAX_NUMBER || volume > 100) {
+                    throw new MalformedPacketException("Ungueltiger Lautsprecher-Eintrag");
+                }
+                list.add(new SpeakerEntry(number, name, channel, volume));
+            }
+            return new SpeakerOverview(x, y, z, java.util.List.copyOf(list));
         }
     }
 

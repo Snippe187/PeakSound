@@ -57,6 +57,13 @@ public final class BlockRegistry {
         }, 30, 30, java.util.concurrent.TimeUnit.SECONDS);
     }
 
+    /** Positionen aller registrierten Bloecke eines Typs. */
+    List<Key> keysOf(PeakBlockType type) {
+        List<Key> out = new ArrayList<>();
+        blocks.forEach((k, t) -> { if (t == type) out.add(k); });
+        return out;
+    }
+
     void register(Block block, PeakBlockType type) {
         blocks.put(Key.of(block), type);
         dirty = true;

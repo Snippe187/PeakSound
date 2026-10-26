@@ -28,6 +28,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     private SongStreamService streams;
     private PlaybackManager playback;
     private JukeboxMenuService menu;
+    private SpeakerMenuService speakerMenu;
+    private EditAccess access;
 
     NetworkHandler(PeakSoundPlugin plugin, PeakRecipes recipes) {
         this.plugin = plugin;
@@ -35,11 +37,14 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     }
 
     /** Verbindet die Dienste (erst nach deren Erzeugung moeglich, da sie das NetworkHandler brauchen). */
-    void wire(UploadService uploads, SongStreamService streams, PlaybackManager playback, JukeboxMenuService menu) {
+    void wire(UploadService uploads, SongStreamService streams, PlaybackManager playback, JukeboxMenuService menu,
+              SpeakerMenuService speakerMenu, EditAccess access) {
         this.uploads = uploads;
         this.streams = streams;
         this.playback = playback;
         this.menu = menu;
+        this.speakerMenu = speakerMenu;
+        this.access = access;
     }
 
     boolean hasMod(Player player) {
@@ -69,6 +74,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             case Packet.JukeboxUpdate update -> menu.onUpdate(player, update);
             case Packet.PlaylistRequest request -> menu.onPlaylistRequest(player, request);
             case Packet.PlaylistAction action -> menu.onPlaylistAction(player, action);
+            case Packet.SpeakerUpdate update -> speakerMenu.onUpdate(player, update);
+            case Packet.SpeakerOverviewRequest request -> menu.onSpeakerOverviewRequest(player, request);
             case Packet.Hello ignored -> { /* oben behandelt */ }
         }
     }
@@ -108,6 +115,6 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         uploads.onQuit(player);
         streams.onQuit(player);
         playback.onQuit(player);
-        menu.onQuit(player);
+        access.onQuit(player);
     }
 }

@@ -6,10 +6,8 @@ import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.LoopMode;
 import de.peaksound.protocol.Packet;
 import java.util.List;
-import java.util.function.IntConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
@@ -22,45 +20,7 @@ import net.minecraft.network.chat.Component;
  * Aenderungen werden gebuendelt an den Server geschickt; der Server prueft jeden Wert erneut.
  */
 final class JukeboxMenuScreen extends Screen {
-    private enum Tab { SETTINGS, PLAYLIST }
-
-    /** Ganzzahliger Schieberegler mit Beschriftung. */
-    private static final class IntSlider extends AbstractSliderButton {
-        private final String key;
-        private final int min;
-        private final int max;
-        private final IntConsumer onChange;
-        private boolean silent;
-
-        IntSlider(int x, int y, int w, String key, int min, int max, int value, IntConsumer onChange) {
-            super(x, y, w, 20, Component.empty(), (double) (value - min) / (max - min));
-            this.key = key;
-            this.min = min;
-            this.max = max;
-            this.onChange = onChange;
-            updateMessage();
-        }
-
-        int intValue() { return min + (int) Math.round(value * (max - min)); }
-
-        /** Wert von aussen setzen (z. B. durch den Ketten-Schalter), ohne erneut zu melden. */
-        void set(int v) {
-            silent = true;
-            this.value = (double) (Math.max(min, Math.min(max, v)) - min) / (max - min);
-            updateMessage();
-            silent = false;
-        }
-
-        @Override
-        protected void updateMessage() {
-            setMessage(Component.translatable(key, intValue()));
-        }
-
-        @Override
-        protected void applyValue() {
-            if (!silent) onChange.accept(intValue());
-        }
-    }
+    private enum Tab { SETTINGS, PLAYLIST, SPEAKERS }
 
     private static final long SEND_DELAY_MS = 250;
     private static final int PAGE_SIZE = 6;
@@ -81,6 +41,7 @@ final class JukeboxMenuScreen extends Screen {
     private boolean nowPlaying;
     private int page;
     private int pollTicks;
+    private List<Packet.SpeakerEntry> speakerEntries = List.of();
 
     private EditBox nameBox;
     private IntSlider range;
@@ -128,21 +89,30 @@ final class JukeboxMenuScreen extends Screen {
         if (changed && s.tab == Tab.PLAYLIST) s.rebuildWidgets();
     }
 
+    /** Lautsprecher-Uebersicht vom Server (Reiter "Lautsprecher"). */
+    static void onSpeakers(Packet.SpeakerOverview overview) {
+        JukeboxMenuScreen s = active;
+        if (s == null || s.bx != overview.x() || s.by != overview.y() || s.bz != overview.z()) return;
+        s.speakerEntries = overview.speakers();
+    }
+
     // ---- Aufbau ----
 
     @Override
     protected void init() {
         int top = height / 2 - 100;
-        int tabW = 120;
+        int tabW = 100;
         Button settingsTab = addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.tab.settings"), b -> switchTab(Tab.SETTINGS))
-                .bounds(width / 2 - tabW - 2, top, tabW, 20).build());
+                .bounds(width / 2 - 155, top, tabW, 20).build());
         Button playlistTab = addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.tab.playlist"), b -> switchTab(Tab.PLAYLIST))
-                .bounds(width / 2 + 2, top, tabW, 20).build());
+                .bounds(width / 2 - 50, top, tabW, 20).build());
+        Button speakersTab = addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.tab.speakers"), b -> switchTab(Tab.SPEAKERS))
+                .bounds(width / 2 + 55, top, tabW, 20).build());
         settingsTab.active = tab != Tab.SETTINGS;
         playlistTab.active = tab != Tab.PLAYLIST;
+        speakersTab.active = tab != Tab.SPEAKERS;
         if (tab == Tab.SETTINGS) initSettings(top + 28);
-        else initPlaylist(top + 28);
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
+        else if (tab == Tab.PLAYLIST) initPlaylist(top + 28);        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
                 .bounds(width / 2 - 100, top + 196, 200, 20).build());
     }
 
@@ -305,9 +275,10 @@ final class JukeboxMenuScreen extends Screen {
     public void tick() {
         super.tick();
         if (dirty && System.currentTimeMillis() - lastChange > SEND_DELAY_MS) flush();
-        if (tab == Tab.PLAYLIST && ++pollTicks >= POLL_TICKS) {
+        if (tab != Tab.SETTINGS && ++pollTicks >= POLL_TICKS) {
             pollTicks = 0;
-            ClientNetwork.send(new Packet.PlaylistRequest(bx, by, bz));
+            if (tab == Tab.PLAYLIST) ClientNetwork.send(new Packet.PlaylistRequest(bx, by, bz));
+            else ClientNetwork.send(new Packet.SpeakerOverviewRequest(bx, by, bz));
         }
     }
 
@@ -334,9 +305,38 @@ final class JukeboxMenuScreen extends Screen {
         g.text(font, now, width / 2 - font.width(now) / 2, top - 10, 0xFFAAAAAA);
 
         if (tab == Tab.PLAYLIST) extractPlaylist(g, top + 28);
+        else if (tab == Tab.SPEAKERS) extractSpeakers(g, top + 28);
         else {
             Component hint = Component.translatable("peaksound.menu.equalizer.hint");
             g.text(font, hint, width / 2 - font.width(hint) / 2, top + 28 + 150, 0xFF777777);
+        }
+    }
+
+    /** Uebersicht der verbundenen Lautsprecher mit Nummer, Name und Kanal-Zuweisung (nur Anzeige). */
+    private void extractSpeakers(GuiGraphicsExtractor g, int top) {
+        int left = width / 2 - 155;
+        if (speakerEntries.isEmpty()) {
+            Component hint = Component.translatable("peaksound.menu.speakers.empty");
+            g.text(font, hint, width / 2 - font.width(hint) / 2, top + 20, 0xFFAAAAAA);
+            Component hint2 = Component.translatable("peaksound.menu.speakers.empty2");
+            g.text(font, hint2, width / 2 - font.width(hint2) / 2, top + 34, 0xFF777777);
+            return;
+        }
+        g.text(font, Component.translatable("peaksound.menu.speakers.head"), left, top, 0xFFAAAAAA);
+        int rows = Math.min(speakerEntries.size(), 12);
+        for (int i = 0; i < rows; i++) {
+            Packet.SpeakerEntry e = speakerEntries.get(i);
+            int y = top + 14 + i * 12;
+            String name = e.name().isBlank() ? "-" : e.name();
+            g.text(font, "#" + e.number(), left, y, 0xFFFFAA00);
+            g.text(font, name, left + 28, y, 0xFFFFFFFF);
+            Component channel = Component.translatable("peaksound.channel." + e.channel().key())
+                    .append(" (" + e.channel().shortName() + ")");
+            g.text(font, channel, left + 150, y, 0xFF55FFFF);
+            g.text(font, e.volume() + " %", left + 280, y, 0xFFAAAAAA);
+        }
+        if (speakerEntries.size() > rows) {
+            g.text(font, "+" + (speakerEntries.size() - rows), left, top + 14 + rows * 12, 0xFF777777);
         }
     }
 

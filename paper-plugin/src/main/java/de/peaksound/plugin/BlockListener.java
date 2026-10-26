@@ -30,15 +30,19 @@ final class BlockListener implements Listener {
     private final JukeboxSettingsStore settings;
     private final JukeboxMenuService menu;
     private final NetworkHandler network;
+    private final SpeakerService speakers;
+    private final SpeakerMenuService speakerMenu;
 
     BlockListener(PeakItems items, BlockRegistry registry, PlaybackManager playback, JukeboxSettingsStore settings,
-                  JukeboxMenuService menu, NetworkHandler network) {
+                  JukeboxMenuService menu, NetworkHandler network, SpeakerService speakers, SpeakerMenuService speakerMenu) {
         this.items = items;
         this.registry = registry;
         this.playback = playback;
         this.settings = settings;
         this.menu = menu;
         this.network = network;
+        this.speakers = speakers;
+        this.speakerMenu = speakerMenu;
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -63,6 +67,7 @@ final class BlockListener implements Listener {
         playback.eject(block).ifPresent(record ->
                 block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), record));
         settings.remove(block);
+        speakers.remove(block);
         registry.remove(block);
         // Statt des Vanilla-Drops faellt das PeakSound-Item (nicht im Kreativmodus)
         event.setDropItems(false);
@@ -122,6 +127,8 @@ final class BlockListener implements Listener {
             event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
             if (type.get() == PeakBlockType.JUKEBOX && network.hasMod(player)) {
                 menu.open(player, block);
+            } else if (type.get() == PeakBlockType.SPEAKER && network.hasMod(player)) {
+                speakerMenu.open(player, block);
             } else {
                 player.sendActionBar(Messages.tunerInfo(player, Messages.blockName(player, type.get()),
                         block.getX(), block.getY(), block.getZ()));

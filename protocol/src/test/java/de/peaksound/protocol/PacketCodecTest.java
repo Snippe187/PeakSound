@@ -15,6 +15,8 @@ class PacketCodecTest {
             new Packet.JukeboxUpdate(1, 64, -3, JukeboxSettings.defaults(16, 50)),
             new Packet.CoverRequest("f".repeat(64)),
             new Packet.PlaylistRequest(1, 64, -3),
+            new Packet.SpeakerUpdate(1, 64, -3, new SpeakerSettings("Links", SpeakerChannel.REAR_LEFT, 70)),
+            new Packet.SpeakerOverviewRequest(1, 64, -3),
             new Packet.PlaylistAction(1, 64, -3, Packet.PlaylistAction.Action.MOVE_UP, 4));
 
     private static final List<Packet.Clientbound> CLIENTBOUND = List.of(
@@ -26,11 +28,14 @@ class PacketCodecTest {
             new Packet.UploadResult(3, true, "b".repeat(64), "Titel", "Interpret", 200_000, 6),
             new Packet.SongChunk("c".repeat(64), 1, 4, new byte[Limits.DOWNLOAD_CHUNK_BYTES]),
             new Packet.SongUnavailable("d".repeat(64)),
-            new Packet.PlaybackStart(1, -60, 3, "e".repeat(64), 1500, 1_700_000_000_000L, 180_000, 2, 16, 80),
+            new Packet.PlaybackStart(1, -60, 3, "e".repeat(64), 1500, 1_700_000_000_000L, 180_000, 2, 16, 80, 5),
             new Packet.PlaybackStop(1, -60, 3),
             new Packet.PlaybackUpdate(1, -60, 3, 20, 40),
             new Packet.OpenJukeboxMenu(1, 64, -3, JukeboxSettings.defaults(16, 100), true, "Titel", "Interpret"),
             new Packet.CoverData("a".repeat(64), new byte[1000]),
+            new Packet.OpenSpeakerMenu(1, 64, -3, SpeakerSettings.defaults(SpeakerChannel.CENTER), 4, "Disco"),
+            new Packet.SpeakerOverview(1, 64, -3, java.util.List.of(
+                    new Packet.SpeakerEntry(1, "A", SpeakerChannel.FRONT_LEFT, 100), new Packet.SpeakerEntry(2, "", SpeakerChannel.SUBWOOFER, 40))),
             new Packet.PlaylistState(1, 64, -3, 1, true, java.util.List.of(
                     new Packet.PlaylistEntry("A", "X", 1000, true), new Packet.PlaylistEntry("B", "", 2000, false))));
 

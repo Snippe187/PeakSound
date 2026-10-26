@@ -5,10 +5,6 @@ import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.PeakBlockType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
@@ -18,21 +14,19 @@ import org.bukkit.entity.Player;
  * im erlaubten Bereich.
  */
 final class JukeboxMenuService {
-    /** Wie weit der Spieler hoechstens von der Jukebox entfernt sein darf, um sie zu bearbeiten. */
-    private static final double MAX_EDIT_DISTANCE = 8.0;
-    /** Mindestabstand zwischen zwei Anfragen eines Spielers (Schutz vor Paketfluten). */
-    private static final long MIN_INTERVAL_MS = 50;
-
     private final PeakSoundPlugin plugin;
     private final BlockRegistry registry;
     private final JukeboxSettingsStore settings;
     private final PlaybackManager playback;
     private final PlaylistService playlist;
-    private final Map<UUID, Long> lastRequest = new ConcurrentHashMap<>();
+    private final EditAccess access;
+    private final SpeakerService speakers;
 
     JukeboxMenuService(PeakSoundPlugin plugin, BlockRegistry registry, JukeboxSettingsStore settings,
-                       PlaybackManager playback, PlaylistService playlist) {
+                       PlaybackManager playback, PlaylistService playlist, EditAccess access, SpeakerService speakers) {
         this.plugin = plugin;
+        this.access = access;
+        this.speakers = speakers;
         this.registry = registry;
         this.settings = settings;
         this.playback = playback;
@@ -90,6 +84,17 @@ final class JukeboxMenuService {
         sendPlaylist(player, block);
     }
 
+    /** Lautsprecher-Uebersicht fuer den Reiter "Lautsprecher" im Jukebox-Menue. */
+    void onSpeakerOverviewRequest(Player player, Packet.SpeakerOverviewRequest request) {
+        Block block = validated(player, request.x(), request.y(), request.z());
+        if (block == null) return;
+        List<Packet.SpeakerEntry> entries = new ArrayList<>();
+        for (SpeakerService.Speaker sp : speakers.speakersOfJukebox(BlockRegistry.Key.of(block))) {
+            if (sp.number() > 0) entries.add(new Packet.SpeakerEntry(sp.number(), sp.settings().name(), sp.settings().channel(), sp.settings().volume()));
+        }
+        Net.send(plugin, player, new Packet.SpeakerOverview(block.getX(), block.getY(), block.getZ(), entries));
+    }
+
     private void sendPlaylist(Player player, Block block) {
         List<PlaylistService.Track> tracks = playlist.tracks(block);
         List<Packet.PlaylistEntry> entries = new ArrayList<>(tracks.size());
@@ -103,32 +108,12 @@ final class JukeboxMenuService {
                 playback.currentIndex(block, tracks), state.isPresent() && state.get().playing, entries));
     }
 
-    /**
-     * Prueft eine Client-Anfrage: Rate-Limit, geladener Chunk, PeakSound-Jukebox, Spieler in Reichweite.
-     *
-     * @return der Block, oder null wenn die Anfrage abgelehnt wird
-     */
     private Block validated(Player player, int x, int y, int z) {
-        long now = System.currentTimeMillis();
-        Long last = lastRequest.put(player.getUniqueId(), now);
-        if (last != null && now - last < MIN_INTERVAL_MS) return null;
-
-        World world = player.getWorld();
-        if (!world.isChunkLoaded(x >> 4, z >> 4)) return null;
-        Block block = world.getBlockAt(x, y, z);
-        if (registry.get(block).filter(t -> t == PeakBlockType.JUKEBOX).isEmpty()) return null;
-        double dx = player.getX() - (block.getX() + 0.5);
-        double dy = player.getY() - block.getY();
-        double dz = player.getZ() - (block.getZ() + 0.5);
-        if (dx * dx + dy * dy + dz * dz > MAX_EDIT_DISTANCE * MAX_EDIT_DISTANCE + 4) return null;
-        return block;
+        return access.validated(player, x, y, z, PeakBlockType.JUKEBOX);
     }
 
     private static String cut(String s) {
         return s.length() > 64 ? s.substring(0, 64) : s;
     }
 
-    void onQuit(Player player) {
-        lastRequest.remove(player.getUniqueId());
-    }
 }

@@ -55,5 +55,28 @@
   "peaksound.menu.playlist.empty": "The playlist is empty.",
   "peaksound.menu.playlist.empty2": "Place a hopper with records next to the jukebox. Chests at the hopper add more slots.",
 
-  "peaksound.menu.equalizer.hint": "Comparator at the jukebox: N = bass, E = mids, S = highs, W = overall"
+  "peaksound.menu.equalizer.hint": "Comparator at the jukebox: N = bass, E = mids, S = highs, W = overall",
+
+  "peaksound.menu.tab.speakers": "Speakers",
+  "peaksound.menu.speakers.head": "  No.  Name                       Position                 Volume",
+  "peaksound.menu.speakers.empty": "No speakers connected.",
+  "peaksound.menu.speakers.empty2": "Connect speakers to the jukebox with redstone dust.",
+  "peaksound.menu.speaker.title": "Speaker",
+  "peaksound.menu.speaker.name.hint": "Name of this speaker",
+  "peaksound.menu.speaker.volume": "Volume: %d %%",
+  "peaksound.menu.speaker.channel": "%s (%s)",
+  "peaksound.menu.speaker.id": "Speaker No. %d - Jukebox: %s",
+  "peaksound.menu.speaker.unconnected": "Not connected to a jukebox (use redstone dust)",
+  "peaksound.channel.front_left": "Front left",
+  "peaksound.channel.front_right": "Front right",
+  "peaksound.channel.center": "Center",
+  "peaksound.channel.subwoofer": "Subwoofer",
+  "peaksound.channel.side_left": "Side left",
+  "peaksound.channel.side_right": "Side right",
+  "peaksound.channel.rear_left": "Rear left",
+  "peaksound.channel.rear_right": "Rear right",
+  "peaksound.channel.top_front_left": "Top front left",
+  "peaksound.channel.top_front_right": "Top front right",
+  "peaksound.channel.top_rear_left": "Top rear left",
+  "peaksound.channel.top_rear_right": "Top rear right"
 }

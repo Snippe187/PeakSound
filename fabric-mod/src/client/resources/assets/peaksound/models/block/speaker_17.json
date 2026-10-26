@@ -1,0 +1,67 @@
+{
+  "textures": {
+    "particle": "minecraft:block/note_block",
+    "base": "minecraft:block/note_block",
+    "num": "peaksound:block/speaker_digit_17"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#base"
+        },
+        "up": {
+          "texture": "#base"
+        },
+        "north": {
+          "texture": "#base"
+        },
+        "south": {
+          "texture": "#base"
+        },
+        "west": {
+          "texture": "#base"
+        },
+        "east": {
+          "texture": "#base"
+        }
+      }
+    },
+    {
+      "from": [
+        -0.01,
+        -0.01,
+        -0.01
+      ],
+      "to": [
+        16.01,
+        16.01,
+        16.01
+      ],
+      "faces": {
+        "north": {
+          "texture": "#num"
+        },
+        "south": {
+          "texture": "#num"
+        },
+        "west": {
+          "texture": "#num"
+        },
+        "east": {
+          "texture": "#num"
+        }
+      }
+    }
+  ]
+}

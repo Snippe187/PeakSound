@@ -55,5 +55,28 @@
   "peaksound.menu.playlist.empty": "Die Playlist ist leer.",
   "peaksound.menu.playlist.empty2": "Stelle einen Hopper mit Platten an die Jukebox. Kisten am Hopper geben mehr Platz.",
 
-  "peaksound.menu.equalizer.hint": "Comparator an der Jukebox: N = Bass, O = Mitten, S = Höhen, W = Gesamt"
+  "peaksound.menu.equalizer.hint": "Comparator an der Jukebox: N = Bass, O = Mitten, S = Höhen, W = Gesamt",
+
+  "peaksound.menu.tab.speakers": "Lautsprecher",
+  "peaksound.menu.speakers.head": "  Nr.  Name                       Position                 Lautst.",
+  "peaksound.menu.speakers.empty": "Keine Lautsprecher verbunden.",
+  "peaksound.menu.speakers.empty2": "Verbinde Lautsprecher mit Redstone-Staub an die Jukebox.",
+  "peaksound.menu.speaker.title": "Lautsprecher",
+  "peaksound.menu.speaker.name.hint": "Name dieses Lautsprechers",
+  "peaksound.menu.speaker.volume": "Lautstärke: %d %%",
+  "peaksound.menu.speaker.channel": "%s (%s)",
+  "peaksound.menu.speaker.id": "Lautsprecher Nr. %d - Jukebox: %s",
+  "peaksound.menu.speaker.unconnected": "Nicht mit einer Jukebox verbunden (Redstone-Staub nutzen)",
+  "peaksound.channel.front_left": "Vorne links",
+  "peaksound.channel.front_right": "Vorne rechts",
+  "peaksound.channel.center": "Center",
+  "peaksound.channel.subwoofer": "Subwoofer",
+  "peaksound.channel.side_left": "Seite links",
+  "peaksound.channel.side_right": "Seite rechts",
+  "peaksound.channel.rear_left": "Hinten links",
+  "peaksound.channel.rear_right": "Hinten rechts",
+  "peaksound.channel.top_front_left": "Decke vorne links",
+  "peaksound.channel.top_front_right": "Decke vorne rechts",
+  "peaksound.channel.top_rear_left": "Decke hinten links",
+  "peaksound.channel.top_rear_right": "Decke hinten rechts"
 }
