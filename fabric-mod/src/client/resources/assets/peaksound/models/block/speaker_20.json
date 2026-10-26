@@ -1,7 +1,8 @@
 {
   "textures": {
-    "particle": "minecraft:block/note_block",
-    "base": "minecraft:block/note_block",
+    "particle": "peaksound:block/speaker_side",
+    "base": "peaksound:block/speaker_side",
+    "top": "peaksound:block/speaker_top",
     "num": "peaksound:block/speaker_digit_20"
   },
   "elements": [
@@ -18,10 +19,10 @@
       ],
       "faces": {
         "down": {
-          "texture": "#base"
+          "texture": "#top"
         },
         "up": {
-          "texture": "#base"
+          "texture": "#top"
         },
         "north": {
           "texture": "#base"

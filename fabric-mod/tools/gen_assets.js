@@ -36,18 +36,21 @@ function png(size, px) {
     chunk("IHDR", ihdr), chunk("IDAT", zlib.deflateSync(raw, { level: 9 })), chunk("IEND", Buffer.alloc(0))]);
 }
 
+// ---------- Texturen (selbst gezeichnet, siehe gen_textures.js) ----------
+require("./gen_textures.js")(png, write, PS);
+
 // ---------- Modelle ----------
 const cube = (side, top) => ({
   parent: "minecraft:block/cube",
   textures: { particle: side, down: top, up: top, north: side, south: side, east: side, west: side }
 });
-json(path.join(PS, "models/block/speaker.json"), cube("minecraft:block/note_block", "minecraft:block/note_block"));
-json(path.join(PS, "models/block/jukebox.json"), cube("minecraft:block/jukebox_side", "minecraft:block/jukebox_top"));
-json(path.join(PS, "models/block/dj_desk.json"), cube("minecraft:block/polished_blackstone", "minecraft:block/jukebox_top"));
-json(path.join(PS, "models/block/microphone.json"), cube("minecraft:block/iron_block", "minecraft:block/black_concrete"));
-json(path.join(PS, "models/block/spotlight.json"), cube("minecraft:block/iron_block", "minecraft:block/redstone_lamp_on"));
+json(path.join(PS, "models/block/speaker.json"), cube("peaksound:block/speaker_side", "peaksound:block/speaker_top"));
+json(path.join(PS, "models/block/jukebox.json"), cube("peaksound:block/jukebox_side", "peaksound:block/jukebox_top"));
+json(path.join(PS, "models/block/dj_desk.json"), cube("peaksound:block/dj_desk_side", "peaksound:block/dj_desk_top"));
+json(path.join(PS, "models/block/microphone.json"), cube("peaksound:block/microphone_side", "peaksound:block/microphone_top"));
+json(path.join(PS, "models/block/spotlight.json"), cube("peaksound:block/spotlight_side", "peaksound:block/spotlight_top"));
 // Items nutzen direkt vorhandene Vanilla-Texturen (es werden keine Mojang-Dateien kopiert)
-const items = { blank_record: "minecraft:item/music_disc_11", written_record: "minecraft:item/music_disc_cat", peak_tuner: "minecraft:item/breeze_rod" };
+const items = { blank_record: "peaksound:item/blank_record", written_record: "peaksound:item/written_record", peak_tuner: "peaksound:item/peak_tuner" };
 for (const [id, tex] of Object.entries(items)) {
   json(path.join(PS, `models/item/${id}.json`), {
     parent: id === "peak_tuner" ? "minecraft:item/handheld" : "minecraft:item/generated",
@@ -108,9 +111,9 @@ const overlayFace = t => ({ texture: t, uv: [0, 0, 16, 16] });
 for (let n = 1; n <= MAX_SPEAKERS; n++) {
   write(path.join(PS, `textures/block/speaker_digit_${n}.png`), numberTexture(n));
   json(path.join(PS, `models/block/speaker_${n}.json`), {
-    textures: { particle: "minecraft:block/note_block", base: "minecraft:block/note_block", num: `peaksound:block/speaker_digit_${n}` },
+    textures: { particle: "peaksound:block/speaker_side", base: "peaksound:block/speaker_side", top: "peaksound:block/speaker_top", num: `peaksound:block/speaker_digit_${n}` },
     elements: [
-      { from: [0, 0, 0], to: [16, 16, 16], faces: { down: face("#base"), up: face("#base"), north: face("#base"), south: face("#base"), west: face("#base"), east: face("#base") } },
+      { from: [0, 0, 0], to: [16, 16, 16], faces: { down: face("#top"), up: face("#top"), north: face("#base"), south: face("#base"), west: face("#base"), east: face("#base") } },
       { from: [-0.01, -0.01, -0.01], to: [16.01, 16.01, 16.01], faces: { north: overlayFace("#num"), south: overlayFace("#num"), west: overlayFace("#num"), east: overlayFace("#num") } }
     ]
   });

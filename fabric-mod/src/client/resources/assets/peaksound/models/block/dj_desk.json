@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "particle": "minecraft:block/polished_blackstone",
-    "down": "minecraft:block/jukebox_top",
-    "up": "minecraft:block/jukebox_top",
-    "north": "minecraft:block/polished_blackstone",
-    "south": "minecraft:block/polished_blackstone",
-    "east": "minecraft:block/polished_blackstone",
-    "west": "minecraft:block/polished_blackstone"
+    "particle": "peaksound:block/dj_desk_side",
+    "down": "peaksound:block/dj_desk_top",
+    "up": "peaksound:block/dj_desk_top",
+    "north": "peaksound:block/dj_desk_side",
+    "south": "peaksound:block/dj_desk_side",
+    "east": "peaksound:block/dj_desk_side",
+    "west": "peaksound:block/dj_desk_side"
   }
 }
