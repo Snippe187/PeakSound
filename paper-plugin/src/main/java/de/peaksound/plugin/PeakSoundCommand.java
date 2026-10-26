@@ -24,10 +24,12 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
     private final PeakItems items;
     private final SpeakerService speakers;
     private final DjService dj;
+    private final LightService lights;
 
     PeakSoundCommand(EqualizerService equalizer, BlockRegistry registry, SongStore songs, PlaybackManager playback, PeakItems items,
-                     SpeakerService speakers, DjService dj) {
+                     SpeakerService speakers, DjService dj, LightService lights) {
         this.dj = dj;
+        this.lights = lights;
         this.speakers = speakers;
         this.equalizer = equalizer;
         this.registry = registry;
@@ -70,6 +72,25 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
             };
             PeakBlocks.install(block, type, registry);
             sender.sendMessage("PeakSound-Block gesetzt.");
+            return true;
+        }
+        // /peaksound light X Y Z <rrggbb[,rrggbb...]> <steady|blink|beat> <none|color_cycle|strobe|sweep|pulse> <bass|mid|high> <yaw> <pitch> <speed>
+        if (args.length == 11 && args[0].equalsIgnoreCase("light")) {
+            Block block = blockAt(sender, args);
+            if (block == null) return true;
+            try {
+                java.util.List<Integer> colors = new java.util.ArrayList<>();
+                for (String hex : args[4].split(",")) colors.add(Integer.parseInt(hex, 16));
+                var settings = new de.peaksound.protocol.LightSettings(colors, 100,
+                        de.peaksound.protocol.LightSettings.LightMode.valueOf(args[5].toUpperCase()),
+                        de.peaksound.protocol.LightSettings.LightEffect.valueOf(args[6].toUpperCase()),
+                        de.peaksound.protocol.LightSettings.LightBand.valueOf(args[7].toUpperCase()),
+                        Integer.parseInt(args[8]), Integer.parseInt(args[9]), Integer.parseInt(args[10])).sanitized();
+                lights.apply(block, settings);
+                sender.sendMessage("Scheinwerfer eingestellt.");
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage("/peaksound light X Y Z <rrggbb,...> <steady|blink|beat> <none|color_cycle|strobe|sweep|pulse> <bass|mid|high> <yaw> <pitch> <speed>");
+            }
             return true;
         }
         if (args.length == 4 && args[0].equalsIgnoreCase("dj")) {
@@ -130,6 +151,6 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker", "dj") : List.of();
+        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker", "dj", "light") : List.of();
     }
 }
