@@ -2,6 +2,8 @@ package de.peaksound.plugin;
 
 import de.peaksound.audio.Analysis;
 import de.peaksound.protocol.JukeboxSettings;
+import de.peaksound.protocol.LoopMode;
+import de.peaksound.protocol.PlaylistLogic;
 import de.peaksound.protocol.Packet;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -43,8 +45,18 @@ final class PlaybackManager {
         boolean playing;
         /** Songposition (ms), bis zu der Taktschlaege schon verarbeitet wurden. */
         long beatCursorMs;
+        /** true: Der Song kommt aus der Playlist (Hopper/Kiste); ecord ist dann nur eine Kopie und wird nie ausgegeben. */
+        final boolean fromPlaylist;
+        int playlistIndex;
+        /** Bereits gespielte Playlist-Eintraege dieses Durchlaufs (fuer Shuffle). */
+        final Set<Integer> played = new HashSet<>();
 
         State(ItemStack record, String hash, String title, String artist, int durationMs, long startedAt, boolean playing) {
+            this(record, hash, title, artist, durationMs, startedAt, playing, false, -1);
+        }
+
+        State(ItemStack record, String hash, String title, String artist, int durationMs, long startedAt, boolean playing,
+              boolean fromPlaylist, int playlistIndex) {
             this.record = record;
             this.hash = hash;
             this.title = title;
@@ -53,6 +65,8 @@ final class PlaybackManager {
             this.startedAt = startedAt;
             this.playing = playing;
             this.beatCursorMs = Math.max(0, System.currentTimeMillis() - startedAt);
+            this.fromPlaylist = fromPlaylist;
+            this.playlistIndex = playlistIndex;
         }
     }
 
@@ -65,13 +79,16 @@ final class PlaybackManager {
     private final NetworkHandler network;
     private final JukeboxSettingsStore settings;
     private final AnalysisStore analysis;
+    private final PlaylistService playlist;
     private final Map<BlockRegistry.Key, State> states = new ConcurrentHashMap<>();
     private final Map<UUID, Set<BlockRegistry.Key>> heard = new ConcurrentHashMap<>();
     /** Fuer welche Jukeboxen der Spieler "Jetzt laeuft" schon gesehen hat (bis er wieder weit weg ist). */
     private final Map<UUID, Set<BlockRegistry.Key>> announced = new ConcurrentHashMap<>();
 
-    PlaybackManager(PeakSoundPlugin plugin, NetworkHandler network, JukeboxSettingsStore settings, AnalysisStore analysis) {
+    PlaybackManager(PeakSoundPlugin plugin, NetworkHandler network, JukeboxSettingsStore settings, AnalysisStore analysis,
+                    PlaylistService playlist) {
         this.plugin = plugin;
+        this.playlist = playlist;
         this.network = network;
         this.settings = settings;
         this.analysis = analysis;
@@ -103,7 +120,119 @@ final class PlaybackManager {
         if (state == null) return Optional.empty();
         stopFor(key);
         save();
-        return Optional.of(state.record);
+        // Platten aus der Playlist bleiben im Hopper/in der Kiste: nur Kopien, nie ausgeben (sonst Duplikate)
+        return state.fromPlaylist ? Optional.empty() : Optional.of(state.record);
+    }
+
+    // ---- Playlist und Wiederholung ----
+
+    /** Ein Song ist zu Ende: Loop-Modus und Playlist entscheiden, was als Naechstes kommt. */
+    private void onEnded(BlockRegistry.Key key, State ended) {
+        stopFor(key);
+        World world = Bukkit.getWorld(key.world());
+        if (world == null || !world.isChunkLoaded(key.x() >> 4, key.z() >> 4)) return; // nichts zu tun, solange nicht geladen
+        Block block = world.getBlockAt(key.x(), key.y(), key.z());
+        if (ended.fromPlaylist) {
+            playNext(block, ended, false);
+        } else if (settings.get(key).loop() == LoopMode.ONE) {
+            // Einzelne eingelegte Platte wiederholen
+            states.put(key, new State(ended.record, ended.hash, ended.title, ended.artist, ended.durationMs,
+                    System.currentTimeMillis(), true));
+            Bukkit.getScheduler().runTask(plugin, this::tick);
+        }
+    }
+
+    /** Index des laufenden Songs in der Playlist, oder -1. Folgt dem Song, auch wenn die Reihenfolge geaendert wurde. */
+    int currentIndex(Block block, List<PlaylistService.Track> tracks) {
+        State s = states.get(BlockRegistry.Key.of(block));
+        if (s == null || !s.fromPlaylist) return -1;
+        return locate(tracks, s);
+    }
+
+    private static int locate(List<PlaylistService.Track> tracks, State s) {
+        int i = s.playlistIndex;
+        if (i >= 0 && i < tracks.size() && tracks.get(i).hash().equals(s.hash)) return i;
+        for (int k = 0; k < tracks.size(); k++) if (tracks.get(k).hash().equals(s.hash)) return k;
+        return -1;
+    }
+
+    /**
+     * Naechsten spielbaren Eintrag starten. Nicht spielbare Songs (fehlen oder gesperrt) werden uebersprungen.
+     *
+     * @param skip true, wenn der Spieler "Skip" gedrueckt hat (dann wird auch bei "Ein Song wiederholen" weitergeschaltet)
+     * @return false, wenn nichts mehr zu spielen ist (die Wiedergabe endet)
+     */
+    boolean playNext(Block block, State current, boolean skip) {
+        BlockRegistry.Key key = BlockRegistry.Key.of(block);
+        List<PlaylistService.Track> tracks = playlist.tracks(block);
+        JukeboxSettings cfg = settings.get(key);
+        Set<Integer> played = current != null ? current.played : new HashSet<>();
+        int index = current != null ? locate(tracks, current) : -1;
+        for (int tries = 0; tries <= tracks.size(); tries++) {
+            index = tries == 0 && !skip
+                    ? PlaylistLogic.next(tracks.size(), index, cfg.loop(), cfg.shuffle(), played, ThreadLocalRandom.current())
+                    : PlaylistLogic.skip(tracks.size(), index, cfg.loop(), cfg.shuffle(), played, ThreadLocalRandom.current());
+            if (index < 0) break;
+            if (tracks.get(index).playable()) {
+                startTrack(block, tracks, index, played);
+                return true;
+            }
+        }
+        if (states.remove(key) != null) save();
+        return false;
+    }
+
+    /** Einen bestimmten Playlist-Eintrag starten (Auswahl im Menue). */
+    boolean playIndex(Block block, int index) {
+        List<PlaylistService.Track> tracks = playlist.tracks(block);
+        if (index < 0 || index >= tracks.size() || !tracks.get(index).playable()) return false;
+        startTrack(block, tracks, index, new HashSet<>());
+        return true;
+    }
+
+    private void startTrack(Block block, List<PlaylistService.Track> tracks, int index, Set<Integer> played) {
+        PlaylistService.Track track = tracks.get(index);
+        Song song = track.song();
+        BlockRegistry.Key key = BlockRegistry.Key.of(block);
+        ItemStack copy = track.inventory().getItem(track.slot()).clone();
+        copy.setAmount(1);
+        if (states.containsKey(key)) stopFor(key); // Clients beginnen den neuen Song frisch
+        State next = new State(copy, song.hash(), song.title(), song.artist(), song.durationMs(),
+                System.currentTimeMillis(), true, true, index);
+        next.played.addAll(played);
+        analysis.peek(song);
+        states.put(key, next);
+        save();
+        Bukkit.getScheduler().runTask(plugin, this::tick);
+    }
+
+    /** Wiedergabe anhalten. Playlist-Songs enden ganz; eine eingelegte Platte bleibt in der Jukebox. */
+    void stopPlayback(Block block) {
+        BlockRegistry.Key key = BlockRegistry.Key.of(block);
+        State s = states.get(key);
+        if (s == null) return;
+        if (s.fromPlaylist) states.remove(key);
+        else s.playing = false;
+        stopFor(key);
+        save();
+    }
+
+    /** Verschiebt einen Eintrag um eine Position (tauscht die Platten in ihren Slots). */
+    boolean moveTrack(Block block, int index, boolean up) {
+        List<PlaylistService.Track> tracks = playlist.tracks(block);
+        int target = PlaylistLogic.swapTarget(index, up, tracks.size());
+        if (target < 0) return false;
+        State s = states.get(BlockRegistry.Key.of(block));
+        int current = s != null && s.fromPlaylist ? locate(tracks, s) : -1;
+        playlist.swap(tracks.get(index), tracks.get(target));
+        if (s != null && s.fromPlaylist && current >= 0) {
+            s.playlistIndex = PlaylistLogic.followSwap(current, index, target);
+            boolean a = s.played.remove(index);
+            boolean b = s.played.remove(target);
+            if (a) s.played.add(target);
+            if (b) s.played.add(index);
+        }
+        return true;
     }
 
     /** Neue Einstellungen uebernehmen und laufende Wiedergabe beim Client nachziehen. */
@@ -142,7 +271,7 @@ final class PlaybackManager {
             if (s.playing && now - s.startedAt >= s.durationMs) {
                 s.playing = false;
                 changed = true;
-                stopFor(e.getKey());
+                onEnded(e.getKey(), s);
             }
         }
         if (changed) save();
@@ -284,6 +413,8 @@ final class PlaybackManager {
             m.put("duration", s.durationMs);
             m.put("started", s.startedAt);
             m.put("playing", s.playing);
+            m.put("playlist", s.fromPlaylist);
+            m.put("index", s.playlistIndex);
             list.add(m);
         });
         YamlConfiguration yaml = new YamlConfiguration();
@@ -323,7 +454,8 @@ final class PlaybackManager {
                 Object artist = m.get("artist");
                 states.put(key, new State(record, (String) m.get("hash"), title == null ? (String) m.get("hash") : title.toString(),
                         artist == null ? "" : artist.toString(), ((Number) m.get("duration")).intValue(),
-                        ((Number) m.get("started")).longValue(), (Boolean) m.get("playing")));
+                        ((Number) m.get("started")).longValue(), (Boolean) m.get("playing"),
+                        Boolean.TRUE.equals(m.get("playlist")), m.get("index") instanceof Number n ? n.intValue() : -1));
             } catch (RuntimeException e) {
                 plugin.getLogger().warning("Ungueltiger Eintrag in playback.yml uebersprungen: " + e.getMessage());
             }

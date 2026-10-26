@@ -44,9 +44,10 @@ public final class PeakSoundPlugin extends JavaPlugin {
         this.settingsStore = jukeboxSettings;
         UploadService uploads = new UploadService(this, items, songs, analysis, transcoder);
         SongStreamService streams = new SongStreamService(this, songs);
-        playback = new PlaybackManager(this, network, jukeboxSettings, analysis);
+        PlaylistService playlist = new PlaylistService(items, songs);
+        playback = new PlaybackManager(this, network, jukeboxSettings, analysis, playlist);
         playback.load();
-        JukeboxMenuService menu = new JukeboxMenuService(this, blocks, jukeboxSettings, playback);
+        JukeboxMenuService menu = new JukeboxMenuService(this, blocks, jukeboxSettings, playback, playlist);
         network.wire(uploads, streams, playback, menu);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, PeakIds.CHANNEL, network);

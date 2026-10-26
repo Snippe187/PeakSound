@@ -16,14 +16,16 @@ import java.nio.ByteBuffer;
  * @param particleHeight   Aufsteigehoehe in Bloecken (0-5)
  * @param rainbow          bunte Noten (sonst alle in einer Farbe)
  * @param showNowPlaying   "Jetzt laeuft: Titel - Interpret" fuer Spieler in Reichweite anzeigen
+ * @param loop             Wiederholmodus der Playlist
+ * @param shuffle          Playlist in zufaelliger Reihenfolge spielen
  */
 public record JukeboxSettings(String name, int range, int volume, boolean chain, boolean particles,
                               int particleAmount, int particleDensity, int particleHeight, boolean rainbow,
-                              boolean showNowPlaying) {
+                              boolean showNowPlaying, LoopMode loop, boolean shuffle) {
     public static final int MAX_NAME = 32;
 
     public static JukeboxSettings defaults(int range, int volume) {
-        return new JukeboxSettings("", range, volume, false, true, 3, 5, 2, true, true).sanitized();
+        return new JukeboxSettings("", range, volume, false, true, 3, 5, 2, true, true, LoopMode.OFF, false).sanitized();
     }
 
     /** Alle Werte in den erlaubten Bereich bringen und den Namen bereinigen. */
@@ -33,20 +35,70 @@ public record JukeboxSettings(String name, int range, int volume, boolean chain,
         return new JukeboxSettings(clean,
                 clamp(range, Limits.MIN_RANGE, Limits.MAX_RANGE), clamp(volume, 0, 100), chain, particles,
                 clamp(particleAmount, 1, 10), clamp(particleDensity, 1, 10), clamp(particleHeight, 0, 5),
-                rainbow, showNowPlaying);
-    }
-
-    public JukeboxSettings withRangeAndVolume(int newRange, int newVolume) {
-        return new JukeboxSettings(name, newRange, newVolume, chain, particles, particleAmount, particleDensity,
-                particleHeight, rainbow, showNowPlaying);
+                rainbow, showNowPlaying, loop == null ? LoopMode.OFF : loop, shuffle);
     }
 
     private static int clamp(int v, int min, int max) { return Math.max(min, Math.min(max, v)); }
 
+    public JukeboxSettings withName(String v) {
+        return new JukeboxSettings(v, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
+                rainbow, showNowPlaying, loop, shuffle);
+    }
+
+    public JukeboxSettings withRangeAndVolume(int newRange, int newVolume) {
+        return new JukeboxSettings(name, newRange, newVolume, chain, particles, particleAmount, particleDensity,
+                particleHeight, rainbow, showNowPlaying, loop, shuffle);
+    }
+
+    public JukeboxSettings withChain(boolean v) {
+        return new JukeboxSettings(name, range, volume, v, particles, particleAmount, particleDensity, particleHeight,
+                rainbow, showNowPlaying, loop, shuffle);
+    }
+
+    public JukeboxSettings withParticles(boolean v) {
+        return new JukeboxSettings(name, range, volume, chain, v, particleAmount, particleDensity, particleHeight,
+                rainbow, showNowPlaying, loop, shuffle);
+    }
+
+    public JukeboxSettings withParticleAmount(int v) {
+        return new JukeboxSettings(name, range, volume, chain, particles, v, particleDensity, particleHeight,
+                rainbow, showNowPlaying, loop, shuffle);
+    }
+
+    public JukeboxSettings withParticleDensity(int v) {
+        return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, v, particleHeight,
+                rainbow, showNowPlaying, loop, shuffle);
+    }
+
+    public JukeboxSettings withParticleHeight(int v) {
+        return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, v,
+                rainbow, showNowPlaying, loop, shuffle);
+    }
+
+    public JukeboxSettings withRainbow(boolean v) {
+        return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
+                v, showNowPlaying, loop, shuffle);
+    }
+
+    public JukeboxSettings withShowNowPlaying(boolean v) {
+        return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
+                rainbow, v, loop, shuffle);
+    }
+
+    public JukeboxSettings withLoop(LoopMode v) {
+        return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
+                rainbow, showNowPlaying, v, shuffle);
+    }
+
+    public JukeboxSettings withShuffle(boolean v) {
+        return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
+                rainbow, showNowPlaying, loop, v);
+    }
+
     void write(PacketIO.Writer w) {
         w.writeString(name, MAX_NAME).writeByte(range).writeByte(volume).writeBoolean(chain).writeBoolean(particles)
                 .writeByte(particleAmount).writeByte(particleDensity).writeByte(particleHeight)
-                .writeBoolean(rainbow).writeBoolean(showNowPlaying);
+                .writeBoolean(rainbow).writeBoolean(showNowPlaying).writeByte(loop.ordinal()).writeBoolean(shuffle);
     }
 
     /** Liest und prueft: Werte ausserhalb des Bereichs machen das Paket ungueltig. */
@@ -61,48 +113,11 @@ public record JukeboxSettings(String name, int range, int volume, boolean chain,
         int height = PacketIO.readByte(in);
         boolean rainbow = PacketIO.readBoolean(in);
         boolean now = PacketIO.readBoolean(in);
-        JukeboxSettings s = new JukeboxSettings(name, range, volume, chain, particles, amount, density, height, rainbow, now);
+        LoopMode loop = LoopMode.byOrdinal(PacketIO.readByte(in));
+        boolean shuffle = PacketIO.readBoolean(in);
+        JukeboxSettings s = new JukeboxSettings(name, range, volume, chain, particles, amount, density, height,
+                rainbow, now, loop, shuffle);
         if (!s.equals(s.sanitized().withName(name))) throw new MalformedPacketException("Einstellungen ausserhalb des Bereichs");
         return s;
-    }
-
-    public JukeboxSettings withName(String n) {
-        return new JukeboxSettings(n, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
-                rainbow, showNowPlaying);
-    }
-
-    public JukeboxSettings withChain(boolean v) {
-        return new JukeboxSettings(name, range, volume, v, particles, particleAmount, particleDensity, particleHeight,
-                rainbow, showNowPlaying);
-    }
-
-    public JukeboxSettings withParticles(boolean v) {
-        return new JukeboxSettings(name, range, volume, chain, v, particleAmount, particleDensity, particleHeight,
-                rainbow, showNowPlaying);
-    }
-
-    public JukeboxSettings withParticleAmount(int v) {
-        return new JukeboxSettings(name, range, volume, chain, particles, v, particleDensity, particleHeight,
-                rainbow, showNowPlaying);
-    }
-
-    public JukeboxSettings withParticleDensity(int v) {
-        return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, v, particleHeight,
-                rainbow, showNowPlaying);
-    }
-
-    public JukeboxSettings withParticleHeight(int v) {
-        return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, v,
-                rainbow, showNowPlaying);
-    }
-
-    public JukeboxSettings withRainbow(boolean v) {
-        return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
-                v, showNowPlaying);
-    }
-
-    public JukeboxSettings withShowNowPlaying(boolean v) {
-        return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
-                rainbow, v);
     }
 }

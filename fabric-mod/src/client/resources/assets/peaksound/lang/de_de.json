@@ -39,5 +39,19 @@
   "peaksound.menu.height": "Aufsteighöhe: %d",
   "peaksound.menu.rainbow": "Bunte Noten: %s",
   "peaksound.menu.playing": "Jetzt läuft: %s - %s",
-  "peaksound.menu.nothing": "Keine Platte läuft"
+  "peaksound.menu.nothing": "Keine Platte läuft",
+
+  "peaksound.menu.tab.settings": "Einstellungen",
+  "peaksound.menu.tab.playlist": "Playlist",
+  "peaksound.menu.playlist.play": "Diesen Song spielen",
+  "peaksound.menu.playlist.skip": "Skip",
+  "peaksound.menu.playlist.stop": "Stopp",
+  "peaksound.menu.loop": "Wiederholen: %s",
+  "peaksound.menu.loop.off": "Aus",
+  "peaksound.menu.loop.all": "Playlist",
+  "peaksound.menu.loop.one": "Song",
+  "peaksound.menu.shuffle": "Zufall: %s",
+  "peaksound.menu.playlist.page": "Seite %d / %d",
+  "peaksound.menu.playlist.empty": "Die Playlist ist leer.",
+  "peaksound.menu.playlist.empty2": "Stelle einen Hopper mit Platten an die Jukebox. Kisten am Hopper geben mehr Platz."
 }

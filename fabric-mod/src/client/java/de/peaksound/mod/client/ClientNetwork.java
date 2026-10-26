@@ -45,6 +45,7 @@ public final class ClientNetwork {
             case Packet.PlaybackUpdate update -> AudioEngine.update(update);
             case Packet.OpenJukeboxMenu menu -> JukeboxMenuScreen.open(menu);
             case Packet.CoverData cover -> CoverCache.onData(cover);
+            case Packet.PlaylistState state -> JukeboxMenuScreen.onPlaylist(state);
         }
     }
 }

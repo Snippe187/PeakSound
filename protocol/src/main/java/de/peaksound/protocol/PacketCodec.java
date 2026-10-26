@@ -47,6 +47,9 @@ public final class PacketCodec {
                 case Packet.OpenJukeboxMenu.ID -> Packet.OpenJukeboxMenu.decode(in);
                 case Packet.JukeboxUpdate.ID -> Packet.JukeboxUpdate.decode(in);
                 case Packet.CoverRequest.ID -> Packet.CoverRequest.decode(in);
+                case Packet.PlaylistRequest.ID -> Packet.PlaylistRequest.decode(in);
+                case Packet.PlaylistAction.ID -> Packet.PlaylistAction.decode(in);
+                case Packet.PlaylistState.ID -> Packet.PlaylistState.decode(in);
                 case Packet.CoverData.ID -> Packet.CoverData.decode(in);
                 default -> throw new MalformedPacketException("Unbekannte Paket-ID " + id);
             };

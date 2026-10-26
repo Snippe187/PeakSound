@@ -69,8 +69,12 @@ final class RecordListener implements Listener {
 
     private void insertRecord(Player player, Block block, ItemStack hand) {
         if (playback.hasRecord(block)) {
-            player.sendMessage(Messages.error(player, "In dieser Jukebox liegt schon eine Platte.",
-                    "There is already a record in this jukebox."));
+            boolean playlist = playback.state(block).filter(s -> s.fromPlaylist).isPresent();
+            player.sendMessage(playlist
+                    ? Messages.error(player, "Die Playlist laeuft. Stoppe sie im Menue (Peak-Tuner), um eine Platte einzulegen.",
+                            "The playlist is running. Stop it in the menu (Peak Tuner) to insert a record.")
+                    : Messages.error(player, "In dieser Jukebox liegt schon eine Platte.",
+                            "There is already a record in this jukebox."));
             return;
         }
         PeakItems.Written written = items.writtenOf(hand).orElse(null);

@@ -39,5 +39,19 @@
   "peaksound.menu.height": "Rise height: %d",
   "peaksound.menu.rainbow": "Colorful notes: %s",
   "peaksound.menu.playing": "Now playing: %s - %s",
-  "peaksound.menu.nothing": "No record is playing"
+  "peaksound.menu.nothing": "No record is playing",
+
+  "peaksound.menu.tab.settings": "Settings",
+  "peaksound.menu.tab.playlist": "Playlist",
+  "peaksound.menu.playlist.play": "Play this song",
+  "peaksound.menu.playlist.skip": "Skip",
+  "peaksound.menu.playlist.stop": "Stop",
+  "peaksound.menu.loop": "Repeat: %s",
+  "peaksound.menu.loop.off": "Off",
+  "peaksound.menu.loop.all": "Playlist",
+  "peaksound.menu.loop.one": "Song",
+  "peaksound.menu.shuffle": "Shuffle: %s",
+  "peaksound.menu.playlist.page": "Page %d / %d",
+  "peaksound.menu.playlist.empty": "The playlist is empty.",
+  "peaksound.menu.playlist.empty2": "Place a hopper with records next to the jukebox. Chests at the hopper add more slots."
 }

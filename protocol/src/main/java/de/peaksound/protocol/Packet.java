@@ -279,6 +279,82 @@ public sealed interface Packet {
         }
     }
 
+    // ---- Playlist (CD-Wechsler) ----
+
+    /** Client -> Server: aktuellen Playlist-Zustand anfordern (das Menue fragt etwa einmal pro Sekunde). */
+    record PlaylistRequest(int x, int y, int z) implements Serverbound {
+        public static final int ID = 20;
+
+        @Override
+        public byte[] encode() { return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).toBytes(); }
+
+        static PlaylistRequest decode(ByteBuffer in) {
+            return new PlaylistRequest(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in));
+        }
+    }
+
+    /** Client -> Server: Aktion auf der Playlist. {@code index} ist der Eintrag (bei SKIP/STOP ignoriert). */
+    record PlaylistAction(int x, int y, int z, Action action, int index) implements Serverbound {
+        public static final int ID = 21;
+
+        public enum Action {
+            PLAY, SKIP, STOP, MOVE_UP, MOVE_DOWN;
+
+            static Action byOrdinal(int o) {
+                Action[] v = values();
+                if (o < 0 || o >= v.length) throw new MalformedPacketException("Unbekannte Aktion");
+                return v[o];
+            }
+        }
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeByte(action.ordinal())
+                    .writeInt(index).toBytes();
+        }
+
+        static PlaylistAction decode(ByteBuffer in) {
+            return new PlaylistAction(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in),
+                    Action.byOrdinal(PacketIO.readByte(in)), PacketIO.readIntRange(in, 0, PlaylistLogic.MAX_ENTRIES));
+        }
+    }
+
+    /** Ein Playlist-Eintrag. {@code available} = false, wenn der Song fehlt oder noch gesperrt ist. */
+    record PlaylistEntry(String title, String artist, int durationMs, boolean available) {}
+
+    /** Server -> Client: die Playlist (Hopper + Kisten), der laufende Eintrag ({@code -1} = keiner). */
+    record PlaylistState(int x, int y, int z, int current, boolean playing, java.util.List<PlaylistEntry> entries)
+            implements Clientbound {
+        public static final int ID = 22;
+
+        @Override
+        public byte[] encode() {
+            if (entries.size() > PlaylistLogic.MAX_ENTRIES) throw new IllegalArgumentException("Playlist zu lang");
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeInt(current)
+                    .writeBoolean(playing).writeShort(entries.size());
+            for (PlaylistEntry e : entries) {
+                w.writeString(e.title(), Limits.MAX_TEXT).writeString(e.artist(), Limits.MAX_TEXT)
+                        .writeInt(e.durationMs()).writeBoolean(e.available());
+            }
+            return w.toBytes();
+        }
+
+        static PlaylistState decode(ByteBuffer in) {
+            int x = PacketIO.readInt(in), y = PacketIO.readInt(in), z = PacketIO.readInt(in);
+            int current = PacketIO.readInt(in);
+            boolean playing = PacketIO.readBoolean(in);
+            int count = PacketIO.readShort(in);
+            if (count > PlaylistLogic.MAX_ENTRIES) throw new MalformedPacketException("Playlist zu lang");
+            java.util.List<PlaylistEntry> list = new java.util.ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                list.add(new PlaylistEntry(PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readString(in, Limits.MAX_TEXT),
+                        PacketIO.readInt(in), PacketIO.readBoolean(in)));
+            }
+            if (current < -1 || current >= count) throw new MalformedPacketException("Ungueltiger Playlist-Index");
+            return new PlaylistState(x, y, z, current, playing, java.util.List.copyOf(list));
+        }
+    }
+
     // ---- Cover ----
 
     record CoverRequest(String hash) implements Serverbound {

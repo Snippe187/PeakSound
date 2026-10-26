@@ -13,7 +13,9 @@ class PacketCodecTest {
             new Packet.UploadChunk(3, 0, new byte[] {1, 2, 3}),
             new Packet.SongRequest("a".repeat(64), 5),
             new Packet.JukeboxUpdate(1, 64, -3, JukeboxSettings.defaults(16, 50)),
-            new Packet.CoverRequest("f".repeat(64)));
+            new Packet.CoverRequest("f".repeat(64)),
+            new Packet.PlaylistRequest(1, 64, -3),
+            new Packet.PlaylistAction(1, 64, -3, Packet.PlaylistAction.Action.MOVE_UP, 4));
 
     private static final List<Packet.Clientbound> CLIENTBOUND = List.of(
             new Packet.HelloAck(1, true, false, 1_700_000_000_000L, 240),
@@ -28,7 +30,9 @@ class PacketCodecTest {
             new Packet.PlaybackStop(1, -60, 3),
             new Packet.PlaybackUpdate(1, -60, 3, 20, 40),
             new Packet.OpenJukeboxMenu(1, 64, -3, JukeboxSettings.defaults(16, 100), true, "Titel", "Interpret"),
-            new Packet.CoverData("a".repeat(64), new byte[1000]));
+            new Packet.CoverData("a".repeat(64), new byte[1000]),
+            new Packet.PlaylistState(1, 64, -3, 1, true, java.util.List.of(
+                    new Packet.PlaylistEntry("A", "X", 1000, true), new Packet.PlaylistEntry("B", "", 2000, false))));
 
     @Test
     void serverboundRoundTrip() {
@@ -119,7 +123,8 @@ class PacketCodecTest {
 
     @Test
     void settingsRoundTripAndSanitize() {
-        JukeboxSettings s = new JukeboxSettings("  Disco\u0007 ".concat("x".repeat(60)), 99, -5, true, false, 50, 0, 9, false, true);
+        JukeboxSettings s = new JukeboxSettings("  Disco\u0007 ".concat("x".repeat(60)), 99, -5, true, false, 50, 0, 9, false, true,
+                LoopMode.ALL, true);
         JukeboxSettings clean = s.sanitized();
         assertEquals(30, clean.range());
         assertEquals(0, clean.volume());
@@ -144,6 +149,22 @@ class PacketCodecTest {
         packet[rangeIndex] = 16;
         packet[rangeIndex + 1] = (byte) 200;
         assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(packet));
+    }
+
+    @Test
+    void rejectsInvalidPlaylistData() {
+        // Aktion mit unbekannter Nummer und Index ausserhalb der Obergrenze
+        byte[] action = new Packet.PlaylistAction(0, 0, 0, Packet.PlaylistAction.Action.PLAY, 1).encode();
+        byte[] badAction = action.clone();
+        badAction[13] = 77;
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(badAction));
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(
+                new Packet.PlaylistAction(0, 0, 0, Packet.PlaylistAction.Action.PLAY, PlaylistLogic.MAX_ENTRIES + 1).encode()));
+        // aktueller Index zeigt hinter das Ende der Liste
+        byte[] state = new Packet.PlaylistState(0, 0, 0, 0, false, java.util.List.of(
+                new Packet.PlaylistEntry("A", "", 1, true))).encode();
+        state[16] = 9; // current = 9 (letztes Byte des Int-Felds)
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeClientbound(state));
     }
 
     @Test
