@@ -100,6 +100,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
 
     private void onHello(Player player, Packet.Hello hello) {
         boolean compatible = hello.protocolVersion() == PeakIds.PROTOCOL_VERSION;
+        plugin.getLogger().info(player.getName() + ": PeakSound-Mod meldet sich (Protokoll " + hello.protocolVersion() + ", Server " + PeakIds.PROTOCOL_VERSION
+                + ", Operator: " + Permissions.admin(player) + ")");
         if (compatible) {
             modded.add(player.getUniqueId());
             playback.forget(player); // Client startet leer: laufende Jukeboxen erneut melden

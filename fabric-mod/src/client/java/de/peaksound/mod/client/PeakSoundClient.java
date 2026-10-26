@@ -19,6 +19,16 @@ public final class PeakSoundClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         PeakCreativeTab.register();
+        // Diagnose: /peaksoundstatus zeigt, was die Mod ueber den Server weiss
+        net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
+                dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("peaksoundstatus").executes(context -> {
+                    boolean channel = net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.canSend(de.peaksound.mod.RawPayload.TYPE);
+                    context.getSource().sendFeedback(Component.literal("PeakSound " + PeakSoundMod.VERSION + " | Protokoll " + PeakIds.PROTOCOL_VERSION
+                            + " | Server kennt den Kanal: " + channel + " | Plugin antwortet: " + ServerState.active()
+                            + " | Versionskonflikt: " + ServerState.versionMismatch() + " | Operator: " + ServerState.operator()));
+                    if (channel && !ServerState.active()) ClientNetwork.send(new Packet.Hello(PeakIds.PROTOCOL_VERSION, PeakSoundMod.VERSION));
+                    return 1;
+                })));
         // Alternative zum Button im Escape-Menue (z. B. wenn ein Launcher das Pausenmenue ersetzt): /peaksoundadmin
         net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
                 dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("peaksoundadmin").executes(context -> {
