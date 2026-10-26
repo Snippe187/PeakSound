@@ -9,9 +9,9 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [x] Plugin: Rezepte inkl. Rezeptbuch, Schwert mit halber Haltbarkeit (auch Shift-Klick)
 - [x] Plugin: Block-Registry (Platzieren, Abbauen, Schutz), Peak-Tuner-Info
 - [x] Plugin: Handshake, Versions-Check, Hinweis für Spieler ohne Mod
-- [ ] Mod: Grundgerüst, Handshake, Creative-Tab, de/en Sprachdateien
-- [ ] Mod: Item-/Block-Darstellung (Modelle, Texturen)
-- [ ] Phase-1-Abnahme: Build, Server startet, Client verbindet, Checkliste
+- [x] Mod: Grundgerüst, Handshake, Creative-Tab, de/en Sprachdateien
+- [x] Mod: Item-/Block-Darstellung (Modelle mit Vanilla-Texturen, Notenblock-Zustände)
+- [x] Phase-1-Abnahme: Build, Server startet, Client verbindet, Checkliste (manuell bestätigt)
 
 ## Phase 2 – Upload, Speicherung, 3D-Audio im Multiplayer
 ## Phase 3 – Jukebox-Menü
