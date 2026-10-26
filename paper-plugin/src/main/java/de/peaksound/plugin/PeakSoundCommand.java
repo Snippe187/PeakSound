@@ -104,7 +104,9 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
             if (block == null) return true;
             java.util.List<Song> all = songs.all();
             try {
-                Song song = all.get(Integer.parseInt(args[4]) - 1);
+                // Zahl = Position in der Songliste, sonst Teil des Titels (die Reihenfolge der Liste ist nicht stabil)
+                Song song = args[4].matches("\\d+") ? all.get(Integer.parseInt(args[4]) - 1)
+                        : all.stream().filter(s -> s.title().toLowerCase().contains(args[4].toLowerCase())).findFirst().orElseThrow();
                 playback.insert(block, items.createWritten(new PeakItems.Written(song.hash(), song.title(), song.artist(), song.uploaderName())), song);
                 playback.setLoop(block, de.peaksound.protocol.LoopMode.ONE); // Test-Songs laufen in Dauerschleife
                 sender.sendMessage("Spielt (Dauerschleife): " + song.title());

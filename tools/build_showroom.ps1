@@ -1,6 +1,6 @@
 # Baut die PeakSound-Showroom-Karte (Plaza mit Tutorial-Tafeln und vier Raeume mit Beispielbauten) per RCON
 # in die Overworld des Testservers. Voraussetzung: Testserver laeuft, RCON an (Passwort peaktest, Port 25575),
-# Plugin mit den Testbefehlen (/peaksound place|play|speaker|light) geladen, mindestens 3 Test-Songs.
+# Plugin mit den Testbefehlen (/peaksound place|play|speaker|light) geladen, die drei Test-Songs Testbeat, Stereo breit und Surround-Demo (siehe tools/MakeTestSongs.java).
 # Aufruf:  powershell -File tools\build_showroom.ps1 [-Player PeakDev]
 param([string]$Player = "PeakDev", [string]$Password = "peaktest", [int]$Port = 25575)
 
@@ -66,7 +66,7 @@ C "fill 234 -60 218 246 -60 218 redstone_wire"
 Speaker 233 -60 218 FRONT_LEFT
 Speaker 247 -60 218 FRONT_RIGHT
 Place microphone 240 -60 219
-C "peaksound play 240 -60 217 2"
+C "peaksound play 240 -60 217 Stereo"
 Sign 235 -59 216 south @("STEREO-ANLAGE", "1 Jukebox", "2 Staub-Linie", "3 Boxen L + R")
 Sign 237 -59 216 south @("Jede Box hat", "ein Menue:", "Name, Position,", "Lautstaerke, Typ")
 Sign 243 -59 216 south @("MIKROFON", "am Staub der", "Anlage: wer nah", "dran spricht...")
@@ -104,7 +104,7 @@ Tower 263 235 -1 TOP_FRONT_LEFT
 Tower 263 245 -1 TOP_FRONT_RIGHT
 Tower 251 235 1 TOP_REAR_LEFT
 Tower 251 245 1 TOP_REAR_RIGHT
-C "peaksound play 257 -60 234 3"
+C "peaksound play 257 -60 234 Surround"
 Sign 252 -59 247 north @("SURROUND 7.1.4", "12 Boxen, jede", "mit eigener", "Position")
 Sign 254 -59 247 north @("Stell dich in", "die Mitte: der", "Ton kommt aus", "allen Richtungen")
 Sign 262 -59 247 north @("Position je Box", "im Box-Menue", "(< und >)", "waehlbar")
@@ -124,8 +124,8 @@ Place jukebox 243 -60 258
 C "fill 244 -60 258 245 -60 258 redstone_wire"
 Speaker 246 -60 258 FRONT_RIGHT
 foreach ($p in @(@(236, 259), @(236, 257), @(244, 259), @(244, 257))) { Place spotlight $p[0] -60 $p[1] }
-C "peaksound play 237 -60 258 1"
-C "peaksound play 243 -60 258 2"
+C "peaksound play 237 -60 258 Testbeat"
+C "peaksound play 243 -60 258 Stereo"
 C "peaksound light 236 -60 259 FF0000 beat none bass 0 70 5"
 C "peaksound light 236 -60 257 FF8000 steady sweep bass 0 60 4"
 C "peaksound light 244 -60 259 0000FF beat none mid 0 70 5"
@@ -141,7 +141,7 @@ C "fill 231 -60 239 231 -58 241 air"
 Lantern 230 240
 # Equalizer: Jukebox mit vier Comparatoren (der Blockstate facing zeigt zum Eingang, also zur Jukebox)
 Place jukebox 223 -60 236
-C "peaksound play 223 -60 236 1"
+C "peaksound play 223 -60 236 Testbeat"
 C "setblock 223 -60 235 comparator[facing=south]"
 C "setblock 223 -60 234 sticky_piston[facing=up]"
 C "setblock 223 -59 234 slime_block"
@@ -158,7 +158,7 @@ Sign 216 -59 236 east @("WEST: alles", "Lampe leuchtet", "im Takt. Baue", "eigen
 Place jukebox 223 -60 244
 C "fill 224 -60 244 229 -60 244 redstone_wire"
 foreach ($p in @(@(225, 245), @(227, 245), @(225, 243), @(227, 243))) { Place spotlight $p[0] -60 $p[1] }
-C "peaksound play 223 -60 244 1"
+C "peaksound play 223 -60 244 Testbeat"
 C "peaksound light 225 -60 245 FF0000 beat none bass 0 75 5"
 C "peaksound light 227 -60 245 00FF00 beat sweep mid 90 60 4"
 C "peaksound light 225 -60 243 0000FF beat none high 180 75 5"
