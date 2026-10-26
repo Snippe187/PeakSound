@@ -75,6 +75,13 @@ public final class AudioEngine {
         if (++ticks % 20 == 0) SongLibrary.tick();
     }
 
+    /** Diagnose: laufende Sitzungen. */
+    static String debug() {
+        StringBuilder sb = new StringBuilder("  Sitzungen: " + sessions.size() + ", Schallquellen: " + byKey.size() + "\n");
+        for (PlaybackSession s : sessions.values()) sb.append("    ").append(s.debug()).append('\n');
+        return sb.toString();
+    }
+
     static void clear() {
         sessions.values().forEach(PlaybackSession::stop);
         sessions.clear();

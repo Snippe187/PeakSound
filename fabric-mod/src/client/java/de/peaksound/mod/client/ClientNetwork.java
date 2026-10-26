@@ -11,9 +11,24 @@ import net.minecraft.client.Minecraft;
 public final class ClientNetwork {
     private ClientNetwork() {}
 
+    /** Diagnose: Zaehler je Pakettyp. */
+    private static final java.util.Map<String, java.util.concurrent.atomic.AtomicInteger> RECEIVED = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.Map<String, java.util.concurrent.atomic.AtomicInteger> SENT = new java.util.concurrent.ConcurrentHashMap<>();
+    private static volatile int malformed;
+    private static volatile int dropped;
+    private static volatile String lastError = "-";
+
+    static String debug() {
+        return "  Gesendet: " + new java.util.TreeMap<>(SENT) + "\n  Empfangen: " + new java.util.TreeMap<>(RECEIVED) + "\n  Ungueltig empfangen: " + malformed
+                + ", nicht gesendet (Server kennt Kanal nicht): " + dropped + ", letzter Fehler: " + lastError + "\n";
+    }
+
     public static void send(Packet.Serverbound packet) {
         if (ClientPlayNetworking.canSend(RawPayload.TYPE)) {
+            SENT.computeIfAbsent(packet.getClass().getSimpleName(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
             ClientPlayNetworking.send(new RawPayload(packet.encode()));
+        } else {
+            dropped++;
         }
     }
 
@@ -23,8 +38,11 @@ public final class ClientNetwork {
             try {
                 packet = PacketCodec.decodeClientbound(payload.data());
             } catch (MalformedPacketException e) {
+                malformed++;
+                lastError = e.getMessage();
                 return; // unbekannte oder defekte Pakete ignorieren
             }
+            RECEIVED.computeIfAbsent(packet.getClass().getSimpleName(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
             Minecraft client = context.client();
             client.execute(() -> dispatch(packet));
         });
@@ -55,6 +73,7 @@ public final class ClientNetwork {
             case Packet.LightStart start -> LightShow.start(start);
             case Packet.LightStop stop -> LightShow.stop(stop.x(), stop.y(), stop.z());
             case Packet.AnalysisData data -> LightShow.onAnalysis(data);
+            case Packet.DebugInfo info -> DebugReport.onServerText(info.text());
             case Packet.OpenMicMenu menu -> MicMenuScreen.open(menu);
             case Packet.DjState state -> DjMenuScreen.onState(state);
         }

@@ -20,6 +20,7 @@ class PacketCodecTest {
                     LightSettings.LightEffect.SWEEP, LightSettings.LightBand.HIGH, 270, -30, 7)),
             new Packet.AnalysisRequest("a".repeat(64)),
             new Packet.DjRequest(1, 2, 3),
+            new Packet.DebugRequest(),
             new Packet.MicUpdate(4, 5, 6, new MicSettings(true, 8, 150, true, 25)),
             new Packet.DjUpdate(1, 2, 3, new DjSettings(60, 8, 90, 70, true)),
             new Packet.DjDeckAction(1, 2, 3, 1, Packet.DjDeckAction.Action.PLAY, 4),
@@ -191,6 +192,14 @@ class PacketCodecTest {
                 new Packet.PlaylistEntry("A", "", 1, true))).encode();
         state[16] = 9; // current = 9 (letztes Byte des Int-Felds)
         assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeClientbound(state));
+    }
+
+    @Test
+    void debugInfoRoundTripsUtf8AndIsBounded() {
+        String text = "Diagnose: Gr\u00fc\u00dfe aus dem Spiel \u266a" + "x".repeat(5000);
+        Packet.Clientbound back = PacketCodec.decodeClientbound(new Packet.DebugInfo(text).encode());
+        assertEquals(text, ((Packet.DebugInfo) back).text());
+        assertThrows(IllegalArgumentException.class, () -> new Packet.DebugInfo("y".repeat(Limits.MAX_DEBUG_BYTES + 1)).encode());
     }
 
     @Test

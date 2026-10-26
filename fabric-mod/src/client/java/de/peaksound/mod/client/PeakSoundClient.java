@@ -19,6 +19,7 @@ public final class PeakSoundClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         PeakCreativeTab.register();
+        DebugReport.register();
         // Diagnose: /peaksoundstatus zeigt, was die Mod ueber den Server weiss
         net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
                 dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("peaksoundstatus").executes(context -> {
@@ -60,6 +61,7 @@ public final class PeakSoundClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             AudioEngine.tick();
             LightShow.tick();
+            DebugReport.tick();
             PreviewPlayer.tick();
         });
         // Button "Song-Verwaltung" im Escape-Menue, nur fuer Operatoren (der Server meldet den Status).

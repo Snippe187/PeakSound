@@ -20,6 +20,8 @@ public final class Limits {
     public static final int MAX_COVER_BYTES = 512 * 1024;
     /** Maximale Groesse der Musikanalyse, die an Clients geht (Scheinwerfer-Effekte). */
     public static final int MAX_ANALYSIS_BYTES = 128 * 1024;
+    /** Hoechste Groesse des Diagnosetexts (UTF-8) vom Server. */
+    public static final int MAX_DEBUG_BYTES = 60_000;
     /** Laenge eines SHA-256-Hex-Strings. */
     public static final int HASH_LENGTH = 64;
 

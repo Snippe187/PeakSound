@@ -56,6 +56,11 @@ final class LightShow {
         }
     }
 
+    /** Diagnose: aktive Scheinwerfer und geladene Analysen. */
+    static String debug() {
+        return "  Scheinwerfer aktiv: " + lights.size() + ", Analysen im Speicher: " + analyses.size() + ", Strobo-Warnung gezeigt: " + warned + "\n";
+    }
+
     static void clear() {
         lights.clear();
         positions.clear();

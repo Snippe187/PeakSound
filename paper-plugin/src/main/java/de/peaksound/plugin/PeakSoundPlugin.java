@@ -91,6 +91,8 @@ public final class PeakSoundPlugin extends JavaPlugin {
             getLogger().info("Simple Voice Chat nicht installiert: Mikrofon-Bloecke bleiben ohne Funktion.");
         }
         network.wire(uploads, streams, playback, menu, speakerMenu, access, admin, lightService, dj, micService);
+        DebugService debugService = new DebugService(this, blocks, songs, playback, network, equalizer, micService);
+        network.setDebug(debugService);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, PeakIds.CHANNEL, network);
         getServer().getMessenger().registerOutgoingPluginChannel(this, PeakIds.CHANNEL);
@@ -101,7 +103,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj, micService), this);
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(new NetworkListener(networks, equalizer), this);
-        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj, lightService);
+        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj, lightService, debugService);
         getCommand("peaksound").setExecutor(command);
         getCommand("peaksound").setTabCompleter(command);
         getServer().getPluginManager().registerEvents(

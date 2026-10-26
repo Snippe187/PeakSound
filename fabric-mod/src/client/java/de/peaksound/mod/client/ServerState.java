@@ -10,6 +10,8 @@ public final class ServerState {
     private static volatile long clockOffsetMs;
     private static volatile int maxSongSeconds = 240;
     private static volatile long helloSentAt;
+    private static volatile long lastAckAt;
+    private static volatile int ackCount;
 
     private ServerState() {}
 
@@ -29,6 +31,8 @@ public final class ServerState {
 
     public static void onAck(boolean isCompatible, boolean isOperator, long serverTimeMs, int songSeconds) {
         pluginPresent = true;
+        lastAckAt = System.currentTimeMillis();
+        ackCount++;
         compatible = isCompatible;
         operator = isCompatible && isOperator;
         maxSongSeconds = songSeconds;
@@ -44,6 +48,13 @@ public final class ServerState {
 
     /** Server hat den Spieler als Operator gemeldet (Anzeige des Song-Verwaltungs-Buttons). */
     public static boolean operator() { return operator; }
+
+    /** Diagnose: alle Felder in einer Zeile. */
+    public static String debug() {
+        return "  pluginPresent=" + pluginPresent + " compatible=" + compatible + " operator=" + operator + " Uhrversatz=" + clockOffsetMs + " ms maxSongSekunden=" + maxSongSeconds
+                + " HelloGesendetVor=" + (helloSentAt == 0 ? "nie" : (System.currentTimeMillis() - helloSentAt) / 1000 + " s")
+                + " HelloAckVor=" + (lastAckAt == 0 ? "nie" : (System.currentTimeMillis() - lastAckAt) / 1000 + " s") + " Acks=" + ackCount + "\n";
+    }
 
     public static int maxSongSeconds() { return maxSongSeconds; }
 

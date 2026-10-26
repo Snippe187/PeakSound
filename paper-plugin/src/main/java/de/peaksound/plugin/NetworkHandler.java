@@ -35,6 +35,13 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     private LightService lights;
     private DjService dj;
     private MicService mic;
+    private DebugService debug;
+    /** Letztes Hello je Spieler (auch bei Versionskonflikt) und Paketzaehler, nur fuer die Diagnose. */
+    private record HelloInfo(int protocol, String modVersion, long at, boolean compatible) {}
+
+    private final Map<UUID, HelloInfo> hellos = new ConcurrentHashMap<>();
+    private final Map<UUID, long[]> traffic = new ConcurrentHashMap<>(); // empfangen, ungueltig, zuletzt (ms)
+    private final Map<UUID, String> lastError = new ConcurrentHashMap<>();
     private final Map<UUID, Boolean> lastOperator = new ConcurrentHashMap<>();
 
     NetworkHandler(PeakSoundPlugin plugin, PeakRecipes recipes) {
@@ -57,6 +64,23 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         this.access = access;
     }
 
+    void setDebug(DebugService debug) { this.debug = debug; }
+
+    /** Diagnosezeilen ueber diesen Spieler: Hello, Paketzaehler, letzter Fehler. */
+    String describe(Player player) {
+        HelloInfo h = hellos.get(player.getUniqueId());
+        long[] t = traffic.get(player.getUniqueId());
+        StringBuilder sb = new StringBuilder();
+        sb.append("  Hello empfangen: ").append(h == null ? "NEIN (der Server hat von diesem Spieler noch nie ein gueltiges Hello gesehen)"
+                : "ja, Mod " + h.modVersion() + ", Protokoll " + h.protocol() + " (Server " + PeakIds.PROTOCOL_VERSION + "), kompatibel: "
+                + h.compatible() + ", vor " + (System.currentTimeMillis() - h.at()) / 1000 + " s").append('\n');
+        sb.append("  Pakete von diesem Spieler auf Kanal ").append(PeakIds.CHANNEL).append(": ").append(t == null ? 0 : t[0])
+                .append(" (davon ungueltig: ").append(t == null ? 0 : t[1]).append(")\n");
+        String err = lastError.get(player.getUniqueId());
+        if (err != null) sb.append("  Letzter Paketfehler: ").append(err).append('\n');
+        return sb.toString();
+    }
+
     boolean hasMod(Player player) {
         return modded.contains(player.getUniqueId());
     }
@@ -65,14 +89,23 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     public void onPluginMessageReceived(String channel, Player player, byte[] message) {
         if (!channel.equals(PeakIds.CHANNEL)) return;
         Packet.Serverbound packet;
+        long[] stats = traffic.computeIfAbsent(player.getUniqueId(), k -> new long[3]);
+        stats[0]++;
+        stats[2] = System.currentTimeMillis();
         try {
             packet = PacketCodec.decodeServerbound(message);
         } catch (MalformedPacketException e) {
+            stats[1]++;
+            lastError.put(player.getUniqueId(), e.getMessage() + " (" + message.length + " Bytes)");
             plugin.getLogger().fine("Ungueltiges Paket von " + player.getName() + ": " + e.getMessage());
             return; // manipulierte Pakete werden still ignoriert
         }
         if (packet instanceof Packet.Hello hello) {
             onHello(player, hello);
+            return;
+        }
+        if (packet instanceof Packet.DebugRequest) { // die Diagnose muss auch ohne Handshake antworten
+            if (debug != null) debug.onRequest(player);
             return;
         }
         if (!hasMod(player)) return; // alles andere nur nach erfolgreichem Handshake
@@ -94,12 +127,14 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             case Packet.DjUpdate update -> dj.onUpdate(player, update);
             case Packet.MicUpdate update -> mic.onUpdate(player, update);
             case Packet.DjDeckAction action -> dj.onDeckAction(player, action);
+            case Packet.DebugRequest ignored -> { /* oben behandelt */ }
             case Packet.Hello ignored -> { /* oben behandelt */ }
         }
     }
 
     private void onHello(Player player, Packet.Hello hello) {
         boolean compatible = hello.protocolVersion() == PeakIds.PROTOCOL_VERSION;
+        hellos.put(player.getUniqueId(), new HelloInfo(hello.protocolVersion(), hello.modVersion(), System.currentTimeMillis(), compatible));
         plugin.getLogger().info(player.getName() + ": PeakSound-Mod meldet sich (Protokoll " + hello.protocolVersion() + ", Server " + PeakIds.PROTOCOL_VERSION
                 + ", Operator: " + Permissions.admin(player) + ")");
         if (compatible) {
@@ -150,5 +185,9 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         admin.onQuit(player);
         lights.onQuit(player);
         lastOperator.remove(player.getUniqueId());
+        hellos.remove(player.getUniqueId());
+        traffic.remove(player.getUniqueId());
+        lastError.remove(player.getUniqueId());
+        if (debug != null) debug.onQuit(player);
     }
 }

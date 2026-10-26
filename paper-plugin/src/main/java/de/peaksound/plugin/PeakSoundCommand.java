@@ -25,9 +25,11 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
     private final SpeakerService speakers;
     private final DjService dj;
     private final LightService lights;
+    private final DebugService debug;
 
     PeakSoundCommand(EqualizerService equalizer, BlockRegistry registry, SongStore songs, PlaybackManager playback, PeakItems items,
-                     SpeakerService speakers, DjService dj, LightService lights) {
+                     SpeakerService speakers, DjService dj, LightService lights, DebugService debug) {
+        this.debug = debug;
         this.dj = dj;
         this.lights = lights;
         this.speakers = speakers;
@@ -91,6 +93,10 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
             } catch (IllegalArgumentException e) {
                 sender.sendMessage("/peaksound light X Y Z <rrggbb,...> <steady|blink|beat> <none|color_cycle|strobe|sweep|pulse> <bass|mid|high> <yaw> <pitch> <speed>");
             }
+            return true;
+        }
+        if (args.length == 1 && args[0].equalsIgnoreCase("debugdump")) { // Server-Bericht in der Konsole (ohne Spieler)
+            sender.sendMessage(debug.dump());
             return true;
         }
         if (args.length == 4 && args[0].equalsIgnoreCase("dj")) {

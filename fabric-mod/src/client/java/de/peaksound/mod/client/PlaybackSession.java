@@ -107,6 +107,12 @@ final class PlaybackSession {
 
     boolean finished() { return finished; }
 
+    /** Diagnose: eine Zeile zu dieser Sitzung. */
+    String debug() {
+        return hash.substring(0, Math.min(8, hash.length())) + " Quellen=" + emitters.size() + " Rate=" + sampleRate + " Kanaele=" + sourceChannels
+                + " Decoder=" + decoderStarted + " beendet=" + finished + " Position=" + (ServerState.serverNow() - startedAtServerMs) / 1000 + "/" + durationMs / 1000 + " s";
+    }
+
     boolean hasEmitters() { return !emitters.isEmpty(); }
 
     // ---- Schallquellen verwalten (Haupt-Thread) ----

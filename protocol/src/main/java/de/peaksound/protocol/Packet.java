@@ -857,4 +857,30 @@ public sealed interface Packet {
             return new MicUpdate(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), MicSettings.read(in));
         }
     }
+
+    // ---- Diagnose ----
+
+    /** Client -> Server: Diagnosetext anfordern (wird auch ohne abgeschlossenen Handshake beantwortet). */
+    record DebugRequest() implements Serverbound {
+        public static final int ID = 44;
+
+        @Override
+        public byte[] encode() { return new PacketIO.Writer(ID).toBytes(); }
+
+        static DebugRequest decode(ByteBuffer in) { return new DebugRequest(); }
+    }
+
+    /** Server -> Client: Diagnosetext (UTF-8). */
+    record DebugInfo(String text) implements Clientbound {
+        public static final int ID = 45;
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeBytes(text.getBytes(java.nio.charset.StandardCharsets.UTF_8), Limits.MAX_DEBUG_BYTES).toBytes();
+        }
+
+        static DebugInfo decode(ByteBuffer in) {
+            return new DebugInfo(new String(PacketIO.readBytes(in, Limits.MAX_DEBUG_BYTES), java.nio.charset.StandardCharsets.UTF_8));
+        }
+    }
 }

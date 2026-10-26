@@ -164,6 +164,26 @@ public final class SongLibrary {
         stalled.forEach(SongLibrary::fail);
     }
 
+    /** Diagnose: Cache-Ordner, Anzahl und Groesse der Dateien, laufende Downloads. */
+    static String debug() {
+        StringBuilder sb = new StringBuilder();
+        Path dir = cacheDir();
+        long bytes = 0;
+        int files = 0;
+        try (var list = java.nio.file.Files.list(dir)) {
+            for (Path p : (Iterable<Path>) list::iterator) {
+                files++;
+                bytes += java.nio.file.Files.size(p);
+            }
+        } catch (java.io.IOException | RuntimeException e) {
+            sb.append("  Cache-Ordner nicht lesbar: ").append(e).append('\n');
+        }
+        sb.append("  Cache-Ordner: ").append(dir).append(" (").append(files).append(" Dateien, ").append(bytes / 1024).append(" KiB)\n");
+        sb.append("  Laufende Downloads: ").append(downloads.size());
+        for (String h : downloads.keySet()) sb.append(' ').append(h, 0, Math.min(8, h.length()));
+        return sb.append('\n').toString();
+    }
+
     static void clear() {
         new ArrayList<>(downloads.values()).forEach(SongLibrary::fail);
     }
