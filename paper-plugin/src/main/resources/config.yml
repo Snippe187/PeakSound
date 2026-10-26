@@ -1,0 +1,7 @@
+# PeakSound - Plugin-Konfiguration
+
+# Hinweis im Chat fuer Spieler ohne PeakSound-Mod.
+non-mod-hint:
+  enabled: true
+  # Wartezeit nach dem Beitritt (20 Ticks = 1 Sekunde). Die Mod meldet sich normalerweise sofort.
+  delay-ticks: 100

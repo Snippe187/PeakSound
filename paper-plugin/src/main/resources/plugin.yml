@@ -1,0 +1,6 @@
+name: PeakSound
+version: '${version}'
+main: de.peaksound.plugin.PeakSoundPlugin
+api-version: '26.2'
+description: 3D-Audio, Schallplatten, Jukeboxen und Lautsprecher fuer die PeakSound-Mod.
+softdepend: [voicechat]
