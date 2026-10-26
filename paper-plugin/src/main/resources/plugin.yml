@@ -4,6 +4,15 @@ main: de.peaksound.plugin.PeakSoundPlugin
 api-version: '26.2'
 description: 3D-Audio, Schallplatten, Jukeboxen und Lautsprecher fuer die PeakSound-Mod.
 softdepend: [voicechat]
+commands:
+  peaksound:
+    description: PeakSound-Diagnose fuer Operatoren
+    usage: /peaksound <eqtest|place|play> ...
+    permission: peaksound.admin
+permissions:
+  peaksound.admin:
+    description: Zugriff auf PeakSound-Diagnosebefehle
+    default: op
 # Werden von Paper beim ersten Start von Maven Central geladen (eigene Jars, LGPL bleibt austauschbar).
 libraries:
   - net.jthink:jaudiotagger:3.0.1

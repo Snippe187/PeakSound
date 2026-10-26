@@ -1,5 +1,7 @@
 package de.peaksound.mod.client;
 
+import de.peaksound.protocol.SyncMath;
+
 /** Was der Client ueber den aktuellen Server weiss. Wird beim Verbinden zurueckgesetzt. */
 public final class ServerState {
     private static volatile boolean pluginPresent;
@@ -28,9 +30,7 @@ public final class ServerState {
         operator = isCompatible && isOperator;
         maxSongSeconds = songSeconds;
         // Der Server hat serverTimeMs etwa in der Mitte der Rundreise gestempelt
-        long now = System.currentTimeMillis();
-        long midpoint = helloSentAt > 0 ? (helloSentAt + now) / 2 : now;
-        clockOffsetMs = serverTimeMs - midpoint;
+        clockOffsetMs = SyncMath.clockOffsetMs(helloSentAt, System.currentTimeMillis(), serverTimeMs);
     }
 
     /** Der Server hat das PeakSound-Plugin und die Protokollversion passt. */

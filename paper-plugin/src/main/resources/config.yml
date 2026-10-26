@@ -23,3 +23,9 @@ playback:
   # Startwerte fuer neue Jukeboxen (Reichweite 1-30 Bloecke, Lautstaerke 0-100 %).
   default-range: 16
   default-volume: 100
+
+network:
+  # Redstone-Verbund: Jukeboxen, die ueber Redstone-Staub verbunden sind, spielen denselben Song.
+  # Grenzen schuetzen den Server vor riesigen Staubfeldern (Suche bricht dort ab).
+  max-dust: 256
+  max-devices: 32

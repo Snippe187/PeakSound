@@ -39,6 +39,13 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [ ] Manuelle Abnahme
 - Hinweis: Eine von Hand eingelegte Platte hat Vorrang vor der Playlist.
 ## Phase 5 – Redstone-Verbund und Comparator-Equalizer
+- [x] Protokoll: DustNetwork (Netz-Suche mit Limits, Steigungen), SyncMath (Uhr, Position, Anführer), Tests
+- [x] Plugin: Netz-Cache (nur bei Blockänderungen neu, Stichprobe alle 10 s), Limits in der Config
+- [x] Plugin: Jukeboxen eines Netzes spielen synchron den Song des Anführers (jede mit eigener Reichweite/Lautstärke)
+- [x] Plugin: Comparator-Equalizer (N Bass, O Mitten, S Höhen, W Gesamt) aus der Upload-Analyse, per Server-Interna
+- [x] Diagnose-Befehle für Operatoren (`/peaksound eqtest|place|play`), Equalizer und Netz am Testserver geprüft
+- [ ] Manuelle Abnahme
+- Hinweis: Der Comparator-Ausgang nutzt Paper-Interna (Reflection). Fehlen sie, schaltet sich nur der Equalizer ab.
 ## Phase 6 – Lautsprecher und Surround
 ## Phase 7 – OP-Menü, Freigabe-System, Limits
 ## Phase 8 – Optimierungen und Feinschliff

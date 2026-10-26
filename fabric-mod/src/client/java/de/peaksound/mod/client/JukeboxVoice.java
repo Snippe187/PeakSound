@@ -4,6 +4,7 @@ import de.peaksound.audio.AudioException;
 import de.peaksound.audio.PcmSource;
 import de.peaksound.protocol.AudioFormat;
 import de.peaksound.protocol.Packet;
+import de.peaksound.protocol.SyncMath;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
@@ -64,7 +65,7 @@ final class JukeboxVoice {
         this.z = start.z() + 0.5;
         this.hash = start.hash();
         // Der Server nennt den Offset zum Sendezeitpunkt; daraus ergibt sich der Start des Songs auf der Serveruhr
-        this.startedAtServerMs = start.serverTimeMs() - start.offsetMs();
+        this.startedAtServerMs = SyncMath.startedAt(start.serverTimeMs(), start.offsetMs());
         this.durationMs = start.durationMs();
         this.range = start.range();
         this.volume = start.volume();
@@ -103,8 +104,7 @@ final class JukeboxVoice {
     }
 
     private long expectedFrame() {
-        long elapsedMs = ServerState.serverNow() - startedAtServerMs;
-        return Math.max(0, elapsedMs) * sampleRate / 1000;
+        return SyncMath.frameAt(SyncMath.positionMs(ServerState.serverNow(), startedAtServerMs), sampleRate);
     }
 
     // ---- Decoder-Thread ----

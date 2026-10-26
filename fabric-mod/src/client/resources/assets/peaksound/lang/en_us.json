@@ -53,5 +53,7 @@
   "peaksound.menu.shuffle": "Shuffle: %s",
   "peaksound.menu.playlist.page": "Page %d / %d",
   "peaksound.menu.playlist.empty": "The playlist is empty.",
-  "peaksound.menu.playlist.empty2": "Place a hopper with records next to the jukebox. Chests at the hopper add more slots."
+  "peaksound.menu.playlist.empty2": "Place a hopper with records next to the jukebox. Chests at the hopper add more slots.",
+
+  "peaksound.menu.equalizer.hint": "Comparator at the jukebox: N = bass, E = mids, S = highs, W = overall"
 }

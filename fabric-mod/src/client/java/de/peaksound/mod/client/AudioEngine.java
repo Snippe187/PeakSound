@@ -1,6 +1,7 @@
 package de.peaksound.mod.client;
 
 import de.peaksound.protocol.Packet;
+import de.peaksound.protocol.SyncMath;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -16,7 +17,7 @@ public final class AudioEngine {
         long key = JukeboxVoice.key(start.x(), start.y(), start.z());
         JukeboxVoice old = voices.get(key);
         if (old != null) {
-            if (old.hash().equals(start.hash()) && old.startedAt() == start.serverTimeMs() - start.offsetMs()) return;
+            if (old.hash().equals(start.hash()) && old.startedAt() == SyncMath.startedAt(start.serverTimeMs(), start.offsetMs())) return;
             old.stop();
         }
         JukeboxVoice voice = new JukeboxVoice(start);

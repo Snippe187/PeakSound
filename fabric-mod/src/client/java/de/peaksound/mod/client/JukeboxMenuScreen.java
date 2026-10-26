@@ -334,6 +334,10 @@ final class JukeboxMenuScreen extends Screen {
         g.text(font, now, width / 2 - font.width(now) / 2, top - 10, 0xFFAAAAAA);
 
         if (tab == Tab.PLAYLIST) extractPlaylist(g, top + 28);
+        else {
+            Component hint = Component.translatable("peaksound.menu.equalizer.hint");
+            g.text(font, hint, width / 2 - font.width(hint) / 2, top + 28 + 150, 0xFF777777);
+        }
     }
 
     private void extractPlaylist(GuiGraphicsExtractor g, int top) {

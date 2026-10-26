@@ -53,5 +53,7 @@
   "peaksound.menu.shuffle": "Zufall: %s",
   "peaksound.menu.playlist.page": "Seite %d / %d",
   "peaksound.menu.playlist.empty": "Die Playlist ist leer.",
-  "peaksound.menu.playlist.empty2": "Stelle einen Hopper mit Platten an die Jukebox. Kisten am Hopper geben mehr Platz."
+  "peaksound.menu.playlist.empty2": "Stelle einen Hopper mit Platten an die Jukebox. Kisten am Hopper geben mehr Platz.",
+
+  "peaksound.menu.equalizer.hint": "Comparator an der Jukebox: N = Bass, O = Mitten, S = Höhen, W = Gesamt"
 }
