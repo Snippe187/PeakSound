@@ -20,7 +20,7 @@ import net.minecraft.network.chat.Component;
  * Aenderungen werden gebuendelt an den Server geschickt; der Server prueft jeden Wert erneut.
  */
 final class JukeboxMenuScreen extends Screen {
-    private enum Tab { SETTINGS, PLAYLIST, SPEAKERS }
+    private enum Tab { SETTINGS, PLAYLIST, SPEAKERS, SIDES }
 
     private static final long SEND_DELAY_MS = 250;
     private static final int PAGE_SIZE = 6;
@@ -56,6 +56,10 @@ final class JukeboxMenuScreen extends Screen {
     private Button loopButton;
     private Button shuffleButton;
     private Button upmixButton;
+
+    // Reiter "Seiten": drehbarer Wuerfel und Auswahl der Ausgangsfunktion je Comparator-Seite
+    private final CubeView cube = new CubeView();
+    private boolean draggingCube;
 
     private JukeboxMenuScreen(Packet.OpenJukeboxMenu menu) {
         super(Component.translatable("peaksound.menu.jukebox.title"));
@@ -102,18 +106,22 @@ final class JukeboxMenuScreen extends Screen {
     @Override
     protected void init() {
         int top = height / 2 - 100;
-        int tabW = 100;
+        int tabW = 75;
+        int tabLeft = width / 2 - 155;
         Button settingsTab = addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.tab.settings"), b -> switchTab(Tab.SETTINGS))
-                .bounds(width / 2 - 155, top, tabW, 20).build());
+                .bounds(tabLeft, top, tabW, 20).build());
         Button playlistTab = addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.tab.playlist"), b -> switchTab(Tab.PLAYLIST))
-                .bounds(width / 2 - 50, top, tabW, 20).build());
+                .bounds(tabLeft + 78, top, tabW, 20).build());
         Button speakersTab = addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.tab.speakers"), b -> switchTab(Tab.SPEAKERS))
-                .bounds(width / 2 + 55, top, tabW, 20).build());
+                .bounds(tabLeft + 156, top, tabW, 20).build());
+        Button sidesTab = addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.tab.sides"), b -> switchTab(Tab.SIDES))
+                .bounds(tabLeft + 234, top, tabW, 20).build());
         settingsTab.active = tab != Tab.SETTINGS;
         playlistTab.active = tab != Tab.PLAYLIST;
         speakersTab.active = tab != Tab.SPEAKERS;
-        if (tab == Tab.SETTINGS) initSettings(top + 28);
+        sidesTab.active = tab != Tab.SIDES;        if (tab == Tab.SETTINGS) initSettings(top + 28);
         else if (tab == Tab.PLAYLIST) initPlaylist(top + 28);
+        else if (tab == Tab.SIDES) initSides(top + 28);
         else initSpeakersTab(top + 28);
         // Im Lautsprecher-Reiter teilen sich Upmix-Schalter und Fertig-Knopf die Zeile
         boolean shared = tab == Tab.SPEAKERS;
@@ -176,6 +184,107 @@ final class JukeboxMenuScreen extends Screen {
             refreshLabels();
         }).bounds(width / 2 - 155, top + 168, 208, 20).tooltip(Tooltip.create(Component.translatable("peaksound.menu.upmix.tooltip"))).build());
         refreshLabels();
+    }
+
+    /** Reiter "Seiten": Der Wuerfel zeigt die vier Comparator-Seiten der Jukebox; rechts waehlst du die Funktion der gewaehlten Seite. */
+    private void initSides(int top) {
+        int right = width / 2 + 20;
+        addRenderableWidget(Button.builder(Component.literal("<"), b -> {
+            if (cube.selected < 4) change(cur.withPort(cube.selected, cur.ports().get(cube.selected).previous()));
+        }).bounds(right, top + 50, 22, 20).build());
+        addRenderableWidget(Button.builder(Component.literal(">"), b -> {
+            if (cube.selected < 4) change(cur.withPort(cube.selected, cur.ports().get(cube.selected).next()));
+        }).bounds(right + 118, top + 50, 22, 20).build());
+    }
+
+    private static int portColor(de.peaksound.protocol.PortFunction f) {
+        return switch (f) {
+            case BASS -> 0xE04848;
+            case MID -> 0x48C860;
+            case HIGH -> 0x4890E8;
+            case OVERALL -> 0xE0C040;
+            case RUNNING -> 0x40D0D0;
+            case SONG_END -> 0xE08A30;
+            case BEAT -> 0xC050D0;
+            case OFF -> 0x55555F;
+        };
+    }
+
+    private static String portShort(de.peaksound.protocol.PortFunction f) {
+        return switch (f) {
+            case BASS -> "BAS";
+            case MID -> "MID";
+            case HIGH -> "HI";
+            case OVERALL -> "ALL";
+            case RUNNING -> "RUN";
+            case SONG_END -> "END";
+            case BEAT -> "BEAT";
+            case OFF -> "-";
+        };
+    }
+
+    private void extractSides(GuiGraphicsExtractor g, int top) {
+        int left = width / 2 - 155;
+        int[] fill = new int[6];
+        String[] l1 = new String[6], l2 = new String[6];
+        for (int f = 0; f < 6; f++) {
+            l1[f] = "";
+            if (f < 4) {
+                de.peaksound.protocol.PortFunction fn = cur.ports().get(f);
+                fill[f] = portColor(fn);
+                l2[f] = portShort(fn);
+            } else {
+                fill[f] = 0x3A3A44;
+                l2[f] = "";
+            }
+        }
+        cube.render(g, font, left + 78, top + 74, 84, fill, l1, l2);
+        Component drag = Component.translatable("peaksound.menu.sides.drag");
+        g.text(font, drag, left + 78 - font.width(drag) / 2, top + 142, 0xFF777777);
+
+        int right = width / 2 + 20;
+        Component face = Component.translatable("peaksound.menu.sides.face." + CubeView.NAMES_KEYS[cube.selected]);
+        g.text(font, face, right, top + 28, 0xFFFFFFFF);
+        if (cube.selected < 4) {
+            de.peaksound.protocol.PortFunction fn = cur.ports().get(cube.selected);
+            Component name = Component.translatable("peaksound.port." + fn.key());
+            g.text(font, name, right + 70 - font.width(name) / 2, top + 56, 0xFF000000 | portColor(fn));
+            Component desc = Component.translatable("peaksound.port." + fn.key() + ".desc");
+            g.text(font, desc, right, top + 80, 0xFFAAAAAA);
+            Component hint = Component.translatable("peaksound.menu.sides.hint");
+            g.text(font, hint, right, top + 104, 0xFF777777);
+        } else {
+            Component none = Component.translatable("peaksound.menu.sides.none");
+            g.text(font, none, right, top + 56, 0xFFAAAAAA);
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        if (tab == Tab.SIDES && event.button() == 0) {
+            int face = cube.pick(event.x(), event.y());
+            if (face >= 0) {
+                cube.selected = face;
+                draggingCube = true;
+                return true;
+            }
+        }
+        return super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double dx, double dy) {
+        if (tab == Tab.SIDES && event.button() == 0 && (draggingCube || cube.pick(event.x(), event.y()) >= 0)) {
+            cube.drag(dx, dy);
+            return true;
+        }
+        return super.mouseDragged(event, dx, dy);
+    }
+
+    @Override
+    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        draggingCube = false;
+        return super.mouseReleased(event);
     }
 
     private void initPlaylist(int top) {
@@ -291,7 +400,7 @@ final class JukeboxMenuScreen extends Screen {
     public void tick() {
         super.tick();
         if (dirty && System.currentTimeMillis() - lastChange > SEND_DELAY_MS) flush();
-        if (tab != Tab.SETTINGS && ++pollTicks >= POLL_TICKS) {
+        if ((tab == Tab.PLAYLIST || tab == Tab.SPEAKERS) && ++pollTicks >= POLL_TICKS) {
             pollTicks = 0;
             if (tab == Tab.PLAYLIST) ClientNetwork.send(new Packet.PlaylistRequest(bx, by, bz));
             else ClientNetwork.send(new Packet.SpeakerOverviewRequest(bx, by, bz));
@@ -320,7 +429,8 @@ final class JukeboxMenuScreen extends Screen {
                 : Component.translatable("peaksound.menu.nothing");
         g.text(font, now, width / 2 - font.width(now) / 2, top - 10, 0xFFAAAAAA);
 
-        if (tab == Tab.PLAYLIST) extractPlaylist(g, top + 28);
+        if (tab == Tab.SIDES) extractSides(g, top + 28);
+        else if (tab == Tab.PLAYLIST) extractPlaylist(g, top + 28);
         else if (tab == Tab.SPEAKERS) extractSpeakers(g, top + 28);
         else {
             Component hint = Component.translatable("peaksound.menu.equalizer.hint");

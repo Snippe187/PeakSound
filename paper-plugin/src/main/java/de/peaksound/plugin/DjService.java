@@ -173,6 +173,21 @@ final class DjService {
         }
     }
 
+    /** Alle 4 Ticks: Pulte mit Redstone-Steuerung folgen dem Signal (ohne Signal Deck A, mit Signal Deck B, mit Ueberblendzeit). */
+    void redstoneTick() {
+        for (BlockRegistry.Key key : registry.keysOf(PeakBlockType.DJ_DESK)) {
+            DjSettings settings = store.get(key);
+            if (!settings.redstone()) continue;
+            Block desk = blockOf(key);
+            if (desk == null) continue;
+            int target = desk.getBlockPower() > 0 ? 100 : 0;
+            if (settings.crossfader() == target) continue;
+            DjSettings next = settings.withCrossfader(target);
+            store.set(key, next);
+            apply(desk, next, next.fadeSeconds() * 1000);
+        }
+    }
+
     /** Jede Sekunde: Pulte nachfuehren (neu angeschlossene Jukeboxen, geaenderte Netze) und verwaiste Faktoren loeschen. */
     void tick() {
         Set<BlockRegistry.Key> used = new HashSet<>();

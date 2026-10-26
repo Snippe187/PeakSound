@@ -23,7 +23,9 @@ Für Minecraft **26.2**: eine **Fabric-Client-Mod**, ein **Paper-Server-Plugin**
   (Bass, Mitten, Höhen), Effekte Farbwechsel, Strobo (mit Warnung und Client-Option), Schwenken, Pulsieren.
 - **Mikrofon** (optional, braucht [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat)): Sprache läuft in 3D über die
   angeschlossenen Lautsprecher; Reichweite, Lautstärke, Ducking der Musik.
-- **Streaming und Cache:** Die Wiedergabe startet, während der Song noch lädt. Geladene Songs liegen im Client-Cache
+- **Song-Bibliothek:** Block, mit dem man einen schon hochgeladenen Song eines anderen Spielers auf eine leere Platte schreibt (Suche, Anhören).
+- **Musik-Fernbedienung:** Ein Redstone-Signal steuert die Jukeboxen eines Netzes: Spielen/Stopp, Pause, Skip, Zurück, Shuffle, Wiederholen, Song oder Lautstärke nach Signalstärke.
+- **Redstone-Ausgänge pro Seite:** Jede der vier Comparator-Seiten der Jukebox gibt Bass, Mitten, Höhen, gesamt,  Die Wiedergabe startet, während der Song noch lädt. Geladene Songs liegen im Client-Cache
   (Hash als Kennung).
 - **OP-Menü:** Song-Verwaltung im Escape-Menü: alle Songs, vorhören, löschen, gesperrte Mehrkanal-Dateien
   freigeben oder ablehnen, Upload-Limits und Speicher-Limit einstellen.

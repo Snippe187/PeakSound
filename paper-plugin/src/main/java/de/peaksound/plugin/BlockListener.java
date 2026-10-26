@@ -36,10 +36,14 @@ final class BlockListener implements Listener {
     private final LightService lights;
     private final DjService dj;
     private final MicService mic;
+    private final LibraryService library;
+    private final RemoteService remote;
 
     BlockListener(PeakItems items, BlockRegistry registry, PlaybackManager playback, JukeboxSettingsStore settings,
                   JukeboxMenuService menu, NetworkHandler network, SpeakerService speakers, SpeakerMenuService speakerMenu,
-                  SettingsClipboard clipboard, LightService lights, DjService dj, MicService mic) {
+                  SettingsClipboard clipboard, LightService lights, DjService dj, MicService mic, LibraryService library, RemoteService remote) {
+        this.remote = remote;
+        this.library = library;
         this.mic = mic;
         this.clipboard = clipboard;
         this.lights = lights;
@@ -80,6 +84,7 @@ final class BlockListener implements Listener {
         if (type.get() == PeakBlockType.SPOTLIGHT) lights.remove(block);
         if (type.get() == PeakBlockType.DJ_DESK) dj.remove(block);
         if (type.get() == PeakBlockType.MICROPHONE) mic.remove(block);
+        if (type.get() == PeakBlockType.MUSIC_REMOTE) remote.remove(block);
         registry.remove(block);
         // Statt des Vanilla-Drops faellt das PeakSound-Item (nicht im Kreativmodus)
         event.setDropItems(false);
@@ -135,10 +140,21 @@ final class BlockListener implements Listener {
         if (!tuner && player.isSneaking() && !player.getInventory().getItemInMainHand().getType().isAir()) return;
 
         event.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
+        if (type.get() == PeakBlockType.SONG_LIBRARY && !player.isSneaking()) {
+            boolean blankInHand = items.typeOf(player.getInventory().getItemInMainHand()).filter(t -> t == PeakItemType.BLANK_RECORD).isPresent();
+            if (tuner || blankInHand) {
+                event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
+                if (network.hasMod(player)) library.open(player, block);
+                else player.sendActionBar(Messages.tunerInfo(player, Messages.blockName(player, type.get()), block.getX(), block.getY(), block.getZ()));
+            } else {
+                player.sendActionBar(Messages.info(player, "Halte eine leere Platte in der Hand und klicke den Block an.", "Hold a blank record and right-click this block."));
+            }
+            return;
+        }
         if (tuner) {
             event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
             if (player.isSneaking()) {
-                clipboard.use(player, block, type.get()); // Einstellungen kopieren / einfuegen
+                if (type.get() != PeakBlockType.SONG_LIBRARY) clipboard.use(player, block, type.get()); // Einstellungen kopieren / einfuegen
             } else if (type.get() == PeakBlockType.JUKEBOX && network.hasMod(player)) {
                 menu.open(player, block);
             } else if (type.get() == PeakBlockType.SPEAKER && network.hasMod(player)) {
@@ -149,6 +165,8 @@ final class BlockListener implements Listener {
                 dj.open(player, block);
             } else if (type.get() == PeakBlockType.MICROPHONE && network.hasMod(player)) {
                 mic.open(player, block);
+            } else if (type.get() == PeakBlockType.MUSIC_REMOTE && network.hasMod(player)) {
+                remote.open(player, block);
             } else {
                 player.sendActionBar(Messages.tunerInfo(player, Messages.blockName(player, type.get()),
                         block.getX(), block.getY(), block.getZ()));

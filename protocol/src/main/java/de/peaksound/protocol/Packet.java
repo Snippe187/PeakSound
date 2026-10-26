@@ -883,4 +883,113 @@ public sealed interface Packet {
             return new DebugInfo(new String(PacketIO.readBytes(in, Limits.MAX_DEBUG_BYTES), java.nio.charset.StandardCharsets.UTF_8));
         }
     }
+
+    // ---- Song-Bibliothek ----
+
+    /** Ein Song in der Bibliothek (Anzeige in der Liste). */
+    record LibrarySong(String hash, String title, String artist, String uploader, int durationMs) {}
+
+    /** Server -> Client: Bibliotheks-Menue oeffnen. Die Liste folgt auf eine {@link LibraryQuery}. */
+    record OpenLibraryMenu(int x, int y, int z) implements Clientbound {
+        public static final int ID = 46;
+
+        @Override
+        public byte[] encode() { return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).toBytes(); }
+
+        static OpenLibraryMenu decode(ByteBuffer in) { return new OpenLibraryMenu(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in)); }
+    }
+
+    /** Client -> Server: Suche und Seite anfordern (leere Suche = alle Songs). */
+    record LibraryQuery(int x, int y, int z, String query, int page) implements Serverbound {
+        public static final int ID = 47;
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeString(query, Limits.LIBRARY_MAX_QUERY).writeInt(page).toBytes();
+        }
+
+        static LibraryQuery decode(ByteBuffer in) {
+            return new LibraryQuery(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in),
+                    PacketIO.readString(in, Limits.LIBRARY_MAX_QUERY), PacketIO.readIntRange(in, 0, 100_000));
+        }
+    }
+
+    /** Server -> Client: eine Seite der Trefferliste. {@code blank} = wie viele leere Platten der Spieler dabei hat. */
+    record LibraryResults(int x, int y, int z, int page, int pages, int total, int blank, java.util.List<LibrarySong> songs)
+            implements Clientbound {
+        public static final int ID = 48;
+
+        @Override
+        public byte[] encode() {
+            if (songs.size() > Limits.LIBRARY_PAGE_SIZE) throw new IllegalArgumentException("Seite zu lang");
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeInt(page).writeInt(pages)
+                    .writeInt(total).writeInt(blank).writeByte(songs.size());
+            for (LibrarySong s : songs) {
+                w.writeString(s.hash(), Limits.HASH_LENGTH).writeString(s.title(), Limits.MAX_TEXT).writeString(s.artist(), Limits.MAX_TEXT)
+                        .writeString(s.uploader(), Limits.MAX_TEXT).writeInt(s.durationMs());
+            }
+            return w.toBytes();
+        }
+
+        static LibraryResults decode(ByteBuffer in) {
+            int x = PacketIO.readInt(in), y = PacketIO.readInt(in), z = PacketIO.readInt(in);
+            int page = PacketIO.readIntRange(in, 0, 100_000), pages = PacketIO.readIntRange(in, 1, 100_001);
+            int total = PacketIO.readIntRange(in, 0, Integer.MAX_VALUE), blank = PacketIO.readIntRange(in, 0, 100_000);
+            int count = PacketIO.readByte(in);
+            if (count > Limits.LIBRARY_PAGE_SIZE) throw new MalformedPacketException("Seite zu lang");
+            java.util.List<LibrarySong> songs = new java.util.ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                songs.add(new LibrarySong(PacketIO.readString(in, Limits.HASH_LENGTH), PacketIO.readString(in, Limits.MAX_TEXT),
+                        PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readInt(in)));
+            }
+            return new LibraryResults(x, y, z, page, pages, total, blank, java.util.List.copyOf(songs));
+        }
+    }
+
+    /** Client -> Server: diesen Song auf eine leere Platte schreiben. */
+    record LibraryWrite(int x, int y, int z, String hash) implements Serverbound {
+        public static final int ID = 49;
+
+        @Override
+        public byte[] encode() { return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeString(hash, Limits.HASH_LENGTH).toBytes(); }
+
+        static LibraryWrite decode(ByteBuffer in) {
+            return new LibraryWrite(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readString(in, Limits.HASH_LENGTH));
+        }
+    }
+
+    // ---- Musik-Fernbedienung ----
+
+    /** Server -> Client: Fernbedienungs-Menue oeffnen. {@code connected} = an ein Jukebox-Netz angeschlossen. */
+    record OpenRemoteMenu(int x, int y, int z, RemoteSettings settings, boolean connected) implements Clientbound {
+        public static final int ID = 50;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            return w.writeBoolean(connected).toBytes();
+        }
+
+        static OpenRemoteMenu decode(ByteBuffer in) {
+            return new OpenRemoteMenu(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), RemoteSettings.read(in),
+                    PacketIO.readBoolean(in));
+        }
+    }
+
+    /** Client -> Server: geaenderte Einstellungen der Fernbedienung. */
+    record RemoteUpdate(int x, int y, int z, RemoteSettings settings) implements Serverbound {
+        public static final int ID = 51;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            return w.toBytes();
+        }
+
+        static RemoteUpdate decode(ByteBuffer in) {
+            return new RemoteUpdate(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), RemoteSettings.read(in));
+        }
+    }
 }

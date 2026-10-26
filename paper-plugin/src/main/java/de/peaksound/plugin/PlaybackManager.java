@@ -46,8 +46,10 @@ final class PlaybackManager {
         final String title;
         final String artist;
         final int durationMs;
-        final long startedAt;
+        long startedAt;
         boolean playing;
+        /** Position (ms), an der pausiert wurde; -1 = nicht pausiert. */
+        long pausedAtMs = -1;
         /** Songposition (ms), bis zu der Taktschlaege schon verarbeitet wurden. */
         long beatCursorMs;
         /** true: Der Song kommt aus der Playlist (Hopper/Kiste); record ist dann nur eine Kopie und wird nie ausgegeben. */
@@ -79,6 +81,8 @@ final class PlaybackManager {
     private final Map<BlockRegistry.Key, Integer> deckGain = new ConcurrentHashMap<>();
     /** Bis wann (ms) eine Schallquelle gerade ueberblendet wird. */
     private final Map<BlockRegistry.Key, Long> fadeUntil = new ConcurrentHashMap<>();
+    /** Wann ein Song an dieser Jukebox zuletzt zu Ende ging (fuer den Redstone-Ausgang Song-Ende). */
+    private final Map<BlockRegistry.Key, Long> lastEnded = new ConcurrentHashMap<>();
     /** Laufende Ueberblendungen: von, nach (Prozent), Startzeit und Dauer, damit Neuankoemmlinge mittendrin einsteigen. */
     private record Fade(int from, int to, long startMs, int durationMs) {
         double current(long now) { return de.peaksound.protocol.DjMath.rampPercent(from, to, now - startMs, durationMs); }
@@ -128,6 +132,13 @@ final class PlaybackManager {
 
     /** Lautstaerke-Faktor (Prozent) je Jukebox, gesetzt vom Mikrofon-Ducking (wirkt zusaetzlich zum DJ-Faktor). */
     private final Map<BlockRegistry.Key, Integer> duckGain = new ConcurrentHashMap<>();
+
+    /** Liegt am Block ein Redstone-Signal an? (nur Hauptthread) */
+    private static boolean powered(BlockRegistry.Key key) {
+        World world = Bukkit.getWorld(key.world());
+        return world != null && world.isChunkLoaded(key.x() >> 4, key.z() >> 4)
+                && world.getBlockAt(key.x(), key.y(), key.z()).getBlockPower() > 0;
+    }
 
     private int gain(BlockRegistry.Key jukebox) {
         return deckGain.getOrDefault(jukebox, 100) * duckGain.getOrDefault(jukebox, 100) / 100;
@@ -218,6 +229,7 @@ final class PlaybackManager {
 
     /** Ein Song ist zu Ende: Loop-Modus und Playlist entscheiden, was als Naechstes kommt. */
     private void onEnded(BlockRegistry.Key key, State ended) {
+        lastEnded.put(key, System.currentTimeMillis());
         stopFor(key);
         World world = Bukkit.getWorld(key.world());
         if (world == null || !world.isChunkLoaded(key.x() >> 4, key.z() >> 4)) return; // nichts zu tun, solange nicht geladen
@@ -294,6 +306,75 @@ final class PlaybackManager {
         states.put(key, next);
         save();
         Bukkit.getScheduler().runTask(plugin, this::tick);
+    }
+
+    long lastEnded(BlockRegistry.Key key) {
+        return lastEnded.getOrDefault(key, 0L);
+    }
+
+    boolean isPlaying(Block block) {
+        State s = states.get(BlockRegistry.Key.of(block));
+        return s != null && s.playing;
+    }
+
+    boolean isPaused(Block block) {
+        State s = states.get(BlockRegistry.Key.of(block));
+        return s != null && !s.playing && s.pausedAtMs >= 0;
+    }
+
+    /** Pausiert den laufenden Song; die Position bleibt erhalten. */
+    void pause(Block block) {
+        BlockRegistry.Key key = BlockRegistry.Key.of(block);
+        State s = states.get(key);
+        if (s == null || !s.playing) return;
+        s.pausedAtMs = Math.max(0, System.currentTimeMillis() - s.startedAt);
+        s.playing = false;
+        stopFor(key);
+        save();
+    }
+
+    /** Setzt einen pausierten Song fort; ein angehaltener (nicht pausierter) beginnt von vorn. */
+    void resume(Block block) {
+        BlockRegistry.Key key = BlockRegistry.Key.of(block);
+        State s = states.get(key);
+        if (s == null || s.playing) return;
+        long now = System.currentTimeMillis();
+        s.startedAt = now - Math.max(0, s.pausedAtMs);
+        s.pausedAtMs = -1;
+        s.playing = true;
+        save();
+        Bukkit.getScheduler().runTask(plugin, this::tick);
+    }
+
+    void togglePause(Block block) {
+        if (isPlaying(block)) pause(block);
+        else resume(block);
+    }
+
+    /** Voriger Song der Playlist (springt vom ersten zum letzten); eine eingelegte Platte beginnt von vorn. */
+    boolean previous(Block block) {
+        BlockRegistry.Key key = BlockRegistry.Key.of(block);
+        State s = states.get(key);
+        if (s == null) return false;
+        if (!s.fromPlaylist) {
+            s.startedAt = System.currentTimeMillis();
+            s.pausedAtMs = -1;
+            s.playing = true;
+            stopFor(key); // Clients beginnen frisch
+            save();
+            Bukkit.getScheduler().runTask(plugin, this::tick);
+            return true;
+        }
+        List<PlaylistService.Track> tracks = playlist.tracks(block);
+        int index = locate(tracks, s);
+        for (int tries = 0; tries < tracks.size(); tries++) {
+            index = index <= 0 ? tracks.size() - 1 : index - 1;
+            if (tracks.get(index).playable()) {
+                startTrack(block, tracks, index, new HashSet<>());
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Wiedergabe anhalten. Playlist-Songs enden ganz; eine eingelegte Platte bleibt in der Jukebox. */
@@ -393,12 +474,18 @@ final class PlaybackManager {
             for (BlockRegistry.Key member : members) jukeboxes.put(member, leader);
 
             List<SpeakerService.Speaker> netSpeakers = speakers.speakersOf(net).stream().filter(sp -> sp.number() > 0).toList();
+            boolean hasSpeakers = !netSpeakers.isEmpty();
+            // Lautsprecher mit Redstone-Steuerung spielen nur, solange ein Signal an ihnen anliegt
+            netSpeakers = netSpeakers.stream().filter(sp -> !sp.settings().redstone() || powered(sp.key())).toList();
             // Stereo-/Mono-Songs bleiben Stereo/Mono, solange die Jukebox nicht auf Upmix steht (dann alle Lautsprecher)
             int sourceChannels = songChannels(leader.hash);
             List<SpeakerService.Speaker> playing = netSpeakers.stream()
                     .filter(sp -> settings.get(sp.jukebox()).upmix() || ChannelLayout.playsWithoutUpmix(sourceChannels, sp.settings().channel()))
                     .toList();
             if (!playing.isEmpty()) netSpeakers = playing; // gibt es keinen passenden Lautsprecher, spielen alle (besser als Stille)
+            if (netSpeakers.isEmpty() && hasSpeakers) {
+                continue; // alle Lautsprecher per Redstone stumm geschaltet: nichts spielt
+            }
             if (netSpeakers.isEmpty()) {
                 for (BlockRegistry.Key member : members) {
                     JukeboxSettings cfg = settings.get(member);
@@ -516,7 +603,7 @@ final class PlaybackManager {
         long now = System.currentTimeMillis();
         Map<BlockRegistry.Key, State> jukeboxes = effective().jukeboxes();
         spawnBeatParticles(jukeboxes, now);
-        equalizer.update(jukeboxes, now);
+        equalizer.update(jukeboxes, now, this::lastEnded);
     }
 
     private void spawnBeatParticles(Map<BlockRegistry.Key, State> effective, long now) {

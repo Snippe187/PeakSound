@@ -2062,13 +2062,13 @@
       "model": "minecraft:block/note_block"
     },
     "instrument=bit,note=18,powered=true": {
-      "model": "minecraft:block/note_block"
+      "model": "peaksound:block/music_remote"
     },
     "instrument=bit,note=19,powered=false": {
       "model": "minecraft:block/note_block"
     },
     "instrument=bit,note=19,powered=true": {
-      "model": "minecraft:block/note_block"
+      "model": "peaksound:block/song_library"
     },
     "instrument=bit,note=20,powered=false": {
       "model": "minecraft:block/note_block"

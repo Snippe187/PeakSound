@@ -31,3 +31,7 @@ network:
   # Grenzen schuetzen den Server vor riesigen Staubfeldern (Suche bricht dort ab).
   max-dust: 256
   max-devices: 32
+
+library:
+  # Song-Bibliothek-Block: Spieler schreiben bereits hochgeladene Songs auf leere Platten (false = Block ausgeschaltet).
+  enabled: true

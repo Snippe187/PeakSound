@@ -2,6 +2,7 @@ package de.peaksound.plugin;
 
 import de.peaksound.audio.Analysis;
 import de.peaksound.protocol.PeakBlockType;
+import de.peaksound.protocol.PortFunction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -35,7 +36,11 @@ final class EqualizerService {
     /** Zuletzt gesetzter Pegel je Comparator, damit nur Aenderungen etwas kosten. */
     private final Map<BlockRegistry.Key, Integer> lastLevel = new HashMap<>();
 
-    EqualizerService(PeakSoundPlugin plugin, BlockRegistry registry, AnalysisStore analysis, ComparatorDriver driver) {
+    private final JukeboxSettingsStore settings;
+
+    EqualizerService(PeakSoundPlugin plugin, BlockRegistry registry, AnalysisStore analysis, ComparatorDriver driver,
+                     JukeboxSettingsStore settings) {
+        this.settings = settings;
         this.plugin = plugin;
         this.registry = registry;
         this.analysis = analysis;
@@ -59,42 +64,60 @@ final class EqualizerService {
                 && registry.get(input).filter(t -> t == PeakBlockType.JUKEBOX).isPresent();
     }
 
-    /** Pegel fuer die Seite {@code face} zur Songposition {@code positionMs}. */
-    static int levelFor(BlockFace face, Analysis a, long positionMs) {
-        return switch (face) {
-            case NORTH -> a.level(Analysis.Band.BASS, positionMs);
-            case EAST -> a.level(Analysis.Band.MID, positionMs);
-            case SOUTH -> a.level(Analysis.Band.HIGH, positionMs);
-            default -> Math.max(a.level(Analysis.Band.BASS, positionMs),
-                    Math.max(a.level(Analysis.Band.MID, positionMs), a.level(Analysis.Band.HIGH, positionMs)));
+    /** Pegel eines Ausgangs zur Songposition. {@code a} ist die Analyse des laufenden Songs (leer: nichts spielt oder noch nicht berechnet). */
+    static int levelFor(PortFunction function, Optional<Analysis> a, boolean playing, long positionMs, long msSinceSongEnd) {
+        return switch (function) {
+            case BASS -> a.map(x -> x.level(Analysis.Band.BASS, positionMs)).orElse(0);
+            case MID -> a.map(x -> x.level(Analysis.Band.MID, positionMs)).orElse(0);
+            case HIGH -> a.map(x -> x.level(Analysis.Band.HIGH, positionMs)).orElse(0);
+            case OVERALL -> a.map(x -> Math.max(x.level(Analysis.Band.BASS, positionMs),
+                    Math.max(x.level(Analysis.Band.MID, positionMs), x.level(Analysis.Band.HIGH, positionMs)))).orElse(0);
+            case RUNNING -> playing ? 15 : 0;
+            case SONG_END -> msSinceSongEnd >= 0 && msSinceSongEnd < SONG_END_PULSE_MS ? 15 : 0;
+            case BEAT -> a.map(x -> {
+                int beat = x.nextBeatAfter(positionMs - BEAT_PULSE_MS);
+                return beat >= 0 && beat <= positionMs ? 15 : 0;
+            }).orElse(0);
+            case OFF -> 0;
         };
     }
 
+    private static final long SONG_END_PULSE_MS = 400;
+    private static final long BEAT_PULSE_MS = 150;
+
     /**
-     * Alle 2 Ticks: Pegel aller Equalizer-Comparators aktualisieren.
+     * Alle 2 Ticks: Pegel aller Equalizer-Comparators aktualisieren. Jede der vier Seiten einer Jukebox gibt die Funktion
+     * aus, die im Seitenmenue der Jukebox gewaehlt wurde (Bass, Mitten, Hoehen, gesamt, laeuft, Song-Ende, Takt).
      *
      * @param effective Jukebox -> Song, der dort gerade zu hoeren ist (inklusive Netz-Mitglieder)
+     * @param lastEnded wann an einer Jukebox zuletzt ein Song endete (ms, 0 = nie)
      */
-    void update(Map<BlockRegistry.Key, PlaybackManager.State> effective, long now) {
+    void update(Map<BlockRegistry.Key, PlaybackManager.State> effective, long now,
+                java.util.function.ToLongFunction<BlockRegistry.Key> lastEnded) {
         if (driver == null) return;
         Set<BlockRegistry.Key> active = new HashSet<>();
-        for (Map.Entry<BlockRegistry.Key, PlaybackManager.State> e : effective.entrySet()) {
-            World world = Bukkit.getWorld(e.getKey().world());
-            if (world == null || !world.isChunkLoaded(e.getKey().x() >> 4, e.getKey().z() >> 4)) continue;
-            Block jukebox = world.getBlockAt(e.getKey().x(), e.getKey().y(), e.getKey().z());
-            Optional<Analysis> a = plugin.songs().get(e.getValue().hash).flatMap(analysis::peek);
-            long position = now - e.getValue().startedAt;
-            for (BlockFace face : FACES) {
+        for (BlockRegistry.Key key : registry.keysOf(PeakBlockType.JUKEBOX)) {
+            World world = Bukkit.getWorld(key.world());
+            if (world == null || !world.isChunkLoaded(key.x() >> 4, key.z() >> 4)) continue;
+            Block jukebox = world.getBlockAt(key.x(), key.y(), key.z());
+            PlaybackManager.State state = effective.get(key);
+            Optional<Analysis> a = state == null ? Optional.empty() : plugin.songs().get(state.hash).flatMap(analysis::peek);
+            long position = state == null ? 0 : now - state.startedAt;
+            long ended = lastEnded.applyAsLong(key);
+            long sinceEnd = ended == 0 ? -1 : now - ended;
+            java.util.List<PortFunction> ports = settings.get(key).ports();
+            for (int i = 0; i < FACES.length; i++) {
+                BlockFace face = FACES[i];
                 Block port = jukebox.getRelative(face);
                 // Der Comparator liegt auf der Seite "face" der Jukebox; sein Eingang zeigt zurueck zur Jukebox
                 if (port.getType() != Material.COMPARATOR
                         || ((Comparator) port.getBlockData()).getFacing() != face.getOppositeFace()) continue;
                 BlockRegistry.Key pk = BlockRegistry.Key.of(port);
                 active.add(pk);
-                drive(port, pk, a.map(x -> levelFor(face, x, position)).orElse(0));
+                drive(port, pk, levelFor(ports.get(i), a, state != null, position, sinceEnd));
             }
         }
-        // Comparators, deren Jukebox nicht mehr spielt, auf 0 setzen
+        // Comparators, die nicht mehr an einer Jukebox haengen, auf 0 setzen
         lastLevel.keySet().removeIf(pk -> {
             if (active.contains(pk)) return false;
             World world = Bukkit.getWorld(pk.world());
@@ -104,7 +127,6 @@ final class EqualizerService {
             return true;
         });
     }
-
     private void drive(Block port, BlockRegistry.Key key, int level) {
         Integer last = lastLevel.get(key);
         if (last != null && last == level) return;

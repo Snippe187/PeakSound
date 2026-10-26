@@ -21,6 +21,13 @@ class PacketCodecTest {
             new Packet.AnalysisRequest("a".repeat(64)),
             new Packet.DjRequest(1, 2, 3),
             new Packet.DebugRequest(),
+            new Packet.RemoteUpdate(1, 2, 3, new RemoteSettings(RemoteAction.VOLUME_BY_STRENGTH, true)),
+            new Packet.JukeboxUpdate(1, 2, 3, JukeboxSettings.defaults(16, 80).withPort(2, PortFunction.BEAT).withPort(3, PortFunction.SONG_END)),
+            new Packet.SpeakerUpdate(1, 2, 3, new SpeakerSettings("R", SpeakerChannel.CENTER, 50, SpeakerKind.WOOFER, true)),
+            new Packet.DjUpdate(1, 2, 3, new DjSettings(0, 5, 100, 100, false, true)),
+            new Packet.MicUpdate(1, 2, 3, new MicSettings(true, 4, 100, false, 30, true)),
+            new Packet.LibraryQuery(1, 2, 3, "stereo wide", 2),
+            new Packet.LibraryWrite(1, 2, 3, "a".repeat(64)),
             new Packet.MicUpdate(4, 5, 6, new MicSettings(true, 8, 150, true, 25)),
             new Packet.DjUpdate(1, 2, 3, new DjSettings(60, 8, 90, 70, true)),
             new Packet.DjDeckAction(1, 2, 3, 1, Packet.DjDeckAction.Action.PLAY, 4),
@@ -203,9 +210,25 @@ class PacketCodecTest {
     }
 
     @Test
+    void libraryResultsRoundTrip() {
+        var songs = java.util.List.of(new Packet.LibrarySong("b".repeat(64), "Titel", "Interpret", "Uploader", 123_000));
+        var packet = new Packet.LibraryResults(1, 2, 3, 0, 4, 20, 2, songs);
+        assertEquals(packet, PacketCodec.decodeClientbound(packet.encode()));
+        var tooMany = java.util.Collections.nCopies(Limits.LIBRARY_PAGE_SIZE + 1, songs.get(0));
+        assertThrows(IllegalArgumentException.class, () -> new Packet.LibraryResults(1, 2, 3, 0, 1, 7, 0, tooMany).encode());
+    }
+
+    @Test
+    void rejectsInvalidPortFunction() {
+        byte[] bad = new Packet.JukeboxUpdate(0, 0, 0, JukeboxSettings.defaults(16, 80)).encode();
+        bad[bad.length - 1] = 99; // unbekannte Ausgangsfunktion
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(bad));
+    }
+
+    @Test
     void rejectsInvalidMicSettings() {
         byte[] bad = new Packet.MicUpdate(0, 0, 0, MicSettings.defaults()).encode();
-        bad[bad.length - 1] = 101; // Ducking-Pegel ueber 100 %
+        bad[bad.length - 2] = 101; // Ducking-Pegel ueber 100 % (das letzte Byte ist der Redstone-Schalter)
         assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(bad));
     }
 

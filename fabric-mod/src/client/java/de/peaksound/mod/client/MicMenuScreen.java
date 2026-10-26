@@ -51,11 +51,15 @@ final class MicMenuScreen extends Screen {
             rebuildWidgets();
         }).bounds(left, top + 108, 200, 20).build());
         duck.active = true;
+        addRenderableWidget(Button.builder(onOff("peaksound.menu.redstone", cur.redstone()), b -> {
+            change(cur.withRedstone(!cur.redstone()));
+            b.setMessage(onOff("peaksound.menu.redstone", cur.redstone()));
+        }).bounds(left, top + 156, 200, 20).tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("peaksound.menu.redstone.mic.tooltip"))).build());
         IntSlider level = addRenderableWidget(new IntSlider(left, top + 132, 200, "peaksound.menu.mic.duck", 0, 100, cur.duckPercent(),
                 v -> change(cur.withDuckPercent(v))));
         level.active = cur.ducking();
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
-                .bounds(left, top + 160, 200, 20).build());
+                .bounds(left, top + 180, 200, 20).build());
     }
 
     private static Component onOff(String key, boolean on) {

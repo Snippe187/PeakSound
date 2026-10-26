@@ -36,6 +36,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     private DjService dj;
     private MicService mic;
     private DebugService debug;
+    private LibraryService library;
+    private RemoteService remote;
     /** Spieler, deren HelloAck noch aussteht, weil ihr Client den Kanal beim Server noch nicht angemeldet hatte (Paper verwirft solche Sendungen still). */
     private final Set<UUID> pendingAck = ConcurrentHashMap.newKeySet();
     /** Letztes Hello je Spieler (auch bei Versionskonflikt) und Paketzaehler, nur fuer die Diagnose. */
@@ -67,6 +69,10 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     }
 
     void setDebug(DebugService debug) { this.debug = debug; }
+
+    void setLibrary(LibraryService library) { this.library = library; }
+
+    void setRemote(RemoteService remote) { this.remote = remote; }
 
     /** Diagnosezeilen ueber diesen Spieler: Hello, Paketzaehler, letzter Fehler. */
     String describe(Player player) {
@@ -129,6 +135,9 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             case Packet.DjUpdate update -> dj.onUpdate(player, update);
             case Packet.MicUpdate update -> mic.onUpdate(player, update);
             case Packet.DjDeckAction action -> dj.onDeckAction(player, action);
+            case Packet.RemoteUpdate update -> remote.onUpdate(player, update);
+            case Packet.LibraryQuery query -> library.onQuery(player, query);
+            case Packet.LibraryWrite write -> library.onWrite(player, write);
             case Packet.DebugRequest ignored -> { /* oben behandelt */ }
             case Packet.Hello ignored -> { /* oben behandelt */ }
         }

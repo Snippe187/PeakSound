@@ -26,9 +26,17 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
     private final DjService dj;
     private final LightService lights;
     private final DebugService debug;
+    private final LibraryService library;
+    private final RemoteService remote;
+    private final JukeboxMenuService jukeboxMenu;
+    private final JukeboxSettingsStore jukeboxSettings;
 
     PeakSoundCommand(EqualizerService equalizer, BlockRegistry registry, SongStore songs, PlaybackManager playback, PeakItems items,
-                     SpeakerService speakers, DjService dj, LightService lights, DebugService debug) {
+                     SpeakerService speakers, DjService dj, LightService lights, DebugService debug, LibraryService library, RemoteService remote, JukeboxSettingsStore jukeboxSettings, JukeboxMenuService jukeboxMenu) {
+        this.jukeboxMenu = jukeboxMenu;
+        this.remote = remote;
+        this.jukeboxSettings = jukeboxSettings;
+        this.library = library;
         this.debug = debug;
         this.dj = dj;
         this.lights = lights;
@@ -70,6 +78,8 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
                 case "dj_desk", "dj" -> de.peaksound.protocol.PeakBlockType.DJ_DESK;
                 case "spotlight" -> de.peaksound.protocol.PeakBlockType.SPOTLIGHT;
                 case "microphone", "mic" -> de.peaksound.protocol.PeakBlockType.MICROPHONE;
+                case "library", "song_library" -> de.peaksound.protocol.PeakBlockType.SONG_LIBRARY;
+                case "remote", "music_remote" -> de.peaksound.protocol.PeakBlockType.MUSIC_REMOTE;
                 default -> de.peaksound.protocol.PeakBlockType.JUKEBOX;
             };
             PeakBlocks.install(block, type, registry);
@@ -92,6 +102,86 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage("Scheinwerfer eingestellt.");
             } catch (IllegalArgumentException e) {
                 sender.sendMessage("/peaksound light X Y Z <rrggbb,...> <steady|blink|beat> <none|color_cycle|strobe|sweep|pulse> <bass|mid|high> <yaw> <pitch> <speed>");
+            }
+            return true;
+        }
+        // /peaksound libopen <spieler> <x> <y> <z>: oeffnet die Bibliothek fuer einen Spieler (Test)
+        if (args.length == 5 && args[0].equalsIgnoreCase("libopen")) {
+            Player target = org.bukkit.Bukkit.getPlayerExact(args[1]);
+            Block block = blockAt(sender, new String[] {"libopen", args[2], args[3], args[4]});
+            if (target == null || block == null) return true;
+            library.open(target, block);
+            return true;
+        }
+        // /peaksound libwrite <spieler> <x> <y> <z> <titelteil>: schreibt einen Song wie ein Klick im Menue (Test)
+        if (args.length == 6 && args[0].equalsIgnoreCase("libwrite")) {
+            Player target = org.bukkit.Bukkit.getPlayerExact(args[1]);
+            Block block = blockAt(sender, new String[] {"libwrite", args[2], args[3], args[4]});
+            Song song = songs.all().stream().filter(s -> s.title().toLowerCase().contains(args[5].toLowerCase())).findFirst().orElse(null);
+            if (target == null || block == null || song == null) { sender.sendMessage("Spieler, Block oder Song nicht gefunden."); return true; }
+            library.onWrite(target, new de.peaksound.protocol.Packet.LibraryWrite(block.getX(), block.getY(), block.getZ(), song.hash()));
+            sender.sendMessage("Geschrieben: " + song.title());
+            return true;
+        }
+        // Tests: /peaksound remote X Y Z <aktion> | /peaksound jukebox X Y Z | /peaksound port X Y Z <n|e|s|w> <funktion>
+        if (args.length == 5 && args[0].equalsIgnoreCase("remote")) {
+            Block block = blockAt(sender, args);
+            if (block == null || registry.get(block).filter(t -> t == de.peaksound.protocol.PeakBlockType.MUSIC_REMOTE).isEmpty()) {
+                sender.sendMessage("Dort ist keine Fernbedienung.");
+                return true;
+            }
+            try {
+                remote.put(block, new de.peaksound.protocol.RemoteSettings(de.peaksound.protocol.RemoteAction.valueOf(args[4].toUpperCase()), false));
+                sender.sendMessage("Fernbedienung eingestellt: " + args[4]);
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage("Aktionen: " + java.util.Arrays.toString(de.peaksound.protocol.RemoteAction.values()));
+            }
+            return true;
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("jukebox")) {
+            Block block = blockAt(sender, args);
+            if (block == null) return true;
+            var cfg = jukeboxSettings.get(block);
+            sender.sendMessage("spielt=" + playback.isPlaying(block) + " pausiert=" + playback.isPaused(block) + " Lautstaerke=" + cfg.volume()
+                    + " Shuffle=" + cfg.shuffle() + " Wiederholen=" + cfg.loop() + " Ausgaenge(N,O,S,W)=" + cfg.ports());
+            return true;
+        }
+        if (args.length == 6 && args[0].equalsIgnoreCase("port")) {
+            Block block = blockAt(sender, args);
+            if (block == null) return true;
+            try {
+                int side = "nesw".indexOf(args[4].toLowerCase().charAt(0));
+                if (side < 0) throw new IllegalArgumentException();
+                playback.applySettings(block, jukeboxSettings.get(block).withPort(side, de.peaksound.protocol.PortFunction.valueOf(args[5].toUpperCase())));
+                sender.sendMessage("Ausgang " + args[4] + " = " + args[5]);
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage("Seite n/e/s/w, Funktion: " + java.util.Arrays.toString(de.peaksound.protocol.PortFunction.values()));
+            }
+            return true;
+        }
+        // /peaksound give <spieler> <item-id> [anzahl]: gibt ein PeakSound-Item (Test und Admin-Hilfe)
+        if ((args.length == 3 || args.length == 4) && args[0].equalsIgnoreCase("give")) {
+            Player target = org.bukkit.Bukkit.getPlayerExact(args[1]);
+            var type = de.peaksound.protocol.PeakItemType.byId(args[2].toLowerCase());
+            if (target == null || type.isEmpty()) {
+                sender.sendMessage("Spieler oder Item nicht gefunden. Items: " + java.util.Arrays.stream(de.peaksound.protocol.PeakItemType.values()).map(de.peaksound.protocol.PeakItemType::id).toList());
+                return true;
+            }
+            int amount = args.length == 4 ? Math.max(1, Math.min(64, Integer.parseInt(args[3]))) : 1;
+            target.getInventory().addItem(items.create(type.get(), amount)).values().forEach(rest -> target.getWorld().dropItem(target.getLocation(), rest));
+            sender.sendMessage(amount + "x " + type.get().id() + " an " + target.getName() + " gegeben.");
+            return true;
+        }
+        // /peaksound menu <spieler> <jukebox|remote|dj> <x> <y> <z>: oeffnet ein Menue fuer einen Spieler (Test)
+        if (args.length == 6 && args[0].equalsIgnoreCase("menu")) {
+            Player target = org.bukkit.Bukkit.getPlayerExact(args[1]);
+            Block block = blockAt(sender, new String[] {"menu", args[3], args[4], args[5]});
+            if (target == null || block == null) return true;
+            switch (args[2].toLowerCase()) {
+                case "jukebox" -> jukeboxMenu.open(target, block);
+                case "remote" -> remote.open(target, block);
+                case "dj" -> dj.open(target, block);
+                default -> sender.sendMessage("jukebox, remote oder dj");
             }
             return true;
         }
@@ -159,6 +249,6 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker", "dj", "light") : List.of();
+        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker", "dj", "light", "remote", "jukebox", "port", "give") : List.of();
     }
 }

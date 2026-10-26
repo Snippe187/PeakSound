@@ -78,7 +78,7 @@ class DjMathTest {
 
     @Test
     void onlyTheDjDeskKeepsNetworksApart() {
-        for (PeakBlockType t : PeakBlockType.values()) assertEquals(t != PeakBlockType.DJ_DESK, t.bridgesNetworks(), t.name());
+        for (PeakBlockType t : PeakBlockType.values()) assertEquals(t != PeakBlockType.DJ_DESK && t != PeakBlockType.SONG_LIBRARY, t.bridgesNetworks(), t.name());
         assertEquals(PeakItemType.SPOTLIGHT, PeakItemType.forBlock(PeakBlockType.SPOTLIGHT));
         assertEquals(PeakItemType.DJ_DESK, PeakItemType.forBlock(PeakBlockType.DJ_DESK));
     }

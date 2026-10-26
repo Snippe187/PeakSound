@@ -86,6 +86,26 @@ public final class PeakRecipes {
         microphone.setCategory(CraftingBookCategory.REDSTONE);
         add(microphone);
 
+        // Song-Bibliothek: Diamant oben, Obsidian links/rechts, normale Jukebox in der Mitte, drei Eisenbarren unten
+        ShapedRecipe library = new ShapedRecipe(key("song_library"), items.create(PeakItemType.SONG_LIBRARY, 1));
+        library.shape(" D ", "OJO", "III");
+        library.setIngredient('D', Material.DIAMOND);
+        library.setIngredient('O', Material.OBSIDIAN);
+        library.setIngredient('J', Material.JUKEBOX);
+        library.setIngredient('I', Material.IRON_INGOT);
+        library.setCategory(CraftingBookCategory.REDSTONE);
+        add(library);
+
+        // Musik-Fernbedienung: Redstone oben, Eisen links/rechts, Comparator in der Mitte, Hebel unten
+        ShapedRecipe remote = new ShapedRecipe(key("music_remote"), items.create(PeakItemType.MUSIC_REMOTE, 1));
+        remote.shape(" R ", "ICI", " L ");
+        remote.setIngredient('R', Material.REDSTONE);
+        remote.setIngredient('I', Material.IRON_INGOT);
+        remote.setIngredient('C', Material.COMPARATOR);
+        remote.setIngredient('L', Material.LEVER);
+        remote.setCategory(CraftingBookCategory.REDSTONE);
+        add(remote);
+
         // Holzhacke + Redstone-Staub
         ShapelessRecipe tuner = new ShapelessRecipe(key("peak_tuner"), items.create(PeakItemType.PEAK_TUNER, 1));
         tuner.addIngredient(Material.WOODEN_HOE);

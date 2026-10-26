@@ -101,6 +101,8 @@ public final class PeakItems {
             case DJ_DESK -> "DJ Desk";
             case SPOTLIGHT -> "Spotlight";
             case MICROPHONE -> "Microphone";
+            case SONG_LIBRARY -> "Song Library";
+            case MUSIC_REMOTE -> "Music Remote";
         };
     }
 }

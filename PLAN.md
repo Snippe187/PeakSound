@@ -89,3 +89,10 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [x] Plugin: Mikrofon-Block (Rezept, Redstone-Netz), Zuordnung Spieler → Mikrofone auf dem Hauptthread, Stimme über angeschlossene Lautsprecher (3D, je Lautsprecher ein ortsgebundener Kanal), Lautstärke, Ducking der Musik
 - [x] Mod: Mikrofon-Menü (an/aus, Sprechreichweite, Lautstärke, Ducking)
 - [ ] Manuelle Abnahme (braucht Simple Voice Chat auf Server und Client)
+
+## Phase 11 – Song-Bibliothek, Fernbedienung, Ausgänge
+- [x] Texturen, Rezeptbuch-Reiter, Peak-Tuner-Träger, einstellbare Songlänge, Debug-Bericht, Handshake-Fix
+- [x] Song-Bibliothek (Block, Suche, Schreiben auf leere Platten, Server prüft alles)
+- [x] Musik-Fernbedienung, Pause/Zurück, Redstone-Steuerung für Lautsprecher, Mikrofon, DJ-Pult
+- [x] Jukebox-Ausgänge pro Seite (Bass/Mitten/Höhen/gesamt/läuft/Song-Ende/Takt) mit 3D-Würfel im Menü
+- [ ] Manuelle Abnahme

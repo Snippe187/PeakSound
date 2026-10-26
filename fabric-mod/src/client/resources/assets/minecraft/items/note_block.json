@@ -38,6 +38,20 @@
           "type": "minecraft:model",
           "model": "peaksound:block/microphone"
         }
+      },
+      {
+        "when": "song_library",
+        "model": {
+          "type": "minecraft:model",
+          "model": "peaksound:block/song_library"
+        }
+      },
+      {
+        "when": "music_remote",
+        "model": {
+          "type": "minecraft:model",
+          "model": "peaksound:block/music_remote"
+        }
       }
     ],
     "fallback": {

@@ -13,3 +13,4 @@ Erste Version für Minecraft 26.2 (Fabric-Mod + Paper-Plugin).
 - DJ-Pult mit Crossfader (gleiche Gesamtleistung, synchron für alle Spieler)
 - Scheinwerfer mit Farben, Modi, Effekten und Strobo-Schutz
 - Mikrofon-Block über Simple Voice Chat (optional)
+- Eigene Texturen, Rezeptbuch-Reiter 

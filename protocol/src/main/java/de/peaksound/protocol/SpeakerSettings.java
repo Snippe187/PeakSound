@@ -9,8 +9,9 @@ import java.nio.ByteBuffer;
  * @param channel Funktion/Position im Surround-System
  * @param volume  eigene Lautstaerke in Prozent (0-100), zusaetzlich zur Lautstaerke der Jukebox
  * @param kind    Bauart (Vollbereich, Tieftoener, Hochtoener, Subwoofer)
+ * @param redstone nur mit Redstone-Signal an diesem Lautsprecher spielen (ohne Signal stumm)
  */
-public record SpeakerSettings(String name, SpeakerChannel channel, int volume, SpeakerKind kind) {
+public record SpeakerSettings(String name, SpeakerChannel channel, int volume, SpeakerKind kind, boolean redstone) {
     public static final int MAX_NAME = 32;
 
     public SpeakerSettings {
@@ -18,7 +19,11 @@ public record SpeakerSettings(String name, SpeakerChannel channel, int volume, S
     }
 
     public SpeakerSettings(String name, SpeakerChannel channel, int volume) {
-        this(name, channel, volume, SpeakerKind.FULL_RANGE);
+        this(name, channel, volume, SpeakerKind.FULL_RANGE, false);
+    }
+
+    public SpeakerSettings(String name, SpeakerChannel channel, int volume, SpeakerKind kind) {
+        this(name, channel, volume, kind, false);
     }
 
     public static SpeakerSettings defaults(SpeakerChannel channel) {
@@ -29,19 +34,21 @@ public record SpeakerSettings(String name, SpeakerChannel channel, int volume, S
         String clean = name == null ? "" : name.replaceAll("\\p{Cntrl}", " ").trim();
         if (clean.length() > MAX_NAME) clean = clean.substring(0, MAX_NAME);
         return new SpeakerSettings(clean, channel == null ? SpeakerChannel.FRONT_LEFT : channel,
-                Math.max(0, Math.min(100, volume)), kind == null ? SpeakerKind.FULL_RANGE : kind);
+                Math.max(0, Math.min(100, volume)), kind == null ? SpeakerKind.FULL_RANGE : kind, redstone);
     }
 
-    public SpeakerSettings withName(String v) { return new SpeakerSettings(v, channel, volume, kind); }
+    public SpeakerSettings withName(String v) { return new SpeakerSettings(v, channel, volume, kind, redstone); }
 
-    public SpeakerSettings withChannel(SpeakerChannel v) { return new SpeakerSettings(name, v, volume, kind); }
+    public SpeakerSettings withChannel(SpeakerChannel v) { return new SpeakerSettings(name, v, volume, kind, redstone); }
 
-    public SpeakerSettings withVolume(int v) { return new SpeakerSettings(name, channel, v, kind); }
+    public SpeakerSettings withVolume(int v) { return new SpeakerSettings(name, channel, v, kind, redstone); }
 
-    public SpeakerSettings withKind(SpeakerKind v) { return new SpeakerSettings(name, channel, volume, v); }
+    public SpeakerSettings withRedstone(boolean v) { return new SpeakerSettings(name, channel, volume, kind, v); }
+
+    public SpeakerSettings withKind(SpeakerKind v) { return new SpeakerSettings(name, channel, volume, v, redstone); }
 
     void write(PacketIO.Writer w) {
-        w.writeString(name, MAX_NAME).writeByte(channel.ordinal()).writeByte(volume).writeByte(kind.ordinal());
+        w.writeString(name, MAX_NAME).writeByte(channel.ordinal()).writeByte(volume).writeByte(kind.ordinal()).writeBoolean(redstone);
     }
 
     static SpeakerSettings read(ByteBuffer in) {
@@ -49,6 +56,6 @@ public record SpeakerSettings(String name, SpeakerChannel channel, int volume, S
         SpeakerChannel channel = SpeakerChannel.byOrdinal(PacketIO.readByte(in));
         int volume = PacketIO.readByte(in);
         if (volume > 100) throw new MalformedPacketException("Lautstaerke ausserhalb des Bereichs");
-        return new SpeakerSettings(name, channel, volume, SpeakerKind.byOrdinal(PacketIO.readByte(in)));
+        return new SpeakerSettings(name, channel, volume, SpeakerKind.byOrdinal(PacketIO.readByte(in)), PacketIO.readBoolean(in));
     }
 }

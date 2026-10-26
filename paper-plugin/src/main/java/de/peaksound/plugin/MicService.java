@@ -58,6 +58,11 @@ final class MicService {
         this.access = access;
     }
 
+    private static Block blockOf(BlockRegistry.Key k) {
+        World w = Bukkit.getWorld(k.world());
+        return w == null || !w.isChunkLoaded(k.x() >> 4, k.z() >> 4) ? null : w.getBlockAt(k.x(), k.y(), k.z());
+    }
+
     void setVoiceChatAvailable(boolean available) { voiceChat = available; }
 
     boolean voiceChatAvailable() { return voiceChat; }
@@ -103,6 +108,10 @@ final class MicService {
         for (BlockRegistry.Key key : mics) {
             MicSettings settings = store.get(key);
             if (!settings.enabled()) continue;
+            if (settings.redstone()) {
+                Block mic = blockOf(key);
+                if (mic == null || mic.getBlockPower() <= 0) continue; // Redstone-Steuerung: nur mit Signal aktiv
+            }
             Target t = build(key, settings);
             if (t != null) built.put(key, t);
         }

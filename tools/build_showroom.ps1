@@ -57,6 +57,11 @@ Sign 240 -57 248 north @("SUED", "DJ-Pult +", "Scheinwerfer", "")
 Sign 232 -57 240 east @("WEST", "Lichtshow +", "Equalizer", "")
 Sign 248 -57 240 west @("OST", "Surround", "7.1.4", "")
 
+# Song-Bibliothek und Fernbedienung zum Ausprobieren auf der Plaza
+Place library 236 -60 244
+Sign 236 -59 245 south @("SONG-BIBLIOTHEK", "Leere Platte in", "der Hand, Rechts-", "klick: Song waehlen")
+C "peaksound give $Player blank_record 8"
+
 # ---------- Nord: Stereo-Anlage + Mikrofon ----------
 Room 232 215 248 231 stone_bricks polished_diorite
 C "fill 239 -60 231 241 -58 231 air"
@@ -67,6 +72,10 @@ Speaker 233 -60 218 FRONT_LEFT
 Speaker 247 -60 218 FRONT_RIGHT
 Place microphone 240 -60 219
 C "peaksound play 240 -60 217 Stereo"
+Place remote 242 -60 219
+C "peaksound remote 242 -60 219 pause_toggle"
+C "setblock 243 -60 219 lever[face=wall,facing=east,powered=false]"
+Sign 242 -59 216 south @("FERNBEDIENUNG", "Hebel = Pause/", "Weiter. Menue:", "Aktion waehlen")
 Sign 235 -59 216 south @("STEREO-ANLAGE", "1 Jukebox", "2 Staub-Linie", "3 Boxen L + R")
 Sign 237 -59 216 south @("Jede Box hat", "ein Menue:", "Name, Position,", "Lautstaerke, Typ")
 Sign 243 -59 216 south @("MIKROFON", "am Staub der", "Anlage: wer nah", "dran spricht...")
@@ -135,7 +144,7 @@ Sign 237 -59 264 north @("Peak-Tuner auf", "das Pult: Song", "je Deck, Crossfade
 Sign 243 -59 264 north @("SCHEINWERFER", "haengen am Staub", "der Decks und", "folgen der Musik")
 Sign 245 -59 264 north @("Menue: Farben,", "Modus, Effekt,", "Band, Richtung", "(Strobo: Option)")
 
-# ---------- West: Lichtshow + Equalizer ----------
+# ---------- West: Lichtshow + Equalizer (Ausgaenge je Seite im Jukebox-Menue unter Ausgaenge) ----------
 Room 215 232 231 248 stone_bricks polished_blackstone
 C "fill 231 -60 239 231 -58 241 air"
 Lantern 230 240

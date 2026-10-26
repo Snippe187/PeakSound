@@ -81,6 +81,9 @@ public final class ClientNetwork {
             case Packet.LightStart start -> LightShow.start(start);
             case Packet.LightStop stop -> LightShow.stop(stop.x(), stop.y(), stop.z());
             case Packet.AnalysisData data -> LightShow.onAnalysis(data);
+            case Packet.OpenRemoteMenu menu -> RemoteMenuScreen.open(menu);
+            case Packet.OpenLibraryMenu menu -> LibraryScreen.open(menu);
+            case Packet.LibraryResults results -> LibraryScreen.onResults(results);
             case Packet.DebugInfo info -> DebugReport.onServerText(info.text());
             case Packet.OpenMicMenu menu -> MicMenuScreen.open(menu);
             case Packet.DjState state -> DjMenuScreen.onState(state);

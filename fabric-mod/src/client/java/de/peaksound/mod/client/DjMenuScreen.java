@@ -67,7 +67,7 @@ final class DjMenuScreen extends Screen {
     @Override
     protected void init() {
         active = this;
-        int left = width / 2 - 155, right = width / 2 + 5, top = height / 2 - 104;
+        int left = width / 2 - 155, right = width / 2 + 5, top = height / 2 - 116;
         for (int d = 0; d < 2; d++) {
             int x = d == 0 ? left : right;
             Packet.DjDeck deck = decks[d];
@@ -107,8 +107,9 @@ final class DjMenuScreen extends Screen {
             stop.active = deck.connected();
         }
 
-        addRenderableWidget(new IntSlider(left, top + 126, 310, "peaksound.menu.dj.crossfader", 0, 100, cur.crossfader(),
+        IntSlider crossfader = addRenderableWidget(new IntSlider(left, top + 126, 310, "peaksound.menu.dj.crossfader", 0, 100, cur.crossfader(),
                 v -> change(cur.withCrossfader(v))));
+        crossfader.active = !cur.redstone();
         addRenderableWidget(new IntSlider(left, top + 148, 205, "peaksound.menu.dj.fade", 0, 30, cur.fadeSeconds(),
                 v -> change(cur.withFadeSeconds(v))));
         addRenderableWidget(Button.builder(swapLabel(), b -> {
@@ -119,8 +120,16 @@ final class DjMenuScreen extends Screen {
                 v -> change(cur.withVolumeA(v))));
         addRenderableWidget(new IntSlider(right, top + 170, 150, "peaksound.menu.dj.volume.b", 0, 100, cur.volumeB(),
                 v -> change(cur.withVolumeB(v))));
+        addRenderableWidget(Button.builder(redstoneLabel(), b -> {
+            change(cur.withRedstone(!cur.redstone()));
+            rebuildWidgets();
+        }).bounds(left, top + 194, 310, 20).tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("peaksound.menu.redstone.dj.tooltip"))).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
-                .bounds(width / 2 - 100, top + 194, 200, 20).build());
+                .bounds(width / 2 - 100, top + 218, 200, 20).build());
+    }
+
+    private Component redstoneLabel() {
+        return Component.translatable("peaksound.menu.redstone", Component.translatable(cur.redstone() ? "options.on" : "options.off"));
     }
 
     private Component swapLabel() {
@@ -165,7 +174,7 @@ final class DjMenuScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
-        int left = width / 2 - 155, right = width / 2 + 5, top = height / 2 - 104;
+        int left = width / 2 - 155, right = width / 2 + 5, top = height / 2 - 116;
         g.text(font, title, width / 2 - font.width(title) / 2, top, 0xFFFFFFFF);
         for (int d = 0; d < 2; d++) {
             Packet.DjDeck deck = decks[d];

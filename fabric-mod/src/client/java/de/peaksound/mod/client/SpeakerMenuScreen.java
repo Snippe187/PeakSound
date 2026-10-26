@@ -26,6 +26,7 @@ final class SpeakerMenuScreen extends Screen {
 
     private Button channelButton;
     private Button kindButton;
+    private Button redstoneButton;
 
     private SpeakerMenuScreen(Packet.OpenSpeakerMenu menu) {
         super(Component.translatable("peaksound.menu.speaker.title"));
@@ -71,14 +72,19 @@ final class SpeakerMenuScreen extends Screen {
             change(cur.withKind(cur.kind().next()));
             refresh();
         }).bounds(left, top + 90, 200, 20).build());
+        redstoneButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
+            change(cur.withRedstone(!cur.redstone()));
+            refresh();
+        }).bounds(left, top + 138, 200, 20).tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("peaksound.menu.redstone.speaker.tooltip"))).build());
         addRenderableWidget(new IntSlider(left, top + 114, 200, "peaksound.menu.speaker.volume", 0, 100, cur.volume(),
                 v -> change(cur.withVolume(v))));
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
-                .bounds(left, top + 146, 200, 20).build());
+                .bounds(left, top + 164, 200, 20).build());
         refresh();
     }
 
     private void refresh() {
+        redstoneButton.setMessage(Component.translatable("peaksound.menu.redstone", Component.translatable(cur.redstone() ? "options.on" : "options.off")));
         kindButton.setMessage(Component.translatable("peaksound.menu.speaker.kind", Component.translatable("peaksound.speaker.kind." + cur.kind().key())));
         SpeakerChannel c = cur.channel();
         channelButton.setMessage(Component.translatable("peaksound.menu.speaker.channel",

@@ -67,3 +67,11 @@ Voraussetzung: Simple Voice Chat (Paper-Plugin, Version 2.6.23 oder neuer) im Or
 - [ ] Lautstärke 200 % / 50 % wirkt. Mikrofon aus: nichts wird übertragen. Weiter als die Sprechreichweite weg: nichts.
 - [ ] Ducking an: Die Musik wird beim Sprechen leiser (Pegel einstellbar) und blendet danach wieder auf.
 - [ ] Ohne Voice-Chat-Plugin: Mikrofon-Menü zeigt den Hinweis, sonst keine Fehler.
+
+## Phase 11 – Song-Bibliothek, Fernbedienung, Ausgänge
+Testbefehle: `/peaksound give <Spieler> <item> [n]`, `/peaksound menu <Spieler> jukebox|remote|dj X Y Z`, `/peaksound remote X Y Z <Aktion>`, `/peaksound port X Y Z <n|e|s|w> <Funktion>`, `/peaksound jukebox X Y Z`.
+- [ ] Rezeptbuch (Inventar, Survival): Reiter „PeakSound“ mit allen Rezepten (auch Song-Bibliothek und Fernbedienung).
+- [ ] Song-Bibliothek: Leere Platte in die Hand, Rechtsklick auf den Block. Suche nach Titel/Interpret/Hochlader, Anhören (▶), „Auf Platte“ schreibt den Song; ohne leere Platte kommt ein Hinweis.
+- [ ] Musik-Fernbedienung per Staub an eine Jukebox, Hebel daneben: Aktion im Menü wählen (Pause/Weiter, Skip, Zurück, Shuffle, Wiederholen, Play/Stopp, Song nach Stärke, Lautstärke nach Stärke) und prüfen. „Signal umdrehen“ testen.
+- [ ] Jukebox-Menü → Reiter Ausgänge: Würfel drehen, Seite anklicken, Funktion wählen. Mit Comparator + Lampe prüfen: Bass/Mitten/Höhen/gesamt, „Läuft“, „Song-Ende“ (Impuls), „Takt“ (Impuls).
+- [ ] Lautsprecher-Menü: „Redstone-Steuerung: An“ → Box spielt nur mit Signal. Mikrofon und DJ-Pult genauso (DJ: kein Signal = Deck A, Signal = Deck B mit Überblendzeit).

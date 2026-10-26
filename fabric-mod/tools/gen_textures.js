@@ -98,6 +98,37 @@ module.exports = function (png, write, PS) {
     save("textures/block/microphone_top", top);
   }
 
+  // ---------- Song-Bibliothek ----------
+  {
+    const side = canvas().fill("#27243a").border("#d4a62a", "#3a3556");                                  // Goldrahmen
+    const sleeve = ["#3fd0ee", "#ff4b9a", "#ff9e2c", "#7ee06a", "#b48cff", "#f2e04a"];
+    for (const [y0, y1] of [[3, 7], [9, 13]]) {                                                         // zwei Regalboeden mit Plattenhuellen
+      side.rect(2, y1 + 1, 13, y1 + 1, "#15131f");
+      for (let x = 2, i = (y0 * 7) % 6; x <= 13; x += 2, i++) {
+        side.rect(x, y0, x, y1, sleeve[i % 6]).rect(x + 1, y0, x + 1, y1, "#1d1b2c");
+      }
+    }
+    save("textures/block/library_side", side);
+    const top = canvas().fill("#27243a").border("#d4a62a", "#3a3556");
+    top.disc(8, 8, 5.6, "#101018").ring(8, 8, 4.4, 4.7, "#262633").disc(8, 8, 2.2, "#ff4b9a").set(8, 8, "#0b0b12");
+    top.rect(3, 3, 4, 4, "#3fd0ee").rect(11, 11, 12, 12, "#7ee06a");
+    save("textures/block/library_top", top);
+  }
+
+  // ---------- Musik-Fernbedienung ----------
+  {
+    const side = canvas().fill("#303845").border("#1a1f27", "#455063");
+    side.rect(3, 3, 12, 6, "#10131a");                                                                   // Display
+    side.rect(4, 4, 6, 5, "#39e06a").rect(8, 4, 8, 5, "#39e06a").rect(10, 4, 11, 5, "#e0e039");
+    [[3, 9], [6, 9], [9, 9], [12, 9]].forEach(([x, y], i) => { side.rect(x, y, x + 1, y + 1, ["#ff4b4b", "#3fd0ee", "#ff9e2c", "#7ee06a"][i]); });  // Tasten
+    side.rect(3, 12, 12, 13, "#232a35").rect(4, 12, 5, 13, "#d9d9e3");                                   // Regler
+    save("textures/block/remote_side", side);
+    const top = canvas().fill("#303845").border("#1a1f27", "#455063");
+    top.disc(8, 8, 4.8, "#10131a").ring(8, 8, 3.2, 3.6, "#455063").disc(8, 8, 1.6, "#ff4b4b");           // Signal-Knopf
+    top.rect(2, 2, 3, 3, "#39e06a").rect(12, 2, 13, 3, "#3fd0ee");
+    save("textures/block/remote_top", top);
+  }
+
   // ---------- Items ----------
   function record(label) {
     const r = canvas();

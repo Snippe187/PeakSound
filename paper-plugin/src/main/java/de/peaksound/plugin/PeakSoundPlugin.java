@@ -19,6 +19,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
     private LightService lightService;
     private BlockSettingsStore<de.peaksound.protocol.MicSettings> micStore;
     private MicService micService;
+    private BlockSettingsStore<de.peaksound.protocol.RemoteSettings> remoteStoreRef;
 
     SongStore songs() { return songs; }
 
@@ -54,7 +55,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         SongStreamService streams = new SongStreamService(this, songs);
         PlaylistService playlist = new PlaylistService(items, songs);
         NetworkRegistry networks = new NetworkRegistry(this, blocks);
-        EqualizerService equalizer = new EqualizerService(this, blocks, analysis, ComparatorDriver.create(getLogger()).orElse(null));
+        EqualizerService equalizer = new EqualizerService(this, blocks, analysis, ComparatorDriver.create(getLogger()).orElse(null), jukeboxSettings);
         getLogger().info(equalizer.available() ? "Comparator-Equalizer bereit." : "Comparator-Equalizer ausgeschaltet.");
         SpeakerStore speakerStore = new SpeakerStore(this);
         speakerStore.load();
@@ -93,17 +94,27 @@ public final class PeakSoundPlugin extends JavaPlugin {
         network.wire(uploads, streams, playback, menu, speakerMenu, access, admin, lightService, dj, micService);
         DebugService debugService = new DebugService(this, blocks, songs, playback, network, equalizer, micService);
         network.setDebug(debugService);
+        LibraryService library = new LibraryService(this, songs, items, access);
+        network.setLibrary(library);
+        BlockSettingsStore<de.peaksound.protocol.RemoteSettings> remoteStore = new BlockSettingsStore<>(this, "remotes.json",
+                de.peaksound.protocol.RemoteSettings.class, de.peaksound.protocol.RemoteSettings.defaults(),
+                de.peaksound.protocol.RemoteSettings::sanitized);
+        remoteStore.load();
+        remoteStore.startAutosave();
+        this.remoteStoreRef = remoteStore;
+        RemoteService remote = new RemoteService(this, blocks, networks, remoteStore, playback, playlist, jukeboxSettings, access);
+        network.setRemote(remote);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, PeakIds.CHANNEL, network);
         getServer().getMessenger().registerOutgoingPluginChannel(this, PeakIds.CHANNEL);
 
-        SettingsClipboard clipboard = new SettingsClipboard(items, jukeboxSettings, playback, speakers, lightService, dj, micService);
+        SettingsClipboard clipboard = new SettingsClipboard(items, jukeboxSettings, playback, speakers, lightService, dj, micService, remote);
         getServer().getPluginManager().registerEvents(clipboard, this);
         getServer().getPluginManager().registerEvents(network, this);
-        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj, micService), this);
+        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj, micService, library, remote), this);
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(new NetworkListener(networks, equalizer), this);
-        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj, lightService, debugService);
+        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj, lightService, debugService, library, remote, jukeboxSettings, menu);
         getCommand("peaksound").setExecutor(command);
         getCommand("peaksound").setTabCompleter(command);
         getServer().getPluginManager().registerEvents(
@@ -116,6 +127,8 @@ public final class PeakSoundPlugin extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, lightService::tick, 10L, 10L);
         Bukkit.getScheduler().runTaskTimer(this, dj::tick, 20L, 20L);
         Bukkit.getScheduler().runTaskTimer(this, micService::tick, 5L, 5L);
+        Bukkit.getScheduler().runTaskTimer(this, remote::tick, 2L, 2L);
+        Bukkit.getScheduler().runTaskTimer(this, dj::redstoneTick, 4L, 4L);
         // Lautsprecher-Nummern und Standard-Kanaele abgleichen (nutzt den Netz-Cache, rechnet nur bei Aenderungen)
         Bukkit.getScheduler().runTaskTimer(this, speakers::refresh, 20L, 20L);
         // Verbindungsanzeige fuer Spieler mit Peak-Tuner in der Hand
@@ -138,5 +151,6 @@ public final class PeakSoundPlugin extends JavaPlugin {
         if (lightService != null) lightService.shutdown();
         if (micService != null) micService.shutdown();
         if (micStore != null) micStore.saveNow();
+        if (remoteStoreRef != null) remoteStoreRef.saveNow();
     }
 }

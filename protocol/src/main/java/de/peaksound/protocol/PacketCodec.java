@@ -70,6 +70,12 @@ public final class PacketCodec {
                 case Packet.MicUpdate.ID -> Packet.MicUpdate.decode(in);
                 case Packet.DebugRequest.ID -> Packet.DebugRequest.decode(in);
                 case Packet.DebugInfo.ID -> Packet.DebugInfo.decode(in);
+                case Packet.OpenLibraryMenu.ID -> Packet.OpenLibraryMenu.decode(in);
+                case Packet.LibraryQuery.ID -> Packet.LibraryQuery.decode(in);
+                case Packet.LibraryResults.ID -> Packet.LibraryResults.decode(in);
+                case Packet.LibraryWrite.ID -> Packet.LibraryWrite.decode(in);
+                case Packet.OpenRemoteMenu.ID -> Packet.OpenRemoteMenu.decode(in);
+                case Packet.RemoteUpdate.ID -> Packet.RemoteUpdate.decode(in);
                 case Packet.AdminListRequest.ID -> Packet.AdminListRequest.decode(in);
                 case Packet.AdminSongs.ID -> Packet.AdminSongs.decode(in);
                 case Packet.AdminAction.ID -> Packet.AdminAction.decode(in);
