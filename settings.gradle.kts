@@ -7,4 +7,4 @@ pluginManagement {
 }
 
 rootProject.name = "peaksound"
-include("protocol", "paper-plugin", "fabric-mod")
+include("protocol", "audio-core", "paper-plugin", "fabric-mod")

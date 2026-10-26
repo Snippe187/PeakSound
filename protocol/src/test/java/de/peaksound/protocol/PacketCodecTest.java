@@ -2,51 +2,121 @@ package de.peaksound.protocol;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class PacketCodecTest {
+    private static final List<Packet.Serverbound> SERVERBOUND = List.of(
+            new Packet.Hello(1, "0.1.0"),
+            new Packet.UploadStart(7, "Mein Song", 1234567),
+            new Packet.UploadChunk(3, 0, new byte[] {1, 2, 3}),
+            new Packet.SongRequest("a".repeat(64), 5));
+
+    private static final List<Packet.Clientbound> CLIENTBOUND = List.of(
+            new Packet.HelloAck(1, true, false, 1_700_000_000_000L, 240),
+            new Packet.OpenUpload(9),
+            new Packet.UploadAccept(3, Limits.UPLOAD_CHUNK_BYTES, 16),
+            new Packet.UploadReject(3, Packet.UploadReject.Reason.RATE_LIMIT, 42),
+            new Packet.UploadAck(3, 8),
+            new Packet.UploadResult(3, true, "b".repeat(64), "Titel", "Interpret", 200_000, 6),
+            new Packet.SongChunk("c".repeat(64), 1, 4, new byte[Limits.DOWNLOAD_CHUNK_BYTES]),
+            new Packet.SongUnavailable("d".repeat(64)),
+            new Packet.PlaybackStart(1, -60, 3, "e".repeat(64), 1500, 1_700_000_000_000L, 180_000, 2, 16, 80),
+            new Packet.PlaybackStop(1, -60, 3));
+
     @Test
-    void helloRoundTrip() {
-        Hello hello = new Hello(1, "0.1.0");
-        assertEquals(hello, PacketCodec.decode(hello.encode()));
+    void serverboundRoundTrip() {
+        for (Packet.Serverbound p : SERVERBOUND) {
+            Packet.Serverbound decoded = PacketCodec.decodeServerbound(p.encode());
+            assertEquals(p.getClass(), decoded.getClass());
+            assertArrayEquals(p.encode(), decoded.encode());
+        }
     }
 
     @Test
-    void helloAckRoundTrip() {
-        HelloAck ack = new HelloAck(1, true, false);
-        assertEquals(ack, PacketCodec.decode(ack.encode()));
+    void clientboundRoundTrip() {
+        for (Packet.Clientbound p : CLIENTBOUND) {
+            Packet.Clientbound decoded = PacketCodec.decodeClientbound(p.encode());
+            assertEquals(p.getClass(), decoded.getClass());
+            assertArrayEquals(p.encode(), decoded.encode());
+        }
+    }
+
+    @Test
+    void helloRoundTripKeepsValues() {
+        Packet.Hello hello = new Packet.Hello(1, "0.1.0");
+        assertEquals(hello, PacketCodec.decodeServerbound(hello.encode()));
+    }
+
+    @Test
+    void directionIsEnforced() {
+        // Ein Client darf keine Server-Pakete senden (z. B. PlaybackStart faelschen)
+        for (Packet.Clientbound p : CLIENTBOUND) {
+            assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(p.encode()));
+        }
+        for (Packet.Serverbound p : SERVERBOUND) {
+            assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeClientbound(p.encode()));
+        }
     }
 
     @Test
     void rejectsEmptyAndOversized() {
-        assertThrows(MalformedPacketException.class, () -> PacketCodec.decode(new byte[0]));
-        assertThrows(MalformedPacketException.class, () -> PacketCodec.decode(new byte[PacketCodec.MAX_PACKET_SIZE + 1]));
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(new byte[0]));
+        assertThrows(MalformedPacketException.class,
+                () -> PacketCodec.decodeServerbound(new byte[PacketCodec.MAX_SERVERBOUND_SIZE + 1]));
+        assertThrows(MalformedPacketException.class,
+                () -> PacketCodec.decodeClientbound(new byte[PacketCodec.MAX_CLIENTBOUND_SIZE + 1]));
     }
 
     @Test
     void rejectsUnknownId() {
-        assertThrows(MalformedPacketException.class, () -> PacketCodec.decode(new byte[] {99}));
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(new byte[] {99}));
     }
 
     @Test
     void rejectsTruncatedAndTrailingBytes() {
-        byte[] ok = new Hello(1, "x").encode();
-        byte[] truncated = java.util.Arrays.copyOf(ok, ok.length - 1);
-        assertThrows(MalformedPacketException.class, () -> PacketCodec.decode(truncated));
-        byte[] trailing = java.util.Arrays.copyOf(ok, ok.length + 1);
-        assertThrows(MalformedPacketException.class, () -> PacketCodec.decode(trailing));
+        byte[] ok = new Packet.Hello(1, "x").encode();
+        assertThrows(MalformedPacketException.class,
+                () -> PacketCodec.decodeServerbound(Arrays.copyOf(ok, ok.length - 1)));
+        assertThrows(MalformedPacketException.class,
+                () -> PacketCodec.decodeServerbound(Arrays.copyOf(ok, ok.length + 1)));
     }
 
     @Test
     void rejectsLyingStringLength() {
-        // ID, protocolVersion=1, Stringlaenge 60000 aber keine Daten
-        byte[] evil = {1, 0, 0, 0, 1, (byte) 0xEA, 0x60};
-        assertThrows(MalformedPacketException.class, () -> PacketCodec.decode(evil));
+        byte[] evil = {Packet.Hello.ID, 0, 0, 0, 1, (byte) 0xEA, 0x60};
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(evil));
     }
 
     @Test
-    void rejectsOverlongVersionString() {
-        assertThrows(IllegalArgumentException.class, () -> new Hello(1, "x".repeat(33)).encode());
+    void rejectsLyingByteArrayLength() {
+        // UploadChunk mit behaupteter Laenge 0x7FFFFFFF
+        byte[] evil = {Packet.UploadChunk.ID, 0, 0, 0, 1, 0, 0, 0, 0, 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(evil));
+    }
+
+    @Test
+    void rejectsOutOfRangeValues() {
+        // Dateigroesse 0 und groesser als das Limit
+        assertThrows(MalformedPacketException.class,
+                () -> PacketCodec.decodeServerbound(new Packet.UploadStart(1, "x", 0).encode()));
+        assertThrows(MalformedPacketException.class,
+                () -> PacketCodec.decodeServerbound(new Packet.UploadStart(1, "x", Limits.MAX_UPLOAD_BYTES + 1).encode()));
+        // Negativer Chunk-Index
+        assertThrows(MalformedPacketException.class,
+                () -> PacketCodec.decodeServerbound(new Packet.UploadChunk(1, -1, new byte[1]).encode()));
+        // Ungueltiger Boolean
+        byte[] badBool = new Packet.HelloAck(1, true, false, 0, 1).encode();
+        badBool[5] = 7;
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeClientbound(badBool));
+    }
+
+    @Test
+    void rejectsOverlongStringsOnEncode() {
+        assertThrows(IllegalArgumentException.class, () -> new Packet.Hello(1, "x".repeat(33)).encode());
+        assertThrows(IllegalArgumentException.class,
+                () -> new Packet.UploadChunk(1, 0, new byte[Limits.UPLOAD_CHUNK_BYTES + 1]).encode());
     }
 
     @Test

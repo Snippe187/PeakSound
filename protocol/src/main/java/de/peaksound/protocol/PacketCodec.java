@@ -3,27 +3,51 @@ package de.peaksound.protocol;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 
-/** Decodiert eingehende Pakete. Gibt entweder ein bekanntes Paket-Objekt oder wirft {@link MalformedPacketException}. */
+/**
+ * Decodiert eingehende Pakete streng nach Richtung. Der Server akzeptiert nur {@link Packet.Serverbound},
+ * der Client nur {@link Packet.Clientbound}. Alles andere wirft {@link MalformedPacketException}.
+ */
 public final class PacketCodec {
-    /** Harte Obergrenze fuer jedes Paket (Plugin-Messaging Client -> Server erlaubt 32 KiB). */
-    public static final int MAX_PACKET_SIZE = 32 * 1024 - 1;
+    /** Client -> Server: Plugin-Messaging erlaubt 32 KiB je Payload. */
+    public static final int MAX_SERVERBOUND_SIZE = 32 * 1024 - 1;
+    /** Server -> Client: Plugin-Messaging erlaubt knapp 1 MiB je Payload. */
+    public static final int MAX_CLIENTBOUND_SIZE = 1024 * 1024 - 1;
 
     private PacketCodec() {}
 
-    public static Object decode(byte[] data) {
-        if (data.length == 0 || data.length > MAX_PACKET_SIZE) {
-            throw new MalformedPacketException("Ungueltige Paketgroesse");
-        }
+    public static Packet.Serverbound decodeServerbound(byte[] data) {
+        return decode(data, MAX_SERVERBOUND_SIZE, Packet.Serverbound.class);
+    }
+
+    public static Packet.Clientbound decodeClientbound(byte[] data) {
+        return decode(data, MAX_CLIENTBOUND_SIZE, Packet.Clientbound.class);
+    }
+
+    private static <T extends Packet> T decode(byte[] data, int maxSize, Class<T> direction) {
+        if (data.length == 0 || data.length > maxSize) throw new MalformedPacketException("Ungueltige Paketgroesse");
         ByteBuffer in = ByteBuffer.wrap(data);
         int id = in.get() & 0xFF;
         try {
-            Object packet = switch (id) {
-                case Hello.ID -> Hello.decode(in);
-                case HelloAck.ID -> HelloAck.decode(in);
+            Packet packet = switch (id) {
+                case Packet.Hello.ID -> Packet.Hello.decode(in);
+                case Packet.HelloAck.ID -> Packet.HelloAck.decode(in);
+                case Packet.OpenUpload.ID -> Packet.OpenUpload.decode(in);
+                case Packet.UploadStart.ID -> Packet.UploadStart.decode(in);
+                case Packet.UploadAccept.ID -> Packet.UploadAccept.decode(in);
+                case Packet.UploadReject.ID -> Packet.UploadReject.decode(in);
+                case Packet.UploadChunk.ID -> Packet.UploadChunk.decode(in);
+                case Packet.UploadAck.ID -> Packet.UploadAck.decode(in);
+                case Packet.UploadResult.ID -> Packet.UploadResult.decode(in);
+                case Packet.SongRequest.ID -> Packet.SongRequest.decode(in);
+                case Packet.SongChunk.ID -> Packet.SongChunk.decode(in);
+                case Packet.SongUnavailable.ID -> Packet.SongUnavailable.decode(in);
+                case Packet.PlaybackStart.ID -> Packet.PlaybackStart.decode(in);
+                case Packet.PlaybackStop.ID -> Packet.PlaybackStop.decode(in);
                 default -> throw new MalformedPacketException("Unbekannte Paket-ID " + id);
             };
             if (in.hasRemaining()) throw new MalformedPacketException("Ueberzaehlige Bytes");
-            return packet;
+            if (!direction.isInstance(packet)) throw new MalformedPacketException("Falsche Richtung fuer Paket " + id);
+            return direction.cast(packet);
         } catch (BufferUnderflowException e) {
             throw new MalformedPacketException("Paket zu kurz");
         }
