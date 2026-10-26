@@ -78,5 +78,26 @@
   "peaksound.channel.top_front_left": "Top front left",
   "peaksound.channel.top_front_right": "Top front right",
   "peaksound.channel.top_rear_left": "Top rear left",
-  "peaksound.channel.top_rear_right": "Top rear right"
+  "peaksound.channel.top_rear_right": "Top rear right",
+
+  "peaksound.admin.button": "PeakSound: Songs",
+  "peaksound.admin.title": "PeakSound song management",
+  "peaksound.admin.tab.songs": "Songs",
+  "peaksound.admin.tab.approval": "Approval (%d)",
+  "peaksound.admin.tab.limits": "Limits",
+  "peaksound.admin.listen": "Listen",
+  "peaksound.admin.approve": "Approve",
+  "peaksound.admin.reject": "Reject and delete",
+  "peaksound.admin.delete": "Delete song",
+  "peaksound.admin.confirm": "Click again to confirm",
+  "peaksound.admin.empty.songs": "No songs stored.",
+  "peaksound.admin.empty.approval": "No files are waiting for approval.",
+  "peaksound.admin.page": "Page %d / %d  -  %d songs",
+  "peaksound.admin.set": "Set",
+  "peaksound.admin.default": "Default",
+  "peaksound.admin.limits.storage": "Storage limit (MB):",
+  "peaksound.admin.limits.used": "Used: %d MB of %s MB",
+  "peaksound.admin.limits.default": "Songs per player:",
+  "peaksound.admin.limits.zero": "0 = unlimited",
+  "peaksound.admin.limits.players": "Player limits (- / + / default):"
 }

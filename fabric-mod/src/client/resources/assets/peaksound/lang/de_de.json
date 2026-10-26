@@ -78,5 +78,26 @@
   "peaksound.channel.top_front_left": "Decke vorne links",
   "peaksound.channel.top_front_right": "Decke vorne rechts",
   "peaksound.channel.top_rear_left": "Decke hinten links",
-  "peaksound.channel.top_rear_right": "Decke hinten rechts"
+  "peaksound.channel.top_rear_right": "Decke hinten rechts",
+
+  "peaksound.admin.button": "PeakSound: Songs",
+  "peaksound.admin.title": "PeakSound Song-Verwaltung",
+  "peaksound.admin.tab.songs": "Songs",
+  "peaksound.admin.tab.approval": "Freigabe (%d)",
+  "peaksound.admin.tab.limits": "Limits",
+  "peaksound.admin.listen": "Anhören",
+  "peaksound.admin.approve": "Freigeben",
+  "peaksound.admin.reject": "Ablehnen und löschen",
+  "peaksound.admin.delete": "Song löschen",
+  "peaksound.admin.confirm": "Zum Bestätigen noch einmal klicken",
+  "peaksound.admin.empty.songs": "Keine Songs gespeichert.",
+  "peaksound.admin.empty.approval": "Keine Dateien warten auf Freigabe.",
+  "peaksound.admin.page": "Seite %d / %d  -  %d Songs",
+  "peaksound.admin.set": "Setzen",
+  "peaksound.admin.default": "Standard",
+  "peaksound.admin.limits.storage": "Speicher-Limit (MB):",
+  "peaksound.admin.limits.used": "Belegt: %d MB von %s MB",
+  "peaksound.admin.limits.default": "Songs pro Spieler:",
+  "peaksound.admin.limits.zero": "0 = unbegrenzt",
+  "peaksound.admin.limits.players": "Spieler-Limits (- / + / Standard):"
 }

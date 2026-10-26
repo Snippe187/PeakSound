@@ -5,6 +5,7 @@ import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.PacketCodec;
 import de.peaksound.protocol.PeakIds;
 import de.peaksound.protocol.Limits;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,6 +31,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     private JukeboxMenuService menu;
     private SpeakerMenuService speakerMenu;
     private EditAccess access;
+    private AdminService admin;
+    private final Map<UUID, Boolean> lastOperator = new ConcurrentHashMap<>();
 
     NetworkHandler(PeakSoundPlugin plugin, PeakRecipes recipes) {
         this.plugin = plugin;
@@ -38,7 +41,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
 
     /** Verbindet die Dienste (erst nach deren Erzeugung moeglich, da sie das NetworkHandler brauchen). */
     void wire(UploadService uploads, SongStreamService streams, PlaybackManager playback, JukeboxMenuService menu,
-              SpeakerMenuService speakerMenu, EditAccess access) {
+              SpeakerMenuService speakerMenu, EditAccess access, AdminService admin) {
+        this.admin = admin;
         this.uploads = uploads;
         this.streams = streams;
         this.playback = playback;
@@ -75,6 +79,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             case Packet.PlaylistRequest request -> menu.onPlaylistRequest(player, request);
             case Packet.PlaylistAction action -> menu.onPlaylistAction(player, action);
             case Packet.SpeakerUpdate update -> speakerMenu.onUpdate(player, update);
+            case Packet.AdminListRequest request -> admin.onListRequest(player);
+            case Packet.AdminAction action -> admin.onAction(player, action);
             case Packet.SpeakerOverviewRequest request -> menu.onSpeakerOverviewRequest(player, request);
             case Packet.Hello ignored -> { /* oben behandelt */ }
         }
@@ -89,7 +95,18 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             player.sendMessage(Messages.versionMismatch(player, PeakIds.PROTOCOL_VERSION, hello.protocolVersion()));
         }
         Net.send(plugin, player, new Packet.HelloAck(PeakIds.PROTOCOL_VERSION, compatible,
-                compatible && player.isOp(), System.currentTimeMillis(), Limits.MAX_SONG_SECONDS));
+                compatible && Permissions.admin(player), System.currentTimeMillis(), Limits.MAX_SONG_SECONDS));
+        if (compatible) lastOperator.put(player.getUniqueId(), Permissions.admin(player));
+    }
+
+    /** Meldet Aenderungen des Operator-Status (z. B. nach /op), damit der Button im Escape-Menue stimmt. */
+    void checkOperators() {
+        for (Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
+            if (!hasMod(p)) continue;
+            boolean now = Permissions.admin(p);
+            Boolean before = lastOperator.put(p.getUniqueId(), now);
+            if (before == null || before != now) Net.send(plugin, p, new Packet.OperatorState(now));
+        }
     }
 
     @EventHandler
@@ -116,5 +133,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         streams.onQuit(player);
         playback.onQuit(player);
         access.onQuit(player);
+        admin.onQuit(player);
+        lastOperator.remove(player.getUniqueId());
     }
 }

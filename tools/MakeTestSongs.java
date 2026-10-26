@@ -25,8 +25,11 @@ public class MakeTestSongs {
         Path index = Path.of(args[1]);
         Files.createDirectories(songsDir);
         List<String> entries = new ArrayList<>();
-        entries.add(store(songsDir, "Testbeat", "PeakSound Stereo-Test", 2, 44100, 30, stereoBeat()));
-        entries.add(store(songsDir, "Surround-Demo 7.1", "PeakSound 3D-Test", 8, 48000, 60, surroundDemo()));
+        entries.add(store(songsDir, "Testbeat", "PeakSound Stereo-Test", 2, 44100, 30, stereoBeat(), "OK"));
+        entries.add(store(songsDir, "Surround-Demo 7.1", "PeakSound 3D-Test", 8, 48000, 60, surroundDemo(), "OK"));
+        // Zwei gesperrte Mehrkanal-Dateien zum Testen der Freigabe im OP-Menue (6 Kanaele, 5.1)
+        entries.add(store(songsDir, "Gesperrt: 5.1-Rundgang", "Warteschlange A", 6, 48000, 24, (t, c) -> channelWalk(t, c == 4 ? BL : c == 5 ? BR : c), "PENDING"));
+        entries.add(store(songsDir, "Gesperrt: 5.1-Musik", "Warteschlange B", 6, 48000, 20, (t, c) -> music(t, c == 4 ? BL : c == 5 ? BR : c), "PENDING"));
         Files.writeString(index, "[\n" + String.join(",\n", entries) + "\n]\n");
     }
 
@@ -121,7 +124,7 @@ public class MakeTestSongs {
 
     // ---- Speichern ----
 
-    static String store(Path songsDir, String title, String artist, int channels, int rate, int seconds, Source source) throws Exception {
+    static String store(Path songsDir, String title, String artist, int channels, int rate, int seconds, Source source, String status) throws Exception {
         int frames = rate * seconds;
         short[] pcm = new short[frames * channels];
         for (int i = 0; i < frames; i++) {
@@ -162,9 +165,9 @@ public class MakeTestSongs {
                     "durationMs": %d,
                     "sizeBytes": %d,
                     "format": "flac",
-                    "status": "OK",
+                    "status": "%s",
                     "uploadedAt": %d,
                     "hasCover": false
-                  }""".formatted(hash, title, artist, channels, seconds * 1000, flac.length, System.currentTimeMillis());
+                  }""".formatted(hash, title, artist, channels, seconds * 1000, flac.length, status, System.currentTimeMillis());
     }
 }

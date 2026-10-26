@@ -37,7 +37,7 @@ final class SongStreamService {
         String hash = request.hash();
         Song song = SongStore.validHash(hash) ? store.get(hash).orElse(null) : null;
         // Gesperrte (PENDING) Songs sind nur fuer die Verwaltung gedacht (Phase 7), nie fuer normale Spieler
-        if (song == null || song.status() != Song.Status.OK) {
+        if (song == null || (song.status() != Song.Status.OK && !Permissions.admin(player))) {
             Net.send(plugin, player, new Packet.SongUnavailable(hash.length() <= Limits.HASH_LENGTH ? hash : ""));
             return;
         }
@@ -72,7 +72,7 @@ final class SongStreamService {
     void onCover(Player player, Packet.CoverRequest request) {
         if (!allow(player.getUniqueId()) || !SongStore.validHash(request.hash())) return;
         Song song = store.get(request.hash()).orElse(null);
-        if (song == null || song.status() != Song.Status.OK) return;
+        if (song == null || (song.status() != Song.Status.OK && !Permissions.admin(player))) return;
         UUID uuid = player.getUniqueId();
         Bukkit.getAsyncScheduler().runNow(plugin, task -> {
             byte[] image = new byte[0];

@@ -48,6 +48,8 @@ public final class ClientNetwork {
             case Packet.PlaylistState state -> JukeboxMenuScreen.onPlaylist(state);
             case Packet.OpenSpeakerMenu menu -> SpeakerMenuScreen.open(menu);
             case Packet.SpeakerOverview overview -> JukeboxMenuScreen.onSpeakers(overview);
+            case Packet.OperatorState state -> ServerState.setOperator(state.operator());
+            case Packet.AdminSongs songs -> AdminScreen.onData(songs);
         }
     }
 }

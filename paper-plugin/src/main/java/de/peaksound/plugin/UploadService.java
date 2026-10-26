@@ -6,6 +6,7 @@ import de.peaksound.audio.AudioInspector;
 import de.peaksound.audio.Transcoder;
 import de.peaksound.protocol.AudioFormat;
 import de.peaksound.protocol.ChunkAssembler;
+import de.peaksound.protocol.LimitLogic;
 import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.MalformedPacketException;
 import de.peaksound.protocol.Packet;
@@ -60,6 +61,7 @@ final class UploadService {
     private final SongStore store;
     private final AnalysisStore analysis;
     private final Transcoder transcoder;
+    private final AdminLimits limits;
     private final SecureRandom random = new SecureRandom();
     private final Map<Integer, Ticket> tickets = new ConcurrentHashMap<>();
     private final Map<UUID, Session> sessions = new ConcurrentHashMap<>();
@@ -67,8 +69,10 @@ final class UploadService {
     private final AtomicInteger processing = new AtomicInteger();
     private int nextUploadId = 1;
 
-    UploadService(PeakSoundPlugin plugin, PeakItems items, SongStore store, AnalysisStore analysis, Transcoder transcoder) {
+    UploadService(PeakSoundPlugin plugin, PeakItems items, SongStore store, AnalysisStore analysis, Transcoder transcoder,
+                  AdminLimits limits) {
         this.plugin = plugin;
+        this.limits = limits;
         this.items = items;
         this.store = store;
         this.analysis = analysis;
@@ -102,12 +106,12 @@ final class UploadService {
             reject(player, 0, Reason.RATE_LIMIT, (int) ((cooldownMs - since + 999) / 1000));
             return;
         }
-        int maxSongs = plugin.getConfig().getInt("upload.max-songs-per-player", 10);
-        if (maxSongs > 0 && store.countByUploader(id) >= maxSongs) {
+        int maxSongs = limits.maxSongsFor(id);
+        if (!LimitLogic.mayUpload(store.countByUploader(id), maxSongs)) {
             reject(player, 0, Reason.QUOTA_REACHED, maxSongs);
             return;
         }
-        if (store.totalBytes() >= maxStorageBytes()) {
+        if (!LimitLogic.fitsStorage(store.totalBytes(), 1, maxStorageBytes())) {
             reject(player, 0, Reason.STORAGE_FULL, 0);
             return;
         }
@@ -145,7 +149,7 @@ final class UploadService {
     }
 
     private long maxStorageBytes() {
-        return plugin.getConfig().getLong("upload.max-storage-mb", 2048) * 1024L * 1024L;
+        return limits.maxStorageBytes();
     }
 
     private void reject(Player player, int uploadId, Reason reason, int arg) {
@@ -212,14 +216,14 @@ final class UploadService {
                 info.cover().length > 0);
 
         SongStore.AddResult added = store.add(song, stored.data(), info.cover(),
-                plugin.getConfig().getInt("upload.max-songs-per-player", 10), maxStorageBytes());
+                limits.maxSongsFor(uploader), maxStorageBytes());
         return switch (added) {
             case ADDED -> {
                 analysis.store(song, stored.data(), stored.format()); // Takt und Frequenzbaender fuer Partikel/Equalizer
                 yield new Outcome(null, 0, song, true);
             }
             case ALREADY_PRESENT -> new Outcome(null, 0, store.get(hash).orElse(song), false);
-            case QUOTA_REACHED -> Outcome.fail(Reason.QUOTA_REACHED, plugin.getConfig().getInt("upload.max-songs-per-player", 10));
+            case QUOTA_REACHED -> Outcome.fail(Reason.QUOTA_REACHED, limits.maxSongsFor(uploader));
             case STORAGE_FULL -> Outcome.fail(Reason.STORAGE_FULL, 0);
         };
     }

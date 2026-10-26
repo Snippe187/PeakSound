@@ -3,6 +3,7 @@ package de.peaksound.plugin;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import de.peaksound.protocol.LimitLogic;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -102,8 +103,8 @@ public final class SongStore {
     public synchronized AddResult add(Song song, byte[] audio, byte[] cover, int maxSongsPerPlayer, long maxBytes)
             throws IOException {
         if (songs.containsKey(song.hash())) return AddResult.ALREADY_PRESENT;
-        if (maxSongsPerPlayer > 0 && countByUploader(song.uploader()) >= maxSongsPerPlayer) return AddResult.QUOTA_REACHED;
-        if (totalBytes + audio.length > maxBytes) return AddResult.STORAGE_FULL;
+        if (!LimitLogic.mayUpload(countByUploader(song.uploader()), maxSongsPerPlayer)) return AddResult.QUOTA_REACHED;
+        if (!LimitLogic.fitsStorage(totalBytes, audio.length, maxBytes)) return AddResult.STORAGE_FULL;
         Files.createDirectories(songsDir);
         Files.write(audioPath(song), audio);
         if (cover.length > 0) Files.write(coverPath(song.hash()), cover);
@@ -111,6 +112,36 @@ public final class SongStore {
         totalBytes += audio.length;
         dirty = true;
         return AddResult.ADDED;
+    }
+
+    /** Anzahl aller Songs. */
+    public synchronized int count() { return songs.size(); }
+
+    /** Setzt den Status (z. B. nach der Freigabe). @return der aktualisierte Song, oder leer, wenn es ihn nicht gibt */
+    public synchronized Optional<Song> setStatus(String hash, Song.Status status) {
+        Song old = songs.get(hash);
+        if (old == null) return Optional.empty();
+        Song updated = new Song(old.hash(), old.title(), old.artist(), old.uploader(), old.uploaderName(), old.channels(),
+                old.durationMs(), old.sizeBytes(), old.format(), status, old.uploadedAt(), old.hasCover());
+        songs.put(hash, updated);
+        dirty = true;
+        return Optional.of(updated);
+    }
+
+    /** Loescht einen Song samt Dateien (Audio, Cover, Analyse). @return der geloeschte Song, oder leer */
+    public synchronized Optional<Song> remove(String hash) {
+        Song song = songs.remove(hash);
+        if (song == null) return Optional.empty();
+        totalBytes = Math.max(0, totalBytes - song.sizeBytes());
+        dirty = true;
+        for (Path p : new Path[] {audioPath(song), coverPath(hash), songsDir.resolve(hash + ".analysis")}) {
+            try {
+                Files.deleteIfExists(p);
+            } catch (IOException e) {
+                plugin.getLogger().log(Level.WARNING, "Datei konnte nicht geloescht werden: " + p, e);
+            }
+        }
+        return Optional.of(song);
     }
 
     /** Speichert den Index, falls er sich geaendert hat (aus einem asynchronen Task aufrufen). */

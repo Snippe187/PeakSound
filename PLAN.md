@@ -55,6 +55,13 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [ ] Manuelle Abnahme
 - Grenze: Quelldateien haben höchstens 8 Kanäle (7.1), weil FLAC und Vorbis nicht mehr zulassen. Die Decken-Lautsprecher bekommen abgeleitete Signale.
 ## Phase 7 – OP-Menü, Freigabe-System, Limits
+- [x] Protokoll: Admin-Pakete (Liste, Aktionen, Operator-Status), LimitLogic, Tests (Richtung, Bereiche, Paketgröße)
+- [x] Plugin: AdminService mit Rechteprüfung bei jeder Aktion (`peaksound.admin`, Standard OP), Audit-Log, Rate-Limit
+- [x] Plugin: Songs löschen, gesperrte Mehrkanal-Dateien freigeben oder ablehnen (löscht), Uploader wird benachrichtigt
+- [x] Plugin: Limits pro Spieler, Standard-Limit und Speicher-Limit im Spiel einstellbar (`limits.json`, Vorrang vor der Config)
+- [x] Plugin: Operator-Status folgt /op und /deop, gesperrte Songs streamen nur an Admins
+- [x] Mod: Button im Escape-Menü (nur Operatoren), OP-Menü mit Reitern Songs, Freigabe, Limits, Vorhören
+- [ ] Manuelle Abnahme
 ## Phase 8 – Optimierungen und Feinschliff
 ## Phase 9 – DJ-Pult und Scheinwerfer
 ## Phase 10 – Simple Voice Chat und Mikrofon

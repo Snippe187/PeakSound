@@ -43,7 +43,9 @@ public final class PeakSoundPlugin extends JavaPlugin {
         jukeboxSettings.load();
         jukeboxSettings.startAutosave();
         this.settingsStore = jukeboxSettings;
-        UploadService uploads = new UploadService(this, items, songs, analysis, transcoder);
+        AdminLimits limits = new AdminLimits(this);
+        limits.load();
+        UploadService uploads = new UploadService(this, items, songs, analysis, transcoder, limits);
         SongStreamService streams = new SongStreamService(this, songs);
         PlaylistService playlist = new PlaylistService(items, songs);
         NetworkRegistry networks = new NetworkRegistry(this, blocks);
@@ -59,7 +61,8 @@ public final class PeakSoundPlugin extends JavaPlugin {
         EditAccess access = new EditAccess(blocks);
         JukeboxMenuService menu = new JukeboxMenuService(this, blocks, jukeboxSettings, playback, playlist, access, speakers);
         SpeakerMenuService speakerMenu = new SpeakerMenuService(this, access, speakers, jukeboxSettings);
-        network.wire(uploads, streams, playback, menu, speakerMenu, access);
+        AdminService admin = new AdminService(this, songs, limits, playback, analysis);
+        network.wire(uploads, streams, playback, menu, speakerMenu, access, admin);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, PeakIds.CHANNEL, network);
         getServer().getMessenger().registerOutgoingPluginChannel(this, PeakIds.CHANNEL);
@@ -80,6 +83,8 @@ public final class PeakSoundPlugin extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, playback::fastTick, 2L, 2L);
         // Lautsprecher-Nummern und Standard-Kanaele abgleichen (nutzt den Netz-Cache, rechnet nur bei Aenderungen)
         Bukkit.getScheduler().runTaskTimer(this, speakers::refresh, 20L, 20L);
+        // Operator-Status regelmaessig abgleichen (der Button der Song-Verwaltung folgt /op und /deop)
+        Bukkit.getScheduler().runTaskTimer(this, network::checkOperators, 40L, 40L);
     }
 
     @Override

@@ -50,6 +50,11 @@ final class AnalysisStore {
         return Optional.empty();
     }
 
+    /** Verwirft den Speicher-Eintrag (Song wurde geloescht). */
+    void forget(String hash) {
+        cache.remove(hash);
+    }
+
     /** Blockierend, nur fuer asynchrone Threads (Upload-Verarbeitung). */
     void store(Song song, byte[] audio, AudioFormat format) {
         try (PcmSource source = PcmSource.open(audio, format)) {

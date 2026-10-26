@@ -451,6 +451,118 @@ public sealed interface Packet {
         }
     }
 
+    // ---- OP-Menue (Song-Verwaltung) ----
+
+    /** Server -> Client: Der Operator-Status hat sich geaendert (der Escape-Menue-Button erscheint oder verschwindet). */
+    record OperatorState(boolean operator) implements Clientbound {
+        public static final int ID = 27;
+
+        @Override
+        public byte[] encode() { return new PacketIO.Writer(ID).writeBoolean(operator).toBytes(); }
+
+        static OperatorState decode(ByteBuffer in) { return new OperatorState(PacketIO.readBoolean(in)); }
+    }
+
+    /** Client -> Server: Song-Verwaltung oeffnen / aktualisieren. Nur Operatoren bekommen eine Antwort. */
+    record AdminListRequest() implements Serverbound {
+        public static final int ID = 28;
+
+        @Override
+        public byte[] encode() { return new PacketIO.Writer(ID).toBytes(); }
+
+        static AdminListRequest decode(ByteBuffer in) { return new AdminListRequest(); }
+    }
+
+    /** Ein Song in der Verwaltung. {@code pending} = gesperrte Mehrkanal-Datei, wartet auf Freigabe. */
+    record AdminSong(String hash, String title, String artist, String uploader, int channels, int durationMs,
+                     int sizeBytes, boolean pending, long uploadedAt) {}
+
+    /** Ein Spieler mit Upload-Limit. {@code max} = {@link LimitLogic#USE_DEFAULT}, wenn der Standard gilt (0 = unbegrenzt). */
+    record AdminPlayer(String name, long uuidHigh, long uuidLow, int songs, int max) {}
+
+    /**
+     * Server -> Client: Daten der Song-Verwaltung. {@code songs} enthaelt hoechstens {@link #MAX_ADMIN_SONGS} Eintraege
+     * (die neuesten), {@code totalSongs} die Gesamtzahl. {@code maxBytes} 0 = unbegrenzt.
+     */
+    record AdminSongs(java.util.List<AdminSong> songs, int totalSongs, long usedBytes, long maxBytes, int defaultLimit,
+                      java.util.List<AdminPlayer> players) implements Clientbound {
+        public static final int ID = 29;
+        public static final int MAX_ADMIN_SONGS = 400;
+        public static final int MAX_ADMIN_PLAYERS = 200;
+
+        @Override
+        public byte[] encode() {
+            if (songs.size() > MAX_ADMIN_SONGS || players.size() > MAX_ADMIN_PLAYERS) throw new IllegalArgumentException("Liste zu lang");
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeShort(songs.size()).writeInt(totalSongs).writeLong(usedBytes)
+                    .writeLong(maxBytes).writeInt(defaultLimit).writeShort(players.size());
+            for (AdminSong s : songs) {
+                w.writeString(s.hash(), Limits.HASH_LENGTH).writeString(s.title(), Limits.MAX_TEXT).writeString(s.artist(), Limits.MAX_TEXT)
+                        .writeString(s.uploader(), Limits.MAX_TEXT).writeInt(s.channels()).writeInt(s.durationMs())
+                        .writeInt(s.sizeBytes()).writeBoolean(s.pending()).writeLong(s.uploadedAt());
+            }
+            for (AdminPlayer p : players) {
+                w.writeString(p.name(), Limits.MAX_TEXT).writeLong(p.uuidHigh()).writeLong(p.uuidLow()).writeInt(p.songs()).writeInt(p.max());
+            }
+            return w.toBytes();
+        }
+
+        static AdminSongs decode(ByteBuffer in) {
+            int songCount = PacketIO.readShort(in);
+            if (songCount > MAX_ADMIN_SONGS) throw new MalformedPacketException("Zu viele Songs");
+            int total = PacketIO.readInt(in);
+            long used = PacketIO.readLong(in);
+            long max = PacketIO.readLong(in);
+            int def = PacketIO.readInt(in);
+            int playerCount = PacketIO.readShort(in);
+            if (playerCount > MAX_ADMIN_PLAYERS) throw new MalformedPacketException("Zu viele Spieler");
+            java.util.List<AdminSong> songs = new java.util.ArrayList<>(songCount);
+            for (int i = 0; i < songCount; i++) {
+                songs.add(new AdminSong(PacketIO.readString(in, Limits.HASH_LENGTH), PacketIO.readString(in, Limits.MAX_TEXT),
+                        PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readInt(in),
+                        PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readBoolean(in), PacketIO.readLong(in)));
+            }
+            java.util.List<AdminPlayer> players = new java.util.ArrayList<>(playerCount);
+            for (int i = 0; i < playerCount; i++) {
+                players.add(new AdminPlayer(PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readLong(in), PacketIO.readLong(in),
+                        PacketIO.readInt(in), PacketIO.readInt(in)));
+            }
+            return new AdminSongs(java.util.List.copyOf(songs), total, used, max, def, java.util.List.copyOf(players));
+        }
+    }
+
+    /**
+     * Client -> Server: eine Verwaltungs-Aktion. Der Server prueft bei JEDER Aktion erneut, ob der Spieler Operator ist.
+     * {@code hash} gilt fuer Song-Aktionen, {@code uuid*} fuer Spieler-Limits, {@code value} fuer Zahlenwerte
+     * (Songlimit, Speicher in MB; {@link LimitLogic#USE_DEFAULT} setzt ein Spielerlimit zurueck).
+     */
+    record AdminAction(Action action, String hash, long uuidHigh, long uuidLow, long value) implements Serverbound {
+        public static final int ID = 30;
+
+        public enum Action {
+            DELETE_SONG, APPROVE_SONG, REJECT_SONG, SET_PLAYER_LIMIT, SET_DEFAULT_LIMIT, SET_STORAGE_MB;
+
+            static Action byOrdinal(int o) {
+                Action[] v = values();
+                if (o < 0 || o >= v.length) throw new MalformedPacketException("Unbekannte Aktion");
+                return v[o];
+            }
+        }
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeByte(action.ordinal()).writeString(hash, Limits.HASH_LENGTH)
+                    .writeLong(uuidHigh).writeLong(uuidLow).writeLong(value).toBytes();
+        }
+
+        static AdminAction decode(ByteBuffer in) {
+            Action action = Action.byOrdinal(PacketIO.readByte(in));
+            String hash = PacketIO.readString(in, Limits.HASH_LENGTH);
+            long high = PacketIO.readLong(in), low = PacketIO.readLong(in), value = PacketIO.readLong(in);
+            if (value < LimitLogic.USE_DEFAULT || value > LimitLogic.MAX_STORAGE_MB) throw new MalformedPacketException("Wert ausserhalb des Bereichs");
+            return new AdminAction(action, hash, high, low, value);
+        }
+    }
+
     // ---- Cover ----
 
     record CoverRequest(String hash) implements Serverbound {

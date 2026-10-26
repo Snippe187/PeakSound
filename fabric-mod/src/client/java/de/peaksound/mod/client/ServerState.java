@@ -24,6 +24,9 @@ public final class ServerState {
     /** Merkt sich den Sendezeitpunkt des Hello, um die Uhrzeit des Servers abzuschaetzen. */
     public static void onHelloSent() { helloSentAt = System.currentTimeMillis(); }
 
+    /** Der Server meldet eine Aenderung des Operator-Status (z. B. nach /op). */
+    public static void setOperator(boolean value) { operator = pluginPresent && compatible && value; }
+
     public static void onAck(boolean isCompatible, boolean isOperator, long serverTimeMs, int songSeconds) {
         pluginPresent = true;
         compatible = isCompatible;

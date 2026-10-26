@@ -254,6 +254,20 @@ final class PlaybackManager {
         return true;
     }
 
+    /** Ein Song wurde geloescht: alles, was ihn gerade spielt, stoppt (die Platte bleibt, wo sie ist). */
+    void onSongRemoved(String hash) {
+        boolean changed = false;
+        for (Map.Entry<BlockRegistry.Key, State> e : states.entrySet()) {
+            State s = e.getValue();
+            if (!s.hash.equals(hash)) continue;
+            if (s.fromPlaylist) states.remove(e.getKey());
+            else s.playing = false;
+            stopFor(e.getKey());
+            changed = true;
+        }
+        if (changed) save();
+    }
+
     /** Wiederholmodus einer Jukebox setzen (z. B. fuer Dauer-Tests). */
     void setLoop(Block block, LoopMode loop) {
         applySettings(block, settings.get(block).withLoop(loop));
