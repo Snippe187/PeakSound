@@ -12,7 +12,9 @@ public enum PeakItemType {
     WRITTEN_RECORD("written_record", "DISC_FRAGMENT_5", null),
     PEAK_TUNER("peak_tuner", "BREEZE_ROD", null),
     JUKEBOX("jukebox", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.JUKEBOX),
-    SPEAKER("speaker", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.SPEAKER);
+    SPEAKER("speaker", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.SPEAKER),
+    DJ_DESK("dj_desk", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.DJ_DESK),
+    SPOTLIGHT("spotlight", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.SPOTLIGHT);
 
     private final String id;
     private final String carrier;
@@ -30,6 +32,14 @@ public enum PeakItemType {
     public String carrierMaterial() { return carrier; }
 
     public Optional<PeakBlockType> block() { return Optional.ofNullable(block); }
+
+    /** Das Item, das zu einem Block gehoert (was beim Abbauen faellt). */
+    public static PeakItemType forBlock(PeakBlockType type) {
+        for (PeakItemType t : values()) {
+            if (t.block == type) return t;
+        }
+        throw new IllegalArgumentException(type.name());
+    }
 
     public static Optional<PeakItemType> byId(String id) {
         for (PeakItemType t : values()) {

@@ -5,6 +5,7 @@ import de.peaksound.audio.PcmSource;
 import de.peaksound.protocol.AudioFormat;
 import de.peaksound.protocol.ChannelLayout;
 import de.peaksound.protocol.ChannelMixer;
+import de.peaksound.protocol.DjMath;
 import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.SpeakerChannel;
 import de.peaksound.protocol.SyncMath;
@@ -46,6 +47,10 @@ final class PlaybackSession {
         final int channel; // 0 = Mono-Mix, 1-12 = Lautsprecher-Kanal
         volatile int range;
         volatile int volume;
+        /** Ueberblendung (DJ-Pult): Lautstaerke rampt linear von fadeFrom nach volume ueber fadeMs. */
+        volatile double fadeFrom;
+        volatile long fadeStartMs;
+        volatile int fadeMs;
         int source = -1;
         final int[] buffers = new int[AL_BUFFERS];
         final Deque<Integer> free = new ArrayDeque<>();
@@ -121,7 +126,25 @@ final class PlaybackSession {
         if (e != null) {
             e.range = range;
             e.volume = volume;
+            e.fadeMs = 0;
         }
+    }
+
+    /** Ueberblendet die Lautstaerke einer Schallquelle in {@code durationMs} auf {@code toVolume} (alle Clients starten gemeinsam). */
+    void fadeEmitter(long key, int toVolume, int durationMs) {
+        Emitter e = emitters.get(key);
+        if (e == null) return;
+        e.fadeFrom = currentVolume(e);
+        e.fadeStartMs = System.currentTimeMillis();
+        e.fadeMs = Math.max(0, durationMs);
+        e.volume = toVolume;
+    }
+
+    private static double currentVolume(Emitter e) {
+        int ms = e.fadeMs;
+        if (ms <= 0) return e.volume;
+        long elapsed = System.currentTimeMillis() - e.fadeStartMs;
+        return DjMath.rampPercent(e.fadeFrom, e.volume, elapsed, ms);
     }
 
     void stop() {
@@ -331,7 +354,7 @@ final class PlaybackSession {
         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
         AL10.alSource3f(e.source, AL10.AL_POSITION, (float) e.x, (float) e.y, (float) e.z);
         float master = Minecraft.getInstance().options.getFinalSoundSourceVolume(SoundSource.RECORDS);
-        AL10.alSourcef(e.source, AL10.AL_GAIN, (float) (master * ClientSettings.volumeFactor() * e.volume / 100.0 * attenuation(distance, e.range)));
+        AL10.alSourcef(e.source, AL10.AL_GAIN, (float) (master * ClientSettings.volumeFactor() * currentVolume(e) / 100.0 * attenuation(distance, e.range)));
     }
 
     /** 1 nahe an der Quelle, sanft fallend bis 0 an der Reichweite. */

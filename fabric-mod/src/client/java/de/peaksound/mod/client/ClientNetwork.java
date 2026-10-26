@@ -50,6 +50,12 @@ public final class ClientNetwork {
             case Packet.SpeakerOverview overview -> JukeboxMenuScreen.onSpeakers(overview);
             case Packet.OperatorState state -> ServerState.setOperator(state.operator());
             case Packet.AdminSongs songs -> AdminScreen.onData(songs);
+            case Packet.PlaybackFade fade -> AudioEngine.fade(fade);
+            case Packet.OpenLightMenu menu -> LightMenuScreen.open(menu);
+            case Packet.LightStart start -> LightShow.start(start);
+            case Packet.LightStop stop -> LightShow.stop(stop.x(), stop.y(), stop.z());
+            case Packet.AnalysisData data -> LightShow.onAnalysis(data);
+            case Packet.DjState state -> DjMenuScreen.onState(state);
         }
     }
 }

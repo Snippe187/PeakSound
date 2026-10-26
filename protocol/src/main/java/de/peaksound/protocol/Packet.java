@@ -563,6 +563,229 @@ public sealed interface Packet {
         }
     }
 
+    // ---- Scheinwerfer ----
+
+    /** Server -> Client: Scheinwerfer-Menue oeffnen. {@code connected} = an eine Jukebox angeschlossen. */
+    record OpenLightMenu(int x, int y, int z, LightSettings settings, boolean connected) implements Clientbound {
+        public static final int ID = 31;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            return w.writeBoolean(connected).toBytes();
+        }
+
+        static OpenLightMenu decode(ByteBuffer in) {
+            return new OpenLightMenu(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in),
+                    LightSettings.read(in), PacketIO.readBoolean(in));
+        }
+    }
+
+    /** Client -> Server: geaenderte Scheinwerfer-Einstellungen. */
+    record LightUpdate(int x, int y, int z, LightSettings settings) implements Serverbound {
+        public static final int ID = 32;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            return w.toBytes();
+        }
+
+        static LightUpdate decode(ByteBuffer in) {
+            return new LightUpdate(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), LightSettings.read(in));
+        }
+    }
+
+    /**
+     * Server -> Client: Ein Scheinwerfer in der Naehe leuchtet. Der Client berechnet Farbe, Helligkeit und Schwenk aus
+     * den Einstellungen und, im Takt-Modus, aus der Songposition ({@code hash}, {@code startedAtServerMs}; leer =
+     * es spielt nichts). Weil alle dieselbe Serveruhr nutzen, sind die Effekte bei allen synchron.
+     */
+    record LightStart(int x, int y, int z, LightSettings settings, String hash, long startedAtServerMs)
+            implements Clientbound {
+        public static final int ID = 33;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            return w.writeString(hash, Limits.HASH_LENGTH).writeLong(startedAtServerMs).toBytes();
+        }
+
+        static LightStart decode(ByteBuffer in) {
+            return new LightStart(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), LightSettings.read(in),
+                    PacketIO.readString(in, Limits.HASH_LENGTH), PacketIO.readLong(in));
+        }
+    }
+
+    record LightStop(int x, int y, int z) implements Clientbound {
+        public static final int ID = 34;
+
+        @Override
+        public byte[] encode() { return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).toBytes(); }
+
+        static LightStop decode(ByteBuffer in) {
+            return new LightStop(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in));
+        }
+    }
+
+    /** Client -> Server: Musikanalyse (Takt, Baender) eines Songs fuer die Lichteffekte. */
+    record AnalysisRequest(String hash) implements Serverbound {
+        public static final int ID = 35;
+
+        @Override
+        public byte[] encode() { return new PacketIO.Writer(ID).writeString(hash, Limits.HASH_LENGTH).toBytes(); }
+
+        static AnalysisRequest decode(ByteBuffer in) { return new AnalysisRequest(PacketIO.readString(in, Limits.HASH_LENGTH)); }
+    }
+
+    record AnalysisData(String hash, byte[] data) implements Clientbound {
+        public static final int ID = 36;
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeString(hash, Limits.HASH_LENGTH).writeBytes(data, Limits.MAX_ANALYSIS_BYTES).toBytes();
+        }
+
+        static AnalysisData decode(ByteBuffer in) {
+            return new AnalysisData(PacketIO.readString(in, Limits.HASH_LENGTH), PacketIO.readBytes(in, Limits.MAX_ANALYSIS_BYTES));
+        }
+    }
+
+    // ---- DJ-Pult ----
+
+    /** Zustand eines Decks fuer das DJ-Menue. {@code connected} = es haengt eine Jukebox daran. */
+    record DjDeck(boolean connected, String jukeboxName, boolean playing, String title, int current,
+                  java.util.List<PlaylistEntry> entries) {
+        public static final int MAX_ENTRIES = 40;
+
+        void write(PacketIO.Writer w) {
+            if (entries.size() > MAX_ENTRIES) throw new IllegalArgumentException("Deck-Playlist zu lang");
+            w.writeBoolean(connected).writeString(jukeboxName, Limits.MAX_TEXT).writeBoolean(playing)
+                    .writeString(title, Limits.MAX_TEXT).writeInt(current).writeByte(entries.size());
+            for (PlaylistEntry e : entries) {
+                w.writeString(e.title(), Limits.MAX_TEXT).writeString(e.artist(), Limits.MAX_TEXT)
+                        .writeInt(e.durationMs()).writeBoolean(e.available());
+            }
+        }
+
+        static DjDeck read(ByteBuffer in) {
+            boolean connected = PacketIO.readBoolean(in);
+            String name = PacketIO.readString(in, Limits.MAX_TEXT);
+            boolean playing = PacketIO.readBoolean(in);
+            String title = PacketIO.readString(in, Limits.MAX_TEXT);
+            int current = PacketIO.readInt(in);
+            int count = PacketIO.readByte(in);
+            if (count > MAX_ENTRIES || current < -1 || current >= Math.max(count, 1) && current != -1) {
+                throw new MalformedPacketException("Ungueltiges Deck");
+            }
+            java.util.List<PlaylistEntry> list = new java.util.ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                list.add(new PlaylistEntry(PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readString(in, Limits.MAX_TEXT),
+                        PacketIO.readInt(in), PacketIO.readBoolean(in)));
+            }
+            return new DjDeck(connected, name, playing, title, current, java.util.List.copyOf(list));
+        }
+    }
+
+    /** Client -> Server: DJ-Zustand anfordern (das Menue fragt etwa einmal pro Sekunde). */
+    record DjRequest(int x, int y, int z) implements Serverbound {
+        public static final int ID = 37;
+
+        @Override
+        public byte[] encode() { return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).toBytes(); }
+
+        static DjRequest decode(ByteBuffer in) { return new DjRequest(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in)); }
+    }
+
+    /** Server -> Client: DJ-Zustand. {@code open} = das Menue soll sich oeffnen (Antwort auf den Tuner-Klick). */
+    record DjState(int x, int y, int z, DjSettings settings, boolean open, DjDeck deckA, DjDeck deckB)
+            implements Clientbound {
+        public static final int ID = 38;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            w.writeBoolean(open);
+            deckA.write(w);
+            deckB.write(w);
+            return w.toBytes();
+        }
+
+        static DjState decode(ByteBuffer in) {
+            int x = PacketIO.readInt(in), y = PacketIO.readInt(in), z = PacketIO.readInt(in);
+            DjSettings s = DjSettings.read(in);
+            boolean open = PacketIO.readBoolean(in);
+            return new DjState(x, y, z, s, open, DjDeck.read(in), DjDeck.read(in));
+        }
+    }
+
+    /** Client -> Server: geaenderte DJ-Einstellungen. */
+    record DjUpdate(int x, int y, int z, DjSettings settings) implements Serverbound {
+        public static final int ID = 39;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            return w.toBytes();
+        }
+
+        static DjUpdate decode(ByteBuffer in) {
+            return new DjUpdate(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), DjSettings.read(in));
+        }
+    }
+
+    /** Client -> Server: Song auf einem Deck waehlen oder stoppen. {@code deck} 0 = A, 1 = B. */
+    record DjDeckAction(int x, int y, int z, int deck, Action action, int index) implements Serverbound {
+        public static final int ID = 40;
+
+        public enum Action {
+            PLAY, SKIP, STOP;
+
+            static Action byOrdinal(int o) {
+                Action[] v = values();
+                if (o < 0 || o >= v.length) throw new MalformedPacketException("Unbekannte Aktion");
+                return v[o];
+            }
+        }
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeByte(deck).writeByte(action.ordinal())
+                    .writeInt(index).toBytes();
+        }
+
+        static DjDeckAction decode(ByteBuffer in) {
+            int x = PacketIO.readInt(in), y = PacketIO.readInt(in), z = PacketIO.readInt(in);
+            int deck = PacketIO.readByte(in);
+            if (deck > 1) throw new MalformedPacketException("Unbekanntes Deck");
+            return new DjDeckAction(x, y, z, deck, Action.byOrdinal(PacketIO.readByte(in)),
+                    PacketIO.readIntRange(in, 0, PlaylistLogic.MAX_ENTRIES));
+        }
+    }
+
+    /**
+     * Server -> Client: Die Lautstaerke einer Schallquelle faehrt in {@code durationMs} auf {@code toVolume}
+     * (Ueberblenden des DJ-Pults). Der Client rampt lokal, deshalb braucht es nur ein Paket je Ueberblendung.
+     */
+    record PlaybackFade(int x, int y, int z, int toVolume, int durationMs) implements Clientbound {
+        public static final int ID = 41;
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeInt(toVolume).writeInt(durationMs).toBytes();
+        }
+
+        static PlaybackFade decode(ByteBuffer in) {
+            return new PlaybackFade(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in),
+                    PacketIO.readIntRange(in, 0, 100), PacketIO.readIntRange(in, 0, 60_000));
+        }
+    }
+
     // ---- Cover ----
 
     record CoverRequest(String hash) implements Serverbound {

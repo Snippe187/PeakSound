@@ -10,7 +10,9 @@ import java.util.Optional;
  */
 public enum PeakBlockType {
     JUKEBOX("jukebox", "bit", 23),
-    SPEAKER("speaker", "bit", 24);
+    SPEAKER("speaker", "bit", 24),
+    DJ_DESK("dj_desk", "bit", 21),
+    SPOTLIGHT("spotlight", "bit", 22);
 
     /** Vanilla-Block, der als Traeger dient. */
     public static final String CARRIER_MATERIAL = "NOTE_BLOCK";
@@ -32,6 +34,12 @@ public enum PeakBlockType {
 
     /** Tonhoehe 0-24 (Blockstate-Wert). */
     public int note() { return note; }
+
+    /**
+     * Verbindet dieser Block mehrere Redstone-Netze zu einem? Alle ausser dem DJ-Pult: Es haengt zwei getrennte
+     * Netze (Deck A und Deck B) an sich, ohne sie zusammenzulegen, damit beide Decks unterschiedliche Songs spielen.
+     */
+    public boolean bridgesNetworks() { return this != DJ_DESK; }
 
     public static Optional<PeakBlockType> byId(String id) {
         for (PeakBlockType t : values()) {

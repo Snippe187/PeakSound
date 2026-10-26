@@ -20,5 +20,14 @@ public abstract class SoundOptionsScreenMixin {
     private void peaksound$addVolumeSlider(CallbackInfo ci) {
         list.addBig(new IntSlider(0, 0, 310, "peaksound.options.volume", 0, 100, ClientSettings.volumePercent(),
                 ClientSettings::setVolumePercent));
+        list.addBig(net.minecraft.client.gui.components.Button.builder(peaksound$strobeLabel(), b -> {
+            ClientSettings.setStrobeAllowed(!ClientSettings.strobeAllowed());
+            b.setMessage(peaksound$strobeLabel());
+        }).bounds(0, 0, 310, 20).build());
+    }
+
+    private static net.minecraft.network.chat.Component peaksound$strobeLabel() {
+        return net.minecraft.network.chat.Component.translatable("peaksound.options.strobe",
+                net.minecraft.network.chat.Component.translatable(ClientSettings.strobeAllowed() ? "options.on" : "options.off"));
     }
 }

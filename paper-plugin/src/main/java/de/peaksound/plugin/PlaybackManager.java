@@ -9,6 +9,7 @@ import de.peaksound.protocol.PlaylistLogic;
 import de.peaksound.protocol.SyncMath;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -74,6 +75,11 @@ final class PlaybackManager {
         }
     }
 
+    /** Lautstaerke-Faktor (Prozent) je Jukebox, gesetzt von DJ-Pulten. Fehlt ein Eintrag, gilt 100. */
+    private final Map<BlockRegistry.Key, Integer> deckGain = new ConcurrentHashMap<>();
+    /** Bis wann (ms) eine Schallquelle gerade ueberblendet wird. */
+    private final Map<BlockRegistry.Key, Long> fadeUntil = new ConcurrentHashMap<>();
+
     /** Was der Client einer Schallquelle zuletzt gemeldet bekam: Song@Start#Kanal (erkennt Songwechsel) sowie Reichweite und Lautstaerke. */
     private record Heard(String signature, int range, int volume) {}
 
@@ -112,6 +118,48 @@ final class PlaybackManager {
         this.network = network;
         this.settings = settings;
         this.analysis = analysis;
+    }
+
+    private int gain(BlockRegistry.Key jukebox) {
+        return deckGain.getOrDefault(jukebox, 100);
+    }
+
+    int deckGainOf(BlockRegistry.Key jukebox) {
+        return gain(jukebox);
+    }
+
+    /**
+     * Setzt den DJ-Faktor der Jukeboxen eines Decks. Bei {@code durationMs > 0} ueberblenden alle Spieler, die die
+     * betroffenen Schallquellen hoeren, in dieser Zeit (der Client rampt selbst, alle starten mit demselben Paket).
+     */
+    void setDeckGain(Collection<BlockRegistry.Key> jukeboxes, int percent, int durationMs) {
+        int value = Math.max(0, Math.min(100, percent));
+        boolean changed = false;
+        for (BlockRegistry.Key k : jukeboxes) changed |= gain(k) != value;
+        if (!changed) return;
+        Map<BlockRegistry.Key, Emitter> before = effective().emitters();
+        for (BlockRegistry.Key k : jukeboxes) {
+            if (value == 100) deckGain.remove(k);
+            else deckGain.put(k, value);
+        }
+        if (durationMs <= 0) {
+            Bukkit.getScheduler().runTask(plugin, this::tick); // sofort per PlaybackUpdate
+            return;
+        }
+        long until = System.currentTimeMillis() + durationMs;
+        Map<BlockRegistry.Key, Emitter> after = effective().emitters();
+        for (Emitter now : after.values()) {
+            Emitter old = before.get(now.key());
+            if (old == null || old.volume() == now.volume()) continue;
+            fadeUntil.put(now.key(), until);
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                Map<BlockRegistry.Key, Heard> hearing = heard.get(p.getUniqueId());
+                Heard known = hearing == null ? null : hearing.get(now.key());
+                if (known == null) continue;
+                Net.send(plugin, p, new Packet.PlaybackFade(now.key().x(), now.key().y(), now.key().z(), now.volume(), durationMs));
+                hearing.put(now.key(), new Heard(known.signature(), known.range(), now.volume()));
+            }
+        }
     }
 
     boolean hasRecord(Block block) {
@@ -308,7 +356,7 @@ final class PlaybackManager {
             if (net == null) { // Chunk nicht geladen oder Block weg: nur die eigene Jukebox
                 jukeboxes.putIfAbsent(e.getKey(), e.getValue());
                 JukeboxSettings cfg = settings.get(e.getKey());
-                emitters.putIfAbsent(e.getKey(), new Emitter(e.getKey(), e.getValue(), 0, cfg.range(), cfg.volume()));
+                emitters.putIfAbsent(e.getKey(), new Emitter(e.getKey(), e.getValue(), 0, cfg.range(), cfg.volume() * gain(e.getKey()) / 100));
                 continue;
             }
             if (!seen.add(net)) continue;
@@ -332,12 +380,12 @@ final class PlaybackManager {
             if (netSpeakers.isEmpty()) {
                 for (BlockRegistry.Key member : members) {
                     JukeboxSettings cfg = settings.get(member);
-                    emitters.put(member, new Emitter(member, leader, 0, cfg.range(), cfg.volume()));
+                    emitters.put(member, new Emitter(member, leader, 0, cfg.range(), cfg.volume() * gain(member) / 100));
                 }
             } else {
                 for (SpeakerService.Speaker sp : netSpeakers) {
                     JukeboxSettings cfg = settings.get(sp.jukebox());
-                    int volume = cfg.volume() * sp.settings().volume() / 100;
+                    int volume = cfg.volume() * sp.settings().volume() / 100 * gain(sp.jukebox()) / 100;
                     emitters.put(sp.key(), new Emitter(sp.key(), leader, sp.settings().channel().ordinal() + 1, cfg.range(), volume));
                 }
             }
@@ -384,7 +432,10 @@ final class PlaybackManager {
                     sendStart(p, em, now); // Anfuehrer oder Kanal hat gewechselt: neu beginnen
                     hearing.put(key, new Heard(signature, em.range(), em.volume()));
                 } else if (known.range() != em.range() || known.volume() != em.volume()) {
-                    Net.send(plugin, p, new Packet.PlaybackUpdate(key.x(), key.y(), key.z(), em.range(), em.volume()));
+                    // Waehrend einer Ueberblendung rampt der Client selbst; ein Update wuerde die Rampe abbrechen
+                    if (fadeUntil.getOrDefault(key, 0L) <= now || known.range() != em.range()) {
+                        Net.send(plugin, p, new Packet.PlaybackUpdate(key.x(), key.y(), key.z(), em.range(), em.volume()));
+                    }
                     hearing.put(key, new Heard(signature, em.range(), em.volume()));
                 }
             }

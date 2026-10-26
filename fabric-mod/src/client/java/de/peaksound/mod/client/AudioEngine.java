@@ -39,6 +39,12 @@ public final class AudioEngine {
         if (session != null) session.updateEmitter(key, update.range(), update.volume());
     }
 
+    static void fade(Packet.PlaybackFade fade) {
+        long key = PlaybackSession.key(fade.x(), fade.y(), fade.z());
+        PlaybackSession session = byKey.get(key);
+        if (session != null) session.fadeEmitter(key, fade.toVolume(), fade.durationMs());
+    }
+
     static void stop(int x, int y, int z) {
         long key = PlaybackSession.key(x, y, z);
         PlaybackSession session = byKey.get(key);

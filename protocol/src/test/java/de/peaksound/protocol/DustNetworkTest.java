@@ -19,6 +19,7 @@ class DustNetworkTest {
         World dust(int x, int y, int z) { dust.add(new Pos(x, y, z)); return this; }
         World solid(int x, int y, int z) { solid.add(new Pos(x, y, z)); return this; }
         World jukebox(int x, int y, int z) { devices.put(new Pos(x, y, z), PeakBlockType.JUKEBOX); solid(x, y, z); return this; }
+        World desk(int x, int y, int z) { devices.put(new Pos(x, y, z), PeakBlockType.DJ_DESK); solid(x, y, z); return this; }
         World speaker(int x, int y, int z) { devices.put(new Pos(x, y, z), PeakBlockType.SPEAKER); solid(x, y, z); return this; }
         World dustLine(int fromX, int toX, int y, int z) { for (int x = fromX; x <= toX; x++) dust(x, y, z); return this; }
 
@@ -119,6 +120,36 @@ class DustNetworkTest {
         World w = new World().jukebox(0, 0, 0).dust(1, 0, 0).jukebox(2, 0, 0).dust(3, 0, 0).jukebox(4, 0, 0);
         assertEquals(3, find(w, 0, 0, 0).devices().size());
         assertEquals(3, find(w, 4, 0, 0).devices().size());
+    }
+
+    @Test
+    void djDeskKeepsItsTwoDecksSeparate() {
+        // Jukebox A - Staub - DJ-Pult - Staub - Jukebox B: zwei getrennte Netze, das Pult haengt an beiden
+        World w = new World().jukebox(0, 0, 0).dust(1, 0, 0).dust(2, 0, 0).desk(3, 0, 0).dust(4, 0, 0).dust(5, 0, 0).jukebox(6, 0, 0);
+        DustNetwork.Result a = find(w, 0, 0, 0);
+        DustNetwork.Result b = find(w, 6, 0, 0);
+        assertEquals(2, a.devices().size()); // Jukebox A + Pult
+        assertTrue(a.devices().containsValue(PeakBlockType.DJ_DESK));
+        assertEquals(2, b.devices().size()); // Jukebox B + Pult
+        assertEquals(1, a.devices().values().stream().filter(t -> t == PeakBlockType.JUKEBOX).count());
+        assertEquals(1, b.devices().values().stream().filter(t -> t == PeakBlockType.JUKEBOX).count());
+    }
+
+    @Test
+    void searchFromDustFindsTheNetworkBehindIt() {
+        World w = new World().jukebox(0, 0, 0).dustLine(1, 4, 0, 0).speaker(5, 0, 0);
+        DustNetwork.Result r = DustNetwork.findFromDust(w, new Pos(3, 0, 0), 512, 32);
+        assertEquals(2, r.devices().size());
+        assertTrue(r.devices().containsValue(PeakBlockType.JUKEBOX));
+        assertTrue(DustNetwork.findFromDust(w, new Pos(40, 0, 0), 512, 32).devices().isEmpty()); // kein Staub dort
+    }
+
+    @Test
+    void searchFromDustDoesNotCrossADjDesk() {
+        World w = new World().dustLine(1, 2, 0, 0).desk(3, 0, 0).dustLine(4, 5, 0, 0).jukebox(6, 0, 0);
+        DustNetwork.Result left = DustNetwork.findFromDust(w, new Pos(1, 0, 0), 512, 32);
+        assertEquals(1, left.devices().size()); // nur das Pult, nicht die Jukebox dahinter
+        assertTrue(left.devices().containsValue(PeakBlockType.DJ_DESK));
     }
 
     @Test

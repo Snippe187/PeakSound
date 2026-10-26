@@ -16,6 +16,12 @@ class PacketCodecTest {
             new Packet.CoverRequest("f".repeat(64)),
             new Packet.PlaylistRequest(1, 64, -3),
             new Packet.AdminListRequest(),
+            new Packet.LightUpdate(1, 2, 3, new LightSettings(java.util.List.of(0xFF0000, 0x00FF00), 80, LightSettings.LightMode.BEAT,
+                    LightSettings.LightEffect.SWEEP, LightSettings.LightBand.HIGH, 270, -30, 7)),
+            new Packet.AnalysisRequest("a".repeat(64)),
+            new Packet.DjRequest(1, 2, 3),
+            new Packet.DjUpdate(1, 2, 3, new DjSettings(60, 8, 90, 70, true)),
+            new Packet.DjDeckAction(1, 2, 3, 1, Packet.DjDeckAction.Action.PLAY, 4),
             new Packet.AdminAction(Packet.AdminAction.Action.SET_PLAYER_LIMIT, "", 12345L, -9876L, 25),
             new Packet.SpeakerUpdate(1, 64, -3, new SpeakerSettings("Links", SpeakerChannel.REAR_LEFT, 70)),
             new Packet.SpeakerOverviewRequest(1, 64, -3),
@@ -36,6 +42,14 @@ class PacketCodecTest {
             new Packet.OpenJukeboxMenu(1, 64, -3, JukeboxSettings.defaults(16, 100), true, "Titel", "Interpret"),
             new Packet.CoverData("a".repeat(64), new byte[1000]),
             new Packet.OperatorState(true),
+            new Packet.OpenLightMenu(1, 2, 3, LightSettings.defaults(), true),
+            new Packet.LightStart(1, 2, 3, LightSettings.defaults(), "b".repeat(64), 123456789L),
+            new Packet.LightStop(1, 2, 3),
+            new Packet.AnalysisData("c".repeat(64), new byte[5000]),
+            new Packet.PlaybackFade(1, 2, 3, 40, 5000),
+            new Packet.DjState(1, 2, 3, DjSettings.defaults(), true,
+                    new Packet.DjDeck(true, "A", true, "Song", 0, java.util.List.of(new Packet.PlaylistEntry("Song", "X", 1000, true))),
+                    new Packet.DjDeck(false, "", false, "", -1, java.util.List.of())),
             new Packet.AdminSongs(java.util.List.of(new Packet.AdminSong("a".repeat(64), "Titel", "Interpret", "Spieler", 6, 180_000, 4_000_000, true, 1_700_000_000_000L)),
                     42, 1_000_000_000L, 2_000_000_000L, 10,
                     java.util.List.of(new Packet.AdminPlayer("Spieler", 1L, 2L, 3, -1))),
@@ -176,6 +190,32 @@ class PacketCodecTest {
                 new Packet.PlaylistEntry("A", "", 1, true))).encode();
         state[16] = 9; // current = 9 (letztes Byte des Int-Felds)
         assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeClientbound(state));
+    }
+
+    @Test
+    void rejectsInvalidLightAndDjSettings() {
+        // Farbe mit gesetzten Bits ueber 24 Bit (das Hoechstwertige Byte der ersten Farbe von Hand setzen), Helligkeit 0, Crossfader 200
+        byte[] badColor = new Packet.LightUpdate(0, 0, 0, LightSettings.defaults()).encode();
+        badColor[14] = 1;
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(badColor));
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(
+                new Packet.LightUpdate(0, 0, 0, new LightSettings(java.util.List.of(0xFFFFFF), 0, LightSettings.LightMode.STEADY,
+                        LightSettings.LightEffect.NONE, LightSettings.LightBand.BASS, 0, 0, 5)).encode()));
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(
+                new Packet.DjUpdate(0, 0, 0, new DjSettings(200, 4, 100, 100, false)).encode()));
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(
+                new Packet.DjDeckAction(0, 0, 0, 5, Packet.DjDeckAction.Action.PLAY, 0).encode()));
+    }
+
+    @Test
+    void lightSettingsAreSanitized() {
+        LightSettings s = new LightSettings(java.util.List.of(1, 2, 3, 4, 5, 6), 500, null, null, null, -90, 200, 99).sanitized();
+        assertEquals(LightSettings.MAX_COLORS, s.colors().size());
+        assertEquals(100, s.brightness());
+        assertEquals(270, s.yaw());
+        assertEquals(90, s.pitch());
+        assertEquals(10, s.speed());
+        assertEquals(java.util.List.of(0xFFFFFF), new LightSettings(java.util.List.of(), 1, null, null, null, 0, 0, 1).sanitized().colors());
     }
 
     @Test

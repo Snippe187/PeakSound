@@ -32,6 +32,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     private SpeakerMenuService speakerMenu;
     private EditAccess access;
     private AdminService admin;
+    private LightService lights;
+    private DjService dj;
     private final Map<UUID, Boolean> lastOperator = new ConcurrentHashMap<>();
 
     NetworkHandler(PeakSoundPlugin plugin, PeakRecipes recipes) {
@@ -41,7 +43,9 @@ final class NetworkHandler implements PluginMessageListener, Listener {
 
     /** Verbindet die Dienste (erst nach deren Erzeugung moeglich, da sie das NetworkHandler brauchen). */
     void wire(UploadService uploads, SongStreamService streams, PlaybackManager playback, JukeboxMenuService menu,
-              SpeakerMenuService speakerMenu, EditAccess access, AdminService admin) {
+              SpeakerMenuService speakerMenu, EditAccess access, AdminService admin, LightService lights, DjService dj) {
+        this.lights = lights;
+        this.dj = dj;
         this.admin = admin;
         this.uploads = uploads;
         this.streams = streams;
@@ -82,6 +86,11 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             case Packet.AdminListRequest request -> admin.onListRequest(player);
             case Packet.AdminAction action -> admin.onAction(player, action);
             case Packet.SpeakerOverviewRequest request -> menu.onSpeakerOverviewRequest(player, request);
+            case Packet.LightUpdate update -> lights.onUpdate(player, update);
+            case Packet.AnalysisRequest request -> lights.onAnalysisRequest(player, request);
+            case Packet.DjRequest request -> dj.onRequest(player, request);
+            case Packet.DjUpdate update -> dj.onUpdate(player, update);
+            case Packet.DjDeckAction action -> dj.onDeckAction(player, action);
             case Packet.Hello ignored -> { /* oben behandelt */ }
         }
     }
@@ -134,6 +143,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         playback.onQuit(player);
         access.onQuit(player);
         admin.onQuit(player);
+        lights.onQuit(player);
         lastOperator.remove(player.getUniqueId());
     }
 }

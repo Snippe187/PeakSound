@@ -23,9 +23,11 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
     private final PlaybackManager playback;
     private final PeakItems items;
     private final SpeakerService speakers;
+    private final DjService dj;
 
     PeakSoundCommand(EqualizerService equalizer, BlockRegistry registry, SongStore songs, PlaybackManager playback, PeakItems items,
-                     SpeakerService speakers) {
+                     SpeakerService speakers, DjService dj) {
+        this.dj = dj;
         this.speakers = speakers;
         this.equalizer = equalizer;
         this.registry = registry;
@@ -59,10 +61,20 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
         if (args.length == 5 && args[0].equalsIgnoreCase("place")) {
             Block block = blockAt(sender, args);
             if (block == null) return true;
-            de.peaksound.protocol.PeakBlockType type = args[1].equalsIgnoreCase("speaker")
-                    ? de.peaksound.protocol.PeakBlockType.SPEAKER : de.peaksound.protocol.PeakBlockType.JUKEBOX;
+            de.peaksound.protocol.PeakBlockType type = switch (args[1].toLowerCase()) {
+                case "speaker" -> de.peaksound.protocol.PeakBlockType.SPEAKER;
+                case "dj_desk", "dj" -> de.peaksound.protocol.PeakBlockType.DJ_DESK;
+                case "spotlight" -> de.peaksound.protocol.PeakBlockType.SPOTLIGHT;
+                default -> de.peaksound.protocol.PeakBlockType.JUKEBOX;
+            };
             PeakBlocks.install(block, type, registry);
             sender.sendMessage("PeakSound-Block gesetzt.");
+            return true;
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("dj")) {
+            Block block = blockAt(sender, args);
+            if (block == null) return true;
+            sender.sendMessage(dj.describe(block));
             return true;
         }
         if (args.length == 5 && args[0].equalsIgnoreCase("play")) {
@@ -96,8 +108,9 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         sender.sendMessage("/peaksound speaker <x> <y> <z> <kanal>");
+        sender.sendMessage("/peaksound dj <x> <y> <z>   (zeigt Decks und Lautstaerken eines DJ-Pults)");
         sender.sendMessage("/peaksound eqtest <x> <y> <z> <pegel 0-15>");
-        sender.sendMessage("/peaksound place <jukebox|speaker> <x> <y> <z>");
+        sender.sendMessage("/peaksound place <jukebox|speaker|dj_desk|spotlight> <x> <y> <z>");
         sender.sendMessage("/peaksound play <x> <y> <z> <song-nummer>");
         return true;
     }
@@ -116,6 +129,6 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker") : List.of();
+        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker", "dj") : List.of();
     }
 }

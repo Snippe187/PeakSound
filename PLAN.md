@@ -72,5 +72,15 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [x] Doku: README, Installation (Server, Client, Lunar), Build, Testlisten, Lizenzen, kommentierte Beispiel-Config
 - [ ] Manuelle Abnahme
 - Offen für Phase 9: Strobo-Option liegt schon in den Client-Einstellungen (`peaksound-client.json`), das Menü dafür kommt mit den Scheinwerfern.
+
 ## Phase 9 – DJ-Pult und Scheinwerfer
+- [x] Protokoll: LightSettings, DjSettings, DjMath (Equal-Power-Crossfader), 11 neue Pakete, DustNetwork (Pult verbindet keine Netze), Tests
+- [x] Audio-Kern: LightLogic (Modi, Effekte, Farbwechsel, Lichtstufe) aus derselben Analyse wie der Equalizer, Tests
+- [x] Plugin: DJ-Pult (Rezept mit 2 PeakSound-Jukeboxen, zwei Decks über Staub, Crossfader, Überblendzeit, Decklautstärken, Song je Deck aus der Playlist)
+- [x] Plugin: Überblenden synchron für alle Spieler (ein Paket mit Dauer, der Client rampt selbst)
+- [x] Plugin: Scheinwerfer (Rezept ergibt 2, an Jukebox-Netz, echtes Licht per Lichtblock, Aufräumen nach Absturz)
+- [x] Mod: DJ-Menü, Scheinwerfer-Menü (Farben, Modus, Effekt, Band, Richtung), Strahl aus Partikeln, Strobo-Warnung und Option in den Soundeinstellungen
+- [ ] Manuelle Abnahme
+
+## Phase 10 – Simple Voice Chat und Mikrofon
 ## Phase 10 – Simple Voice Chat und Mikrofon

@@ -47,3 +47,14 @@ Testdateien erzeugst du mit `node tools/make_test_audio.js` (`run/test-audio/`).
 - [ ] Optionen → Musik & Geräusche: „PeakSound-Lautstärke“ wirkt (0 = Musik aus).
 - [ ] Peak-Tuner in der Hand: leuchtende Linien von der Jukebox zu den Lautsprechern (türkis) und weiteren Jukeboxen (orange).
 - [ ] Shift-Rechtsklick mit Tuner auf Jukebox/Lautsprecher kopiert, Shift-Rechtsklick auf einen anderen Block gleicher Art fügt ein. Shift-Rechtsklick in die Luft leert.
+
+## Phase 9 – DJ-Pult und Scheinwerfer
+Testanlage im Spiel mit Befehl: `/peaksound place dj_desk|spotlight|jukebox X Y Z`, `/peaksound play X Y Z <Song>`, `/peaksound dj X Y Z` (zeigt Decks und Faktoren).
+- [ ] Rezeptbuch zeigt DJ-Pult (2 PeakSound-Jukeboxen links/rechts, Redstone oben, Eisen unten, Diamant Mitte) und Scheinwerfer (2 Stück). Normale Notenblöcke statt PeakSound-Jukeboxen ergeben nichts.
+- [ ] DJ-Pult mit Peak-Tuner anklicken: Menü mit zwei Decks. Je ein Redstone-Staub-Strang vom Pult zu einer Jukebox-Gruppe (Deck A/B); „Decks tauschen“ vertauscht sie.
+- [ ] Song pro Deck aus der Playlist der Jukebox wählen, Skip und Stop. Crossfader bewegen: Deck A wird leiser, Deck B lauter über die eingestellte Überblendzeit; mit zwei Spielern gleichzeitig hört man dasselbe.
+- [ ] Decklautstärken wirken sofort. Pult abbauen: Lautstärken der Jukeboxen sind wieder normal.
+- [ ] Scheinwerfer per Staub an eine Jukebox anschließen, Peak-Tuner → Menü. Strahl aus farbigen Partikeln in der eingestellten Richtung; echtes Licht im Strahl.
+- [ ] Farben: mehrere Farben wechseln sich ab; Effekt „Farbwechsel“ blendet weich über. Modi Dauerhaft / Blinkend / Im Takt (Bass, Mitten, Höhen).
+- [ ] Effekt Strobo: einmalige Warnung im Chat; Optionen → Musik & Geräusche → „PeakSound-Strobo-Effekte: Aus“ macht den Strobo gleichmäßig hell.
+- [ ] Spielt die Jukebox nichts, ist der Scheinwerfer im Modus „Im Takt“ aus. Server neu starten: Einstellungen bleiben, keine Lichtblöcke bleiben zurück.

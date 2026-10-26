@@ -2080,13 +2080,13 @@
       "model": "minecraft:block/note_block"
     },
     "instrument=bit,note=21,powered=true": {
-      "model": "minecraft:block/note_block"
+      "model": "peaksound:block/dj_desk"
     },
     "instrument=bit,note=22,powered=false": {
       "model": "minecraft:block/note_block"
     },
     "instrument=bit,note=22,powered=true": {
-      "model": "minecraft:block/note_block"
+      "model": "peaksound:block/spotlight"
     },
     "instrument=bit,note=23,powered=false": {
       "model": "minecraft:block/note_block"

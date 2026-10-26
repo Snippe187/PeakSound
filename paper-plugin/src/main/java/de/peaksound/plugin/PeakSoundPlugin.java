@@ -14,6 +14,9 @@ public final class PeakSoundPlugin extends JavaPlugin {
     private PlaybackManager playback;
     private JukeboxSettingsStore settingsStore;
     private SpeakerStore speakerStoreRef;
+    private BlockSettingsStore<de.peaksound.protocol.LightSettings> lightStore;
+    private BlockSettingsStore<de.peaksound.protocol.DjSettings> djStore;
+    private LightService lightService;
 
     SongStore songs() { return songs; }
 
@@ -62,18 +65,29 @@ public final class PeakSoundPlugin extends JavaPlugin {
         JukeboxMenuService menu = new JukeboxMenuService(this, blocks, jukeboxSettings, playback, playlist, access, speakers);
         SpeakerMenuService speakerMenu = new SpeakerMenuService(this, access, speakers, jukeboxSettings);
         AdminService admin = new AdminService(this, songs, limits, playback, analysis);
-        network.wire(uploads, streams, playback, menu, speakerMenu, access, admin);
+        lightStore = new BlockSettingsStore<>(this, "lights.json", de.peaksound.protocol.LightSettings.class,
+                de.peaksound.protocol.LightSettings.defaults(), de.peaksound.protocol.LightSettings::sanitized);
+        lightStore.load();
+        lightStore.startAutosave();
+        djStore = new BlockSettingsStore<>(this, "dj-desks.json", de.peaksound.protocol.DjSettings.class,
+                de.peaksound.protocol.DjSettings.defaults(), de.peaksound.protocol.DjSettings::sanitized);
+        djStore.load();
+        djStore.startAutosave();
+        lightService = new LightService(this, blocks, networks, lightStore, playback, analysis, songs, network, access);
+        lightService.cleanupLeftovers();
+        DjService dj = new DjService(this, blocks, networks, djStore, playback, playlist, jukeboxSettings, access);
+        network.wire(uploads, streams, playback, menu, speakerMenu, access, admin, lightService, dj);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, PeakIds.CHANNEL, network);
         getServer().getMessenger().registerOutgoingPluginChannel(this, PeakIds.CHANNEL);
 
-        SettingsClipboard clipboard = new SettingsClipboard(items, jukeboxSettings, playback, speakers);
+        SettingsClipboard clipboard = new SettingsClipboard(items, jukeboxSettings, playback, speakers, lightService, dj);
         getServer().getPluginManager().registerEvents(clipboard, this);
         getServer().getPluginManager().registerEvents(network, this);
-        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard), this);
+        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj), this);
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(new NetworkListener(networks, equalizer), this);
-        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers);
+        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj);
         getCommand("peaksound").setExecutor(command);
         getCommand("peaksound").setTabCompleter(command);
         getServer().getPluginManager().registerEvents(
@@ -83,6 +97,8 @@ public final class PeakSoundPlugin extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, playback::tick, 10L, 10L);
         // Partikel im Takt und Equalizer: feine Aufloesung, aber nur Nachschlagen in der vorberechneten Analyse
         Bukkit.getScheduler().runTaskTimer(this, playback::fastTick, 2L, 2L);
+        Bukkit.getScheduler().runTaskTimer(this, lightService::tick, 10L, 10L);
+        Bukkit.getScheduler().runTaskTimer(this, dj::tick, 20L, 20L);
         // Lautsprecher-Nummern und Standard-Kanaele abgleichen (nutzt den Netz-Cache, rechnet nur bei Aenderungen)
         Bukkit.getScheduler().runTaskTimer(this, speakers::refresh, 20L, 20L);
         // Verbindungsanzeige fuer Spieler mit Peak-Tuner in der Hand
@@ -100,5 +116,8 @@ public final class PeakSoundPlugin extends JavaPlugin {
         if (playback != null) playback.saveBlocking();
         if (settingsStore != null) settingsStore.saveNow();
         if (speakerStoreRef != null) speakerStoreRef.saveNow();
+        if (lightStore != null) lightStore.saveNow();
+        if (djStore != null) djStore.saveNow();
+        if (lightService != null) lightService.shutdown();
     }
 }

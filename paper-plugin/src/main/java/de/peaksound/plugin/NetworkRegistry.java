@@ -99,8 +99,32 @@ final class NetworkRegistry {
         return net;
     }
 
-    /** Ein Block wurde gesetzt, entfernt oder bewegt: betroffene Netze verwerfen. */
-    void invalidateAt(World world, int x, int y, int z) {
+    /**
+     * Die Netze, die ueber Staub direkt am DJ-Pult haengen (hoechstens zwei werden vom Pult genutzt). Nicht gecacht:
+     * Der Aufrufer merkt sich das Ergebnis kurz.
+     */
+    List<Net> netsAround(Block desk) {
+        World world = desk.getWorld();
+        WorldGrid grid = new WorldGrid(world);
+        int maxDust = Math.max(8, plugin.getConfig().getInt("network.max-dust", 256));
+        int maxDevices = Math.max(1, plugin.getConfig().getInt("network.max-devices", 32));
+        int[][] sides = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        List<DustNetwork.Pos> starts = new ArrayList<>();
+        starts.add(new DustNetwork.Pos(desk.getX(), desk.getY() + 1, desk.getZ()));
+        for (int[] s : sides) {
+            for (int dy = -1; dy <= 1; dy++) starts.add(new DustNetwork.Pos(desk.getX() + s[0], desk.getY() + dy, desk.getZ() + s[1]));
+        }
+        List<Net> out = new ArrayList<>();
+        for (DustNetwork.Pos start : starts) {
+            if (!grid.isDust(start.x(), start.y(), start.z())) continue;
+            if (out.stream().anyMatch(n -> n.dust.contains(new BlockRegistry.Key(world.getUID(), start.x(), start.y(), start.z())))) continue;
+            Net net = new Net(world.getUID(), DustNetwork.findFromDust(grid, start, maxDust, maxDevices));
+            if (!net.jukeboxes().isEmpty()) out.add(net);
+        }
+        return out;
+    }
+
+    /** Ein Block wurde gesetzt, entfernt oder bewegt: betroffene Netze verwerfen. */    void invalidateAt(World world, int x, int y, int z) {
         if (all.isEmpty()) return;
         UUID id = world.getUID();
         List<Net> hit = null;

@@ -39,8 +39,16 @@ final class CraftListener implements Listener {
     @EventHandler
     public void onPrepare(PrepareItemCraftEvent event) {
         if (!isOurs(event.getRecipe())) return;
+        boolean dj = event.getRecipe() instanceof Keyed k && k.getKey().equals(recipes.djDeskKey);
         for (ItemStack ingredient : event.getInventory().getMatrix()) {
-            if (items.typeOf(ingredient).isPresent()) {
+            var type = items.typeOf(ingredient);
+            if (dj && ingredient != null && ingredient.getType() == Material.NOTE_BLOCK) {
+                // Das DJ-Pult braucht echte PeakSound-Jukeboxen, keine normalen Notenbloecke
+                if (type.isEmpty() || type.get() != PeakItemType.JUKEBOX) {
+                    event.getInventory().setResult(null);
+                    return;
+                }
+            } else if (type.isPresent()) {
                 event.getInventory().setResult(null);
                 return;
             }

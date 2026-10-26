@@ -43,6 +43,8 @@ const cube = (side, top) => ({
 });
 json(path.join(PS, "models/block/speaker.json"), cube("minecraft:block/note_block", "minecraft:block/note_block"));
 json(path.join(PS, "models/block/jukebox.json"), cube("minecraft:block/jukebox_side", "minecraft:block/jukebox_top"));
+json(path.join(PS, "models/block/dj_desk.json"), cube("minecraft:block/polished_blackstone", "minecraft:block/jukebox_top"));
+json(path.join(PS, "models/block/spotlight.json"), cube("minecraft:block/iron_block", "minecraft:block/redstone_lamp_on"));
 // Items nutzen direkt vorhandene Vanilla-Texturen (es werden keine Mojang-Dateien kopiert)
 const items = { blank_record: "minecraft:item/music_disc_11", written_record: "minecraft:item/music_disc_cat", peak_tuner: "minecraft:item/breeze_rod" };
 for (const [id, tex] of Object.entries(items)) {
@@ -68,7 +70,8 @@ itemDef("disc_fragment_5.json", "minecraft:item/disc_fragment_5",
   { blank_record: "peaksound:item/blank_record", written_record: "peaksound:item/written_record" });
 itemDef("breeze_rod.json", "minecraft:item/breeze_rod", { peak_tuner: "peaksound:item/peak_tuner" });
 itemDef("note_block.json", "minecraft:block/note_block",
-  { jukebox: "peaksound:block/jukebox", speaker: "peaksound:block/speaker" });
+  { jukebox: "peaksound:block/jukebox", speaker: "peaksound:block/speaker",
+    dj_desk: "peaksound:block/dj_desk", spotlight: "peaksound:block/spotlight" });
 
 
 // ---------- Lautsprecher-Nummern 1-25: durchsichtige Ziffern-Overlays auf dem Vanilla-Notenblock ----------
@@ -115,7 +118,8 @@ for (let n = 1; n <= MAX_SPEAKERS; n++) {
 const instruments = ["harp", "basedrum", "snare", "hat", "bass", "flute", "bell", "guitar", "chime", "xylophone",
   "iron_xylophone", "cow_bell", "didgeridoo", "bit", "banjo", "pling", "zombie", "skeleton", "creeper",
   "dragon", "wither_skeleton", "piglin", "custom_head"];
-const special = { "bit/23/true": "peaksound:block/jukebox", "bit/24/true": "peaksound:block/speaker" };
+const special = { "bit/23/true": "peaksound:block/jukebox", "bit/24/true": "peaksound:block/speaker",
+  "bit/21/true": "peaksound:block/dj_desk", "bit/22/true": "peaksound:block/spotlight" };
 const variants = {};
 for (const inst of instruments) {
   for (let note = 0; note <= 24; note++) {

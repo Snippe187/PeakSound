@@ -33,11 +33,15 @@ final class BlockListener implements Listener {
     private final SpeakerService speakers;
     private final SpeakerMenuService speakerMenu;
     private final SettingsClipboard clipboard;
+    private final LightService lights;
+    private final DjService dj;
 
     BlockListener(PeakItems items, BlockRegistry registry, PlaybackManager playback, JukeboxSettingsStore settings,
                   JukeboxMenuService menu, NetworkHandler network, SpeakerService speakers, SpeakerMenuService speakerMenu,
-                  SettingsClipboard clipboard) {
+                  SettingsClipboard clipboard, LightService lights, DjService dj) {
         this.clipboard = clipboard;
+        this.lights = lights;
+        this.dj = dj;
         this.items = items;
         this.registry = registry;
         this.playback = playback;
@@ -71,11 +75,13 @@ final class BlockListener implements Listener {
                 block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), record));
         settings.remove(block);
         speakers.remove(block);
+        if (type.get() == PeakBlockType.SPOTLIGHT) lights.remove(block);
+        if (type.get() == PeakBlockType.DJ_DESK) dj.remove(block);
         registry.remove(block);
         // Statt des Vanilla-Drops faellt das PeakSound-Item (nicht im Kreativmodus)
         event.setDropItems(false);
         if (event.getPlayer().getGameMode() != GameMode.CREATIVE) {
-            PeakItemType item = type.get() == PeakBlockType.JUKEBOX ? PeakItemType.JUKEBOX : PeakItemType.SPEAKER;
+            PeakItemType item = PeakItemType.forBlock(type.get());
             block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), items.create(item, 1));
         }
     }
@@ -134,6 +140,10 @@ final class BlockListener implements Listener {
                 menu.open(player, block);
             } else if (type.get() == PeakBlockType.SPEAKER && network.hasMod(player)) {
                 speakerMenu.open(player, block);
+            } else if (type.get() == PeakBlockType.SPOTLIGHT && network.hasMod(player)) {
+                lights.open(player, block);
+            } else if (type.get() == PeakBlockType.DJ_DESK && network.hasMod(player)) {
+                dj.open(player, block);
             } else {
                 player.sendActionBar(Messages.tunerInfo(player, Messages.blockName(player, type.get()),
                         block.getX(), block.getY(), block.getZ()));

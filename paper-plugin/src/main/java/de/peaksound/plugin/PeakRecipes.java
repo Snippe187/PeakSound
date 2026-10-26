@@ -18,6 +18,8 @@ public final class PeakRecipes {
     private final List<NamespacedKey> keys = new ArrayList<>();
 
     public final NamespacedKey blankRecordKey = key("blank_record");
+    /** Das DJ-Pult-Rezept braucht PeakSound-Jukeboxen als Zutat (alle anderen Rezepte lehnen PeakSound-Items als Zutat ab). */
+    public final NamespacedKey djDeskKey = key("dj_desk");
 
     PeakRecipes(PeakSoundPlugin plugin, PeakItems items) {
         this.plugin = plugin;
@@ -53,6 +55,27 @@ public final class PeakRecipes {
         speaker.setIngredient('N', Material.NOTE_BLOCK);
         speaker.setCategory(CraftingBookCategory.REDSTONE);
         add(speaker);
+
+        // DJ-Pult: 2 PeakSound-Jukeboxen links und rechts, Redstone oben, Eisenbarren unten, Diamant in der Mitte
+        ShapedRecipe dj = new ShapedRecipe(djDeskKey, items.create(PeakItemType.DJ_DESK, 1));
+        dj.shape(" R ", "JDJ", " I ");
+        dj.setIngredient('R', Material.REDSTONE);
+        dj.setIngredient('D', Material.DIAMOND);
+        dj.setIngredient('I', Material.IRON_INGOT);
+        // Das Rezept nutzt den Traeger-Block der PeakSound-Jukebox (Notenblock); CraftListener prueft, dass es wirklich PeakSound-Jukeboxen sind
+        dj.setIngredient('J', Material.NOTE_BLOCK);
+        dj.setCategory(CraftingBookCategory.REDSTONE);
+        add(dj);
+
+        // Scheinwerfer (ergibt 2): Redstone-Lampe in der Mitte, Glas oben, Eisenbarren links/rechts/unten, Glowstone-Staub unten in den Ecken
+        ShapedRecipe spotlight = new ShapedRecipe(key("spotlight"), items.create(PeakItemType.SPOTLIGHT, 2));
+        spotlight.shape(" G ", "ILI", "NIN");
+        spotlight.setIngredient('G', Material.GLASS);
+        spotlight.setIngredient('I', Material.IRON_INGOT);
+        spotlight.setIngredient('L', Material.REDSTONE_LAMP);
+        spotlight.setIngredient('N', Material.GLOWSTONE_DUST);
+        spotlight.setCategory(CraftingBookCategory.REDSTONE);
+        add(spotlight);
 
         // Holzhacke + Redstone-Staub
         ShapelessRecipe tuner = new ShapelessRecipe(key("peak_tuner"), items.create(PeakItemType.PEAK_TUNER, 1));

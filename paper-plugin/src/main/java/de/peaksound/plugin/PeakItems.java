@@ -98,6 +98,8 @@ public final class PeakItems {
             case PEAK_TUNER -> "Peak Tuner";
             case JUKEBOX -> "PeakSound Jukebox";
             case SPEAKER -> "Speaker";
+            case DJ_DESK -> "DJ Desk";
+            case SPOTLIGHT -> "Spotlight";
         };
     }
 }

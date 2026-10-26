@@ -50,6 +50,48 @@ public final class DustNetwork {
 
     private static final int[][] HORIZONTAL = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 
+    /**
+     * Wie {@link #find}, beginnt aber an einem Staubblock statt an einem Geraet. Gibt es kein verbundenes Geraet,
+     * ist das Ergebnis ohne Geraete. Damit findet das DJ-Pult heraus, welches Netz hinter einem seiner Staubblocke liegt.
+     */
+    public static Result findFromDust(Grid grid, Pos startDust, int maxDust, int maxDevices) {
+        Map<Pos, PeakBlockType> devices = new LinkedHashMap<>();
+        Set<Pos> dust = new HashSet<>();
+        if (!grid.isDust(startDust.x(), startDust.y(), startDust.z())) return new Result(devices, dust, false);
+        dust.add(startDust);
+        boolean truncated = false;
+        Deque<Pos> queue = new ArrayDeque<>();
+        queue.add(startDust);
+        Deque<Pos> deviceQueue = new ArrayDeque<>();
+        while (!queue.isEmpty() || !deviceQueue.isEmpty()) {
+            if (!deviceQueue.isEmpty()) {
+                Pos node = deviceQueue.poll();
+                if (!devices.get(node).bridgesNetworks()) continue;
+                for (Pos d : deviceNeighbours(grid, node)) {
+                    if (dust.contains(d)) continue;
+                    if (dust.size() >= maxDust) { truncated = true; continue; }
+                    dust.add(d);
+                    queue.add(d);
+                }
+                continue;
+            }
+            Pos node = queue.poll();
+            for (Pos next : dustNeighbours(grid, node)) {
+                if (dust.contains(next)) continue;
+                if (dust.size() >= maxDust) { truncated = true; continue; }
+                dust.add(next);
+                queue.add(next);
+            }
+            for (Pos dev : touchedDevices(grid, node)) {
+                if (devices.containsKey(dev)) continue;
+                if (devices.size() >= maxDevices) { truncated = true; continue; }
+                devices.put(dev, grid.device(dev.x(), dev.y(), dev.z()));
+                deviceQueue.add(dev);
+            }
+        }
+        return new Result(devices, dust, truncated);
+    }
+
     public static Result find(Grid grid, Pos start, int maxDust, int maxDevices) {
         Map<Pos, PeakBlockType> devices = new LinkedHashMap<>();
         Set<Pos> dust = new HashSet<>();
@@ -63,6 +105,8 @@ public final class DustNetwork {
         while (!queue.isEmpty()) {
             Pos node = queue.poll();
             if (devices.containsKey(node)) {
+                // Das DJ-Pult haengt zwei Netze an sich, legt sie aber nicht zusammen (nur Blatt, nie Knoten)
+                if (!devices.get(node).bridgesNetworks() && !node.equals(start)) continue;
                 // Geraet: Staub an den Seiten und auf dem Geraet gehoert zum Netz
                 for (Pos d : deviceNeighbours(grid, node)) {
                     if (dust.contains(d)) continue;

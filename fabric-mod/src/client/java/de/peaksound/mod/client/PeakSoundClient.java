@@ -24,6 +24,7 @@ public final class PeakSoundClient implements ClientModInitializer {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             ServerState.reset();
             AudioEngine.clear();
+            LightShow.clear();
             ServerState.onHelloSent();
             ClientNetwork.send(new Packet.Hello(PeakIds.PROTOCOL_VERSION, PeakSoundMod.VERSION));
         });
@@ -31,11 +32,13 @@ public final class PeakSoundClient implements ClientModInitializer {
             ServerState.reset();
             AudioEngine.clear();
             CoverCache.clear();
+            LightShow.clear();
             PreviewPlayer.stop();
         });
         ClientTooltipComponentCallback.EVENT.register(CoverTooltip::create);
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             AudioEngine.tick();
+            LightShow.tick();
             PreviewPlayer.tick();
         });
         // Button "Song-Verwaltung" im Escape-Menue, nur fuer Operatoren (der Server meldet den Status).

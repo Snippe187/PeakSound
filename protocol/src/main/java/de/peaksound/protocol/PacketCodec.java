@@ -55,6 +55,17 @@ public final class PacketCodec {
                 case Packet.SpeakerOverviewRequest.ID -> Packet.SpeakerOverviewRequest.decode(in);
                 case Packet.SpeakerOverview.ID -> Packet.SpeakerOverview.decode(in);
                 case Packet.OperatorState.ID -> Packet.OperatorState.decode(in);
+                case Packet.OpenLightMenu.ID -> Packet.OpenLightMenu.decode(in);
+                case Packet.LightUpdate.ID -> Packet.LightUpdate.decode(in);
+                case Packet.LightStart.ID -> Packet.LightStart.decode(in);
+                case Packet.LightStop.ID -> Packet.LightStop.decode(in);
+                case Packet.AnalysisRequest.ID -> Packet.AnalysisRequest.decode(in);
+                case Packet.AnalysisData.ID -> Packet.AnalysisData.decode(in);
+                case Packet.DjRequest.ID -> Packet.DjRequest.decode(in);
+                case Packet.DjState.ID -> Packet.DjState.decode(in);
+                case Packet.DjUpdate.ID -> Packet.DjUpdate.decode(in);
+                case Packet.DjDeckAction.ID -> Packet.DjDeckAction.decode(in);
+                case Packet.PlaybackFade.ID -> Packet.PlaybackFade.decode(in);
                 case Packet.AdminListRequest.ID -> Packet.AdminListRequest.decode(in);
                 case Packet.AdminSongs.ID -> Packet.AdminSongs.decode(in);
                 case Packet.AdminAction.ID -> Packet.AdminAction.decode(in);

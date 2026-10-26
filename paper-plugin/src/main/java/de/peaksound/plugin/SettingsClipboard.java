@@ -1,6 +1,8 @@
 package de.peaksound.plugin;
 
+import de.peaksound.protocol.DjSettings;
 import de.peaksound.protocol.JukeboxSettings;
+import de.peaksound.protocol.LightSettings;
 import de.peaksound.protocol.PeakBlockType;
 import de.peaksound.protocol.PeakItemType;
 import de.peaksound.protocol.SpeakerSettings;
@@ -23,15 +25,21 @@ import org.bukkit.inventory.EquipmentSlot;
  */
 final class SettingsClipboard implements Listener {
     /** Was ein Spieler gerade kopiert hat. */
-    private record Clip(PeakBlockType type, BlockRegistry.Key source, JukeboxSettings jukebox, SpeakerSettings speaker) {}
+    private record Clip(PeakBlockType type, BlockRegistry.Key source, JukeboxSettings jukebox, SpeakerSettings speaker,
+                LightSettings light, DjSettings dj) {}
 
     private final PeakItems items;
     private final JukeboxSettingsStore jukeboxSettings;
     private final PlaybackManager playback;
     private final SpeakerService speakers;
+    private final LightService lights;
+    private final DjService dj;
     private final Map<UUID, Clip> clips = new ConcurrentHashMap<>();
 
-    SettingsClipboard(PeakItems items, JukeboxSettingsStore jukeboxSettings, PlaybackManager playback, SpeakerService speakers) {
+    SettingsClipboard(PeakItems items, JukeboxSettingsStore jukeboxSettings, PlaybackManager playback, SpeakerService speakers,
+                      LightService lights, DjService dj) {
+        this.lights = lights;
+        this.dj = dj;
         this.items = items;
         this.jukeboxSettings = jukeboxSettings;
         this.playback = playback;
@@ -47,13 +55,17 @@ final class SettingsClipboard implements Listener {
             switch (type) {
                 case JUKEBOX -> playback.applySettings(block, clip.jukebox().withName(jukeboxSettings.get(block).name()));
                 case SPEAKER -> speakers.update(block, clip.speaker().withName(speakers.settingsOf(block).name()));
+                case SPOTLIGHT -> lights.apply(block, clip.light());
+                case DJ_DESK -> dj.put(block, clip.dj());
             }
             player.sendActionBar(Messages.info(player, "Einstellungen eingefuegt.", "Settings pasted."));
             return;
         }
         Clip copied = switch (type) {
-            case JUKEBOX -> new Clip(type, key, jukeboxSettings.get(block), null);
-            case SPEAKER -> new Clip(type, key, null, speakers.settingsOf(block));
+            case JUKEBOX -> new Clip(type, key, jukeboxSettings.get(block), null, null, null);
+            case SPEAKER -> new Clip(type, key, null, speakers.settingsOf(block), null, null);
+            case SPOTLIGHT -> new Clip(type, key, null, null, lights.settingsOf(block), null);
+            case DJ_DESK -> new Clip(type, key, null, null, null, dj.settingsOf(block));
         };
         clips.put(player.getUniqueId(), copied);
         player.sendActionBar(Messages.info(player,

@@ -17,6 +17,20 @@
           "type": "minecraft:model",
           "model": "peaksound:block/speaker"
         }
+      },
+      {
+        "when": "dj_desk",
+        "model": {
+          "type": "minecraft:model",
+          "model": "peaksound:block/dj_desk"
+        }
+      },
+      {
+        "when": "spotlight",
+        "model": {
+          "type": "minecraft:model",
+          "model": "peaksound:block/spotlight"
+        }
       }
     ],
     "fallback": {
