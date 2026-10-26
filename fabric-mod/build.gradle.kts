@@ -41,6 +41,7 @@ dependencies {
     for (lib in listOf(
         "net.jthink:jaudiotagger:3.0.1",
         "com.googlecode.soundlibs:jlayer:1.0.1.4",
+        "org.jcraft:jorbis:0.0.17",
         "org.jflac:jflac-codec:1.5.2",
         "net.sourceforge.javaflacencoder:java-flac-encoder:0.3.7",
     )) {

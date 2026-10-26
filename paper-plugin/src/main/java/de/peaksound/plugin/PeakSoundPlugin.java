@@ -12,6 +12,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
     private PeakRecipes recipes;
     private SongStore songs;
     private PlaybackManager playback;
+    private JukeboxSettingsStore settingsStore;
 
     SongStore songs() { return songs; }
 
@@ -36,23 +37,31 @@ public final class PeakSoundPlugin extends JavaPlugin {
         getLogger().info(transcoder.ffmpegAvailable()
                 ? "ffmpeg gefunden: Uploads werden zu Ogg Vorbis komprimiert."
                 : "ffmpeg nicht gefunden: OGG/FLAC/MP3 bleiben unveraendert, WAV wird zu FLAC.");
-        UploadService uploads = new UploadService(this, items, songs, transcoder);
+        AnalysisStore analysis = new AnalysisStore(this, songs);
+        JukeboxSettingsStore jukeboxSettings = new JukeboxSettingsStore(this);
+        jukeboxSettings.load();
+        jukeboxSettings.startAutosave();
+        this.settingsStore = jukeboxSettings;
+        UploadService uploads = new UploadService(this, items, songs, analysis, transcoder);
         SongStreamService streams = new SongStreamService(this, songs);
-        playback = new PlaybackManager(this, network);
+        playback = new PlaybackManager(this, network, jukeboxSettings, analysis);
         playback.load();
-        network.wire(uploads, streams, playback);
+        JukeboxMenuService menu = new JukeboxMenuService(this, blocks, jukeboxSettings, playback);
+        network.wire(uploads, streams, playback, menu);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, PeakIds.CHANNEL, network);
         getServer().getMessenger().registerOutgoingPluginChannel(this, PeakIds.CHANNEL);
 
         getServer().getPluginManager().registerEvents(network, this);
-        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback), this);
+        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network), this);
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(
                 new RecordListener(this, items, blocks, songs, uploads, playback, network), this);
 
         // Wiedergabe-Zustand alle 10 Ticks pruefen (leichtgewichtig: nur ein Vergleich pro Jukebox und Spieler)
         Bukkit.getScheduler().runTaskTimer(this, playback::tick, 10L, 10L);
+        // Partikel im Takt: feinere Aufloesung, aber nur ein Vergleich je Jukebox (Analyse liegt im Speicher)
+        Bukkit.getScheduler().runTaskTimer(this, playback::particleTick, 2L, 2L);
     }
 
     @Override
@@ -61,5 +70,6 @@ public final class PeakSoundPlugin extends JavaPlugin {
         if (blocks != null) blocks.saveNow();
         if (songs != null) songs.saveIfDirty();
         if (playback != null) playback.saveBlocking();
+        if (settingsStore != null) settingsStore.saveNow();
     }
 }

@@ -1,47 +1,58 @@
 package de.peaksound.plugin;
 
-import de.peaksound.protocol.Limits;
+import de.peaksound.audio.Analysis;
+import de.peaksound.protocol.JukeboxSettings;
 import de.peaksound.protocol.Packet;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Verwaltet, welche Jukebox welche Platte spielt, und meldet Spielern in der Naehe Start und Ende.
+ * Verwaltet, welche Jukebox welche Platte spielt, und meldet Spielern in der Naehe Start, Aenderungen und Ende.
  * Die Wiedergabe selbst (Audio) passiert beim Client; der Server liefert nur Song, Startzeit und Position.
+ * Zusaetzlich: "Jetzt laeuft"-Anzeige und Noten-Partikel im Takt (aus der vorberechneten Analyse).
  */
 final class PlaybackManager {
     /** Zustand einer Jukebox mit eingelegter Platte. */
     static final class State {
         final ItemStack record;
         final String hash;
+        final String title;
+        final String artist;
         final int durationMs;
         final long startedAt;
-        final int range;
-        final int volume;
         boolean playing;
+        /** Songposition (ms), bis zu der Taktschlaege schon verarbeitet wurden. */
+        long beatCursorMs;
 
-        State(ItemStack record, String hash, int durationMs, long startedAt, int range, int volume, boolean playing) {
+        State(ItemStack record, String hash, String title, String artist, int durationMs, long startedAt, boolean playing) {
             this.record = record;
             this.hash = hash;
+            this.title = title;
+            this.artist = artist;
             this.durationMs = durationMs;
             this.startedAt = startedAt;
-            this.range = range;
-            this.volume = volume;
             this.playing = playing;
+            this.beatCursorMs = Math.max(0, System.currentTimeMillis() - startedAt);
         }
     }
 
@@ -52,26 +63,35 @@ final class PlaybackManager {
 
     private final PeakSoundPlugin plugin;
     private final NetworkHandler network;
+    private final JukeboxSettingsStore settings;
+    private final AnalysisStore analysis;
     private final Map<BlockRegistry.Key, State> states = new ConcurrentHashMap<>();
     private final Map<UUID, Set<BlockRegistry.Key>> heard = new ConcurrentHashMap<>();
+    /** Fuer welche Jukeboxen der Spieler "Jetzt laeuft" schon gesehen hat (bis er wieder weit weg ist). */
+    private final Map<UUID, Set<BlockRegistry.Key>> announced = new ConcurrentHashMap<>();
 
-    PlaybackManager(PeakSoundPlugin plugin, NetworkHandler network) {
+    PlaybackManager(PeakSoundPlugin plugin, NetworkHandler network, JukeboxSettingsStore settings, AnalysisStore analysis) {
         this.plugin = plugin;
         this.network = network;
+        this.settings = settings;
+        this.analysis = analysis;
     }
 
     boolean hasRecord(Block block) {
         return states.containsKey(BlockRegistry.Key.of(block));
     }
 
+    Optional<State> state(Block block) {
+        return Optional.ofNullable(states.get(BlockRegistry.Key.of(block)));
+    }
+
     /** Legt eine Platte ein und startet sie. */
     void insert(Block block, ItemStack record, Song song) {
-        int range = clamp(plugin.getConfig().getInt("playback.default-range", 16), Limits.MIN_RANGE, Limits.MAX_RANGE);
-        int volume = clamp(plugin.getConfig().getInt("playback.default-volume", 100), 0, 100);
         ItemStack single = record.clone();
         single.setAmount(1);
         states.put(BlockRegistry.Key.of(block),
-                new State(single, song.hash(), song.durationMs(), System.currentTimeMillis(), range, volume, true));
+                new State(single, song.hash(), song.title(), song.artist(), song.durationMs(), System.currentTimeMillis(), true));
+        analysis.peek(song); // Analyse vorladen, damit der erste Takt schon Partikel ausloest
         save();
         tick(); // Spieler in der Naehe sofort informieren
     }
@@ -86,12 +106,30 @@ final class PlaybackManager {
         return Optional.of(state.record);
     }
 
+    /** Neue Einstellungen uebernehmen und laufende Wiedergabe beim Client nachziehen. */
+    void applySettings(Block block, JukeboxSettings updated) {
+        BlockRegistry.Key key = BlockRegistry.Key.of(block);
+        JukeboxSettings old = settings.get(key);
+        settings.set(block, updated);
+        JukeboxSettings now = settings.get(key);
+        State s = states.get(key);
+        if (s == null || !s.playing || (old.range() == now.range() && old.volume() == now.volume())) return;
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            Set<BlockRegistry.Key> set = heard.get(p.getUniqueId());
+            if (set != null && set.contains(key)) {
+                Net.send(plugin, p, new Packet.PlaybackUpdate(key.x(), key.y(), key.z(), now.range(), now.volume()));
+            }
+        }
+    }
+
     private void stopFor(BlockRegistry.Key key) {
         for (Player p : Bukkit.getOnlinePlayers()) {
             Set<BlockRegistry.Key> set = heard.get(p.getUniqueId());
             if (set != null && set.remove(key)) {
                 Net.send(plugin, p, new Packet.PlaybackStop(key.x(), key.y(), key.z()));
             }
+            Set<BlockRegistry.Key> shown = announced.get(p.getUniqueId());
+            if (shown != null) shown.remove(key);
         }
     }
 
@@ -104,41 +142,109 @@ final class PlaybackManager {
             if (s.playing && now - s.startedAt >= s.durationMs) {
                 s.playing = false;
                 changed = true;
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    Set<BlockRegistry.Key> set = heard.get(p.getUniqueId());
-                    if (set != null && set.remove(e.getKey())) {
-                        Net.send(plugin, p, new Packet.PlaybackStop(e.getKey().x(), e.getKey().y(), e.getKey().z()));
-                    }
-                }
+                stopFor(e.getKey());
             }
         }
         if (changed) save();
 
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (!network.hasMod(p)) continue;
+            if (!network.hasMod(p)) {
+                announceOnly(p, now);
+                continue;
+            }
             Set<BlockRegistry.Key> set = heard.computeIfAbsent(p.getUniqueId(), k -> new HashSet<>());
+            Set<BlockRegistry.Key> shown = announced.computeIfAbsent(p.getUniqueId(), k -> new HashSet<>());
             UUID world = p.getWorld().getUID();
             Location loc = p.getLocation();
             for (Map.Entry<BlockRegistry.Key, State> e : states.entrySet()) {
                 BlockRegistry.Key key = e.getKey();
                 State s = e.getValue();
                 if (!s.playing) continue;
-                boolean sameWorld = key.world().equals(world);
-                double d2 = sameWorld
-                        ? sq(loc.getX() - (key.x() + 0.5)) + sq(loc.getY() - (key.y() + 0.5)) + sq(loc.getZ() - (key.z() + 0.5))
-                        : Double.MAX_VALUE;
+                JukeboxSettings cfg = settings.get(key);
+                double d2 = distanceSquared(key, world, loc);
                 boolean listening = set.contains(key);
-                if (!listening && d2 <= sq(s.range + PRELOAD_MARGIN)) {
+                if (!listening && d2 <= sq(cfg.range() + PRELOAD_MARGIN)) {
                     int offset = (int) Math.min(Integer.MAX_VALUE, now - s.startedAt);
                     Net.send(plugin, p, new Packet.PlaybackStart(key.x(), key.y(), key.z(), s.hash, offset, now,
-                            s.durationMs, songChannels(s.hash), s.range, s.volume));
+                            s.durationMs, songChannels(s.hash), cfg.range(), cfg.volume()));
                     set.add(key);
-                } else if (listening && d2 > sq(s.range + RELEASE_MARGIN)) {
+                } else if (listening && d2 > sq(cfg.range() + RELEASE_MARGIN)) {
                     Net.send(plugin, p, new Packet.PlaybackStop(key.x(), key.y(), key.z()));
                     set.remove(key);
                 }
+                updateAnnouncement(p, key, s, cfg, d2, shown);
             }
         }
+    }
+
+    /** Spieler ohne Mod hoeren nichts, sehen aber trotzdem die "Jetzt laeuft"-Anzeige (Actionbar). */
+    private void announceOnly(Player p, long now) {
+        Set<BlockRegistry.Key> shown = announced.computeIfAbsent(p.getUniqueId(), k -> new HashSet<>());
+        UUID world = p.getWorld().getUID();
+        Location loc = p.getLocation();
+        for (Map.Entry<BlockRegistry.Key, State> e : states.entrySet()) {
+            if (!e.getValue().playing) continue;
+            updateAnnouncement(p, e.getKey(), e.getValue(), settings.get(e.getKey()), distanceSquared(e.getKey(), world, loc), shown);
+        }
+    }
+
+    private void updateAnnouncement(Player p, BlockRegistry.Key key, State s, JukeboxSettings cfg, double d2,
+                                    Set<BlockRegistry.Key> shown) {
+        if (!cfg.showNowPlaying()) return;
+        if (d2 <= sq(cfg.range()) && shown.add(key)) {
+            String artist = s.artist.isBlank() ? "" : " – " + s.artist;
+            boolean de = p.locale().getLanguage().equals("de");
+            p.sendActionBar(Component.text("♪ ", NamedTextColor.GOLD)
+                    .append(Component.text(de ? "Jetzt läuft: " : "Now playing: ", NamedTextColor.GRAY))
+                    .append(Component.text(s.title + artist, NamedTextColor.WHITE)));
+        } else if (d2 > sq(cfg.range() + 4)) {
+            shown.remove(key);
+        }
+    }
+
+    /** Alle 2 Ticks: Noten-Partikel bei Taktschlaegen. Nutzt nur die vorberechnete Analyse (kein Rechnen im Tick). */
+    void particleTick() {
+        long now = System.currentTimeMillis();
+        for (Map.Entry<BlockRegistry.Key, State> e : states.entrySet()) {
+            State s = e.getValue();
+            if (!s.playing) continue;
+            JukeboxSettings cfg = settings.get(e.getKey());
+            long position = now - s.startedAt;
+            if (!cfg.particles()) {
+                s.beatCursorMs = position;
+                continue;
+            }
+            Optional<Song> song = plugin.songs().get(s.hash);
+            Optional<Analysis> a = song.flatMap(analysis::peek);
+            if (a.isEmpty()) continue;
+            int beat = a.get().nextBeatAfter(s.beatCursorMs);
+            if (beat < 0 || beat > position) continue;
+            s.beatCursorMs = position;
+            World world = Bukkit.getWorld(e.getKey().world());
+            if (world == null) continue;
+            Location center = new Location(world, e.getKey().x() + 0.5, e.getKey().y() + 1.0, e.getKey().z() + 0.5);
+            if (world.getNearbyPlayers(center, 48).isEmpty()) continue; // niemand sieht es
+            spawnNotes(world, center, cfg);
+        }
+    }
+
+    private static void spawnNotes(World world, Location center, JukeboxSettings cfg) {
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        double spread = 1.6 - 0.14 * cfg.particleDensity(); // Dichte 10 = eng, Dichte 1 = weit gestreut
+        for (int i = 0; i < cfg.particleAmount(); i++) {
+            Location at = center.clone().add((rnd.nextDouble() - 0.5) * 2 * spread,
+                    rnd.nextDouble() * Math.max(0.2, cfg.particleHeight()), (rnd.nextDouble() - 0.5) * 2 * spread);
+            if (cfg.rainbow()) {
+                world.spawnParticle(Particle.NOTE, at, 0, rnd.nextDouble(), 0, 0, 1.0); // Farbe = erster Offset (0-1)
+            } else {
+                world.spawnParticle(Particle.NOTE, at, 0, 0.0, 0, 0, 1.0);
+            }
+        }
+    }
+
+    private double distanceSquared(BlockRegistry.Key key, UUID world, Location loc) {
+        if (!key.world().equals(world)) return Double.MAX_VALUE;
+        return sq(loc.getX() - (key.x() + 0.5)) + sq(loc.getY() - (key.y() + 0.5)) + sq(loc.getZ() - (key.z() + 0.5));
     }
 
     private int songChannels(String hash) {
@@ -147,17 +253,18 @@ final class PlaybackManager {
 
     void onQuit(Player player) {
         heard.remove(player.getUniqueId());
+        announced.remove(player.getUniqueId());
     }
 
-    /** Beim Weltwechsel/Respawn muss der Client neu informiert werden. */
+    /** Beim Weltwechsel/Neuverbinden muss der Client neu informiert werden. */
     void forget(Player player) {
         Set<BlockRegistry.Key> set = heard.get(player.getUniqueId());
         if (set != null) set.clear();
+        Set<BlockRegistry.Key> shown = announced.get(player.getUniqueId());
+        if (shown != null) shown.clear();
     }
 
     private static double sq(double v) { return v * v; }
-
-    private static int clamp(int v, int min, int max) { return Math.max(min, Math.min(max, v)); }
 
     // ---- Persistenz (playback.yml) ----
 
@@ -165,17 +272,17 @@ final class PlaybackManager {
     private String snapshot() {
         List<Map<String, Object>> list = new ArrayList<>();
         states.forEach((k, s) -> {
-            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            Map<String, Object> m = new LinkedHashMap<>();
             m.put("world", k.world().toString());
             m.put("x", k.x());
             m.put("y", k.y());
             m.put("z", k.z());
             m.put("record", Base64.getEncoder().encodeToString(s.record.serializeAsBytes()));
             m.put("hash", s.hash);
+            m.put("title", s.title);
+            m.put("artist", s.artist);
             m.put("duration", s.durationMs);
             m.put("started", s.startedAt);
-            m.put("range", s.range);
-            m.put("volume", s.volume);
             m.put("playing", s.playing);
             list.add(m);
         });
@@ -202,7 +309,7 @@ final class PlaybackManager {
     void saveBlocking() {
         write(snapshot());
     }
-    @SuppressWarnings("unchecked")
+
     void load() {
         java.nio.file.Path file = plugin.getDataFolder().toPath().resolve("playback.yml");
         if (!java.nio.file.Files.exists(file)) return;
@@ -212,9 +319,11 @@ final class PlaybackManager {
                 BlockRegistry.Key key = new BlockRegistry.Key(UUID.fromString((String) m.get("world")),
                         ((Number) m.get("x")).intValue(), ((Number) m.get("y")).intValue(), ((Number) m.get("z")).intValue());
                 ItemStack record = ItemStack.deserializeBytes(Base64.getDecoder().decode((String) m.get("record")));
-                states.put(key, new State(record, (String) m.get("hash"), ((Number) m.get("duration")).intValue(),
-                        ((Number) m.get("started")).longValue(), ((Number) m.get("range")).intValue(),
-                        ((Number) m.get("volume")).intValue(), (Boolean) m.get("playing")));
+                Object title = m.get("title");
+                Object artist = m.get("artist");
+                states.put(key, new State(record, (String) m.get("hash"), title == null ? (String) m.get("hash") : title.toString(),
+                        artist == null ? "" : artist.toString(), ((Number) m.get("duration")).intValue(),
+                        ((Number) m.get("started")).longValue(), (Boolean) m.get("playing")));
             } catch (RuntimeException e) {
                 plugin.getLogger().warning("Ungueltiger Eintrag in playback.yml uebersprungen: " + e.getMessage());
             }

@@ -42,8 +42,8 @@ final class JukeboxVoice {
     private final String hash;
     private final long startedAtServerMs;
     private final int durationMs;
-    private final int range;
-    private final int volume;
+    private volatile int range;
+    private volatile int volume;
 
     private final BlockingQueue<Block> decoded = new ArrayBlockingQueue<>(8);
     private final Deque<Integer> queuedLengths = new ArrayDeque<>();
@@ -75,6 +75,12 @@ final class JukeboxVoice {
     }
 
     long key() { return key; }
+
+    /** Menue hat Reichweite oder Lautstaerke geaendert (wirkt bei der naechsten Pegelberechnung). */
+    void update(int newRange, int newVolume) {
+        this.range = newRange;
+        this.volume = newVolume;
+    }
 
     String hash() { return hash; }
 

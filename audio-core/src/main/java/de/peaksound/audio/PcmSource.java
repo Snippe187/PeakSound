@@ -17,13 +17,16 @@ public interface PcmSource extends Closeable {
      */
     int read(short[] out, int maxFrames) throws IOException;
 
-    /** Oeffnet einen Decoder fuer MP3, FLAC oder WAV. OGG decodiert der Client selbst (STBVorbis). */
+    /**
+     * Oeffnet einen Decoder fuer MP3, FLAC, WAV oder OGG. Der Client spielt OGG selbst ueber STBVorbis ab;
+     * der OGG-Decoder hier dient der serverseitigen Analyse.
+     */
     static PcmSource open(byte[] data, AudioFormat format) throws AudioException {
         return switch (format) {
             case MP3 -> new Mp3PcmSource(data);
             case FLAC -> new FlacPcmSource(data);
             case WAV -> new WavPcmSource(data);
-            case OGG -> throw new AudioException("OGG wird nicht ueber PcmSource decodiert");
+            case OGG -> new OggPcmSource(data);
         };
     }
 }

@@ -23,5 +23,21 @@
   "peaksound.upload.error.storage": "The server storage is full.",
   "peaksound.upload.error.ticket": "The upload expired. Shift-click the jukebox again.",
   "peaksound.upload.error.busy": "The server is busy. Try again shortly.",
-  "peaksound.upload.error.internal": "Internal error. Please tell an admin."
+  "peaksound.upload.error.internal": "Internal error. Please tell an admin.",
+
+  "peaksound.menu.jukebox.title": "PeakSound Jukebox",
+  "peaksound.menu.name": "Name",
+  "peaksound.menu.name.hint": "Name of this jukebox",
+  "peaksound.menu.range": "Range: %d blocks",
+  "peaksound.menu.volume": "Volume: %d %%",
+  "peaksound.menu.chain": "Chain: %s",
+  "peaksound.menu.chain.tooltip": "When on, range and volume move together (16 blocks / 50 %% -> 24 blocks = 75 %%).",
+  "peaksound.menu.nowplaying": "Show now playing: %s",
+  "peaksound.menu.particles": "Note particles: %s",
+  "peaksound.menu.amount": "Particles per beat: %d",
+  "peaksound.menu.density": "Density: %d",
+  "peaksound.menu.height": "Rise height: %d",
+  "peaksound.menu.rainbow": "Colorful notes: %s",
+  "peaksound.menu.playing": "Now playing: %s - %s",
+  "peaksound.menu.nothing": "No record is playing"
 }

@@ -23,6 +23,14 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - Bewusst verschoben: Wiedergabe startet nach vollständigem Download (progressives Streaming → Phase 8);
   Cover im Platten-Tooltip → Phase 3; Mehrkanal-Freigabe im OP-Menü → Phase 7; Lautsprecher/Surround → Phase 6.
 ## Phase 3 – Jukebox-Menü
+- [x] Protokoll: JukeboxSettings (Grenzen, Bereinigung), ChainMath (Verkettung), Menü-/Cover-Pakete, Tests
+- [x] audio-core: Ogg-Decoder (JOrbis), Analyse (Takt + 3 Frequenzbänder, wird in Phase 5 für den Equalizer genutzt), Tests
+- [x] Plugin: Einstellungen je Jukebox (Name, Reichweite, Lautstärke, Kette, Partikel, Jetzt-läuft), serverseitig geprüft
+- [x] Plugin: Noten-Partikel im Takt aus der Analyse, "Jetzt läuft: Titel – Interpret" (Actionbar, auch ohne Mod)
+- [x] Plugin: Cover-Auslieferung; Mod: Cover im Platten-Tooltip (Mixin), Standardbild ohne Cover
+- [x] Mod: Jukebox-Menü (Peak-Tuner Rechtsklick), Live-Änderung von Reichweite/Lautstärke bei laufender Wiedergabe
+- [ ] Manuelle Abnahme
+- Verschoben: Playlist-Bereich im Menü (Phase 4), Lautsprecher-Übersicht im Menü (Phase 6).
 ## Phase 4 – Hopper-Playlist und Kisten-Erweiterung
 ## Phase 5 – Redstone-Verbund und Comparator-Equalizer
 ## Phase 6 – Lautsprecher und Surround

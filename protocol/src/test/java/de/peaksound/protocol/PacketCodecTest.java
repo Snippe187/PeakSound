@@ -11,7 +11,9 @@ class PacketCodecTest {
             new Packet.Hello(1, "0.1.0"),
             new Packet.UploadStart(7, "Mein Song", 1234567),
             new Packet.UploadChunk(3, 0, new byte[] {1, 2, 3}),
-            new Packet.SongRequest("a".repeat(64), 5));
+            new Packet.SongRequest("a".repeat(64), 5),
+            new Packet.JukeboxUpdate(1, 64, -3, JukeboxSettings.defaults(16, 50)),
+            new Packet.CoverRequest("f".repeat(64)));
 
     private static final List<Packet.Clientbound> CLIENTBOUND = List.of(
             new Packet.HelloAck(1, true, false, 1_700_000_000_000L, 240),
@@ -23,7 +25,10 @@ class PacketCodecTest {
             new Packet.SongChunk("c".repeat(64), 1, 4, new byte[Limits.DOWNLOAD_CHUNK_BYTES]),
             new Packet.SongUnavailable("d".repeat(64)),
             new Packet.PlaybackStart(1, -60, 3, "e".repeat(64), 1500, 1_700_000_000_000L, 180_000, 2, 16, 80),
-            new Packet.PlaybackStop(1, -60, 3));
+            new Packet.PlaybackStop(1, -60, 3),
+            new Packet.PlaybackUpdate(1, -60, 3, 20, 40),
+            new Packet.OpenJukeboxMenu(1, 64, -3, JukeboxSettings.defaults(16, 100), true, "Titel", "Interpret"),
+            new Packet.CoverData("a".repeat(64), new byte[1000]));
 
     @Test
     void serverboundRoundTrip() {
@@ -110,6 +115,35 @@ class PacketCodecTest {
         byte[] badBool = new Packet.HelloAck(1, true, false, 0, 1).encode();
         badBool[5] = 7;
         assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeClientbound(badBool));
+    }
+
+    @Test
+    void settingsRoundTripAndSanitize() {
+        JukeboxSettings s = new JukeboxSettings("  Disco\u0007 ".concat("x".repeat(60)), 99, -5, true, false, 50, 0, 9, false, true);
+        JukeboxSettings clean = s.sanitized();
+        assertEquals(30, clean.range());
+        assertEquals(0, clean.volume());
+        assertEquals(10, clean.particleAmount());
+        assertEquals(1, clean.particleDensity());
+        assertEquals(5, clean.particleHeight());
+        assertTrue(clean.name().length() <= JukeboxSettings.MAX_NAME);
+        assertFalse(clean.name().contains("\u0007"));
+        Packet.JukeboxUpdate decoded = (Packet.JukeboxUpdate) PacketCodec.decodeServerbound(
+                new Packet.JukeboxUpdate(0, 0, 0, clean).encode());
+        assertEquals(clean, decoded.settings());
+    }
+
+    @Test
+    void rejectsOutOfRangeSettingsFromClient() {
+        // Reichweite 99 und Lautstaerke 200 direkt im Paket: ein ehrlicher Client sendet das nie
+        byte[] packet = new Packet.JukeboxUpdate(0, 0, 0, JukeboxSettings.defaults(16, 50)).encode();
+        int nameLen = ((packet[13] & 0xFF) << 8) | (packet[14] & 0xFF);
+        int rangeIndex = 15 + nameLen;
+        packet[rangeIndex] = 99;
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(packet));
+        packet[rangeIndex] = 16;
+        packet[rangeIndex + 1] = (byte) 200;
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(packet));
     }
 
     @Test

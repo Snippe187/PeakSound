@@ -12,6 +12,9 @@
     "main": ["de.peaksound.mod.PeakSoundMod"],
     "client": ["de.peaksound.mod.client.PeakSoundClient"]
   },
+  "mixins": [
+    {"config": "peaksound.mixins.json", "environment": "client"}
+  ],
   "depends": {
     "fabricloader": ">=0.20.1",
     "minecraft": "~26.2",

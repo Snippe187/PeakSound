@@ -16,6 +16,8 @@ public final class Limits {
     public static final int MAX_UPLOAD_BYTES = 64 * 1024 * 1024;
     /** Texte (Titel, Interpret, Namen). */
     public static final int MAX_TEXT = 64;
+    /** Maximale Cover-Groesse in Bytes. */
+    public static final int MAX_COVER_BYTES = 512 * 1024;
     /** Laenge eines SHA-256-Hex-Strings. */
     public static final int HASH_LENGTH = 64;
 

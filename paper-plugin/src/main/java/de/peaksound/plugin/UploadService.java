@@ -58,6 +58,7 @@ final class UploadService {
     private final PeakSoundPlugin plugin;
     private final PeakItems items;
     private final SongStore store;
+    private final AnalysisStore analysis;
     private final Transcoder transcoder;
     private final SecureRandom random = new SecureRandom();
     private final Map<Integer, Ticket> tickets = new ConcurrentHashMap<>();
@@ -66,10 +67,11 @@ final class UploadService {
     private final AtomicInteger processing = new AtomicInteger();
     private int nextUploadId = 1;
 
-    UploadService(PeakSoundPlugin plugin, PeakItems items, SongStore store, Transcoder transcoder) {
+    UploadService(PeakSoundPlugin plugin, PeakItems items, SongStore store, AnalysisStore analysis, Transcoder transcoder) {
         this.plugin = plugin;
         this.items = items;
         this.store = store;
+        this.analysis = analysis;
         this.transcoder = transcoder;
     }
 
@@ -212,7 +214,10 @@ final class UploadService {
         SongStore.AddResult added = store.add(song, stored.data(), info.cover(),
                 plugin.getConfig().getInt("upload.max-songs-per-player", 10), maxStorageBytes());
         return switch (added) {
-            case ADDED -> new Outcome(null, 0, song, true);
+            case ADDED -> {
+                analysis.store(song, stored.data(), stored.format()); // Takt und Frequenzbaender fuer Partikel/Equalizer
+                yield new Outcome(null, 0, song, true);
+            }
             case ALREADY_PRESENT -> new Outcome(null, 0, store.get(hash).orElse(song), false);
             case QUOTA_REACHED -> Outcome.fail(Reason.QUOTA_REACHED, plugin.getConfig().getInt("upload.max-songs-per-player", 10));
             case STORAGE_FULL -> Outcome.fail(Reason.STORAGE_FULL, 0);

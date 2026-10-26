@@ -27,6 +27,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     private UploadService uploads;
     private SongStreamService streams;
     private PlaybackManager playback;
+    private JukeboxMenuService menu;
 
     NetworkHandler(PeakSoundPlugin plugin, PeakRecipes recipes) {
         this.plugin = plugin;
@@ -34,10 +35,11 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     }
 
     /** Verbindet die Dienste (erst nach deren Erzeugung moeglich, da sie das NetworkHandler brauchen). */
-    void wire(UploadService uploads, SongStreamService streams, PlaybackManager playback) {
+    void wire(UploadService uploads, SongStreamService streams, PlaybackManager playback, JukeboxMenuService menu) {
         this.uploads = uploads;
         this.streams = streams;
         this.playback = playback;
+        this.menu = menu;
     }
 
     boolean hasMod(Player player) {
@@ -63,6 +65,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             case Packet.UploadStart start -> uploads.onStart(player, start);
             case Packet.UploadChunk chunk -> uploads.onChunk(player, chunk);
             case Packet.SongRequest request -> streams.onRequest(player, request);
+            case Packet.CoverRequest request -> streams.onCover(player, request);
+            case Packet.JukeboxUpdate update -> menu.onUpdate(player, update);
             case Packet.Hello ignored -> { /* oben behandelt */ }
         }
     }
@@ -102,5 +106,6 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         uploads.onQuit(player);
         streams.onQuit(player);
         playback.onQuit(player);
+        menu.onQuit(player);
     }
 }

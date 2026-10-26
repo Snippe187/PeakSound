@@ -23,5 +23,21 @@
   "peaksound.upload.error.storage": "Der Speicher des Servers ist voll.",
   "peaksound.upload.error.ticket": "Der Upload ist abgelaufen. Klicke die Jukebox mit Shift erneut an.",
   "peaksound.upload.error.busy": "Der Server ist ausgelastet. Versuche es gleich noch einmal.",
-  "peaksound.upload.error.internal": "Interner Fehler. Bitte informiere einen Admin."
+  "peaksound.upload.error.internal": "Interner Fehler. Bitte informiere einen Admin.",
+
+  "peaksound.menu.jukebox.title": "PeakSound-Jukebox",
+  "peaksound.menu.name": "Name",
+  "peaksound.menu.name.hint": "Name dieser Jukebox",
+  "peaksound.menu.range": "Reichweite: %d Blöcke",
+  "peaksound.menu.volume": "Lautstärke: %d %%",
+  "peaksound.menu.chain": "Kette: %s",
+  "peaksound.menu.chain.tooltip": "Wenn an, bewegen sich Reichweite und Lautstärke gemeinsam (16 Blöcke / 50 %% -> 24 Blöcke = 75 %%).",
+  "peaksound.menu.nowplaying": "Jetzt-läuft-Anzeige: %s",
+  "peaksound.menu.particles": "Noten-Partikel: %s",
+  "peaksound.menu.amount": "Partikel pro Takt: %d",
+  "peaksound.menu.density": "Dichte: %d",
+  "peaksound.menu.height": "Aufsteighöhe: %d",
+  "peaksound.menu.rainbow": "Bunte Noten: %s",
+  "peaksound.menu.playing": "Jetzt läuft: %s - %s",
+  "peaksound.menu.nothing": "Keine Platte läuft"
 }

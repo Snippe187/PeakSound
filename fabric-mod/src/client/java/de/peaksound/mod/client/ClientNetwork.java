@@ -42,6 +42,9 @@ public final class ClientNetwork {
             case Packet.SongUnavailable unavailable -> SongLibrary.onUnavailable(unavailable.hash());
             case Packet.PlaybackStart start -> AudioEngine.start(start);
             case Packet.PlaybackStop stop -> AudioEngine.stop(stop.x(), stop.y(), stop.z());
+            case Packet.PlaybackUpdate update -> AudioEngine.update(update);
+            case Packet.OpenJukeboxMenu menu -> JukeboxMenuScreen.open(menu);
+            case Packet.CoverData cover -> CoverCache.onData(cover);
         }
     }
 }

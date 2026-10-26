@@ -31,11 +31,18 @@ final class BlockListener implements Listener {
     private final PeakItems items;
     private final BlockRegistry registry;
     private final PlaybackManager playback;
+    private final JukeboxSettingsStore settings;
+    private final JukeboxMenuService menu;
+    private final NetworkHandler network;
 
-    BlockListener(PeakItems items, BlockRegistry registry, PlaybackManager playback) {
+    BlockListener(PeakItems items, BlockRegistry registry, PlaybackManager playback, JukeboxSettingsStore settings,
+                  JukeboxMenuService menu, NetworkHandler network) {
         this.items = items;
         this.registry = registry;
         this.playback = playback;
+        this.settings = settings;
+        this.menu = menu;
+        this.network = network;
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -68,6 +75,7 @@ final class BlockListener implements Listener {
         // Eingelegte Platte faellt heraus, die Wiedergabe endet
         playback.eject(block).ifPresent(record ->
                 block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), record));
+        settings.remove(block);
         registry.remove(block);
         // Statt des Vanilla-Drops faellt das PeakSound-Item (nicht im Kreativmodus)
         event.setDropItems(false);
@@ -125,8 +133,12 @@ final class BlockListener implements Listener {
         event.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
         if (tuner) {
             event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
-            player.sendActionBar(Messages.tunerInfo(player, Messages.blockName(player, type.get()),
-                    block.getX(), block.getY(), block.getZ()));
+            if (type.get() == PeakBlockType.JUKEBOX && network.hasMod(player)) {
+                menu.open(player, block);
+            } else {
+                player.sendActionBar(Messages.tunerInfo(player, Messages.blockName(player, type.get()),
+                        block.getX(), block.getY(), block.getZ()));
+            }
         }
     }
 }

@@ -225,6 +225,86 @@ public sealed interface Packet {
         }
     }
 
+    /** Reichweite oder Lautstaerke einer spielenden Jukebox wurde geaendert (Menue). */
+    record PlaybackUpdate(int x, int y, int z, int range, int volume) implements Clientbound {
+        public static final int ID = 15;
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeInt(range).writeInt(volume).toBytes();
+        }
+
+        static PlaybackUpdate decode(ByteBuffer in) {
+            return new PlaybackUpdate(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in),
+                    PacketIO.readIntRange(in, Limits.MIN_RANGE, Limits.MAX_RANGE), PacketIO.readIntRange(in, 0, 100));
+        }
+    }
+
+    // ---- Jukebox-Menue ----
+
+    /** Server -> Client: Menue oeffnen, mit dem vollstaendigen aktuellen Zustand. */
+    record OpenJukeboxMenu(int x, int y, int z, JukeboxSettings settings, boolean playing, String title, String artist)
+            implements Clientbound {
+        public static final int ID = 16;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            w.writeBoolean(playing).writeString(title, Limits.MAX_TEXT).writeString(artist, Limits.MAX_TEXT);
+            return w.toBytes();
+        }
+
+        static OpenJukeboxMenu decode(ByteBuffer in) {
+            return new OpenJukeboxMenu(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in),
+                    JukeboxSettings.read(in), PacketIO.readBoolean(in),
+                    PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readString(in, Limits.MAX_TEXT));
+        }
+    }
+
+    /** Client -> Server: geaenderte Einstellungen. Der Server prueft Entfernung, Block und Werte. */
+    record JukeboxUpdate(int x, int y, int z, JukeboxSettings settings) implements Serverbound {
+        public static final int ID = 17;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            return w.toBytes();
+        }
+
+        static JukeboxUpdate decode(ByteBuffer in) {
+            return new JukeboxUpdate(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in),
+                    JukeboxSettings.read(in));
+        }
+    }
+
+    // ---- Cover ----
+
+    record CoverRequest(String hash) implements Serverbound {
+        public static final int ID = 18;
+
+        @Override
+        public byte[] encode() { return new PacketIO.Writer(ID).writeString(hash, Limits.HASH_LENGTH).toBytes(); }
+
+        static CoverRequest decode(ByteBuffer in) { return new CoverRequest(PacketIO.readString(in, Limits.HASH_LENGTH)); }
+    }
+
+    /** Cover-Bild (JPEG/PNG, hoechstens {@link Limits#MAX_COVER_BYTES}); leer, wenn der Song kein Cover hat. */
+    record CoverData(String hash, byte[] image) implements Clientbound {
+        public static final int ID = 19;
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeString(hash, Limits.HASH_LENGTH)
+                    .writeBytes(image, Limits.MAX_COVER_BYTES).toBytes();
+        }
+
+        static CoverData decode(ByteBuffer in) {
+            return new CoverData(PacketIO.readString(in, Limits.HASH_LENGTH), PacketIO.readBytes(in, Limits.MAX_COVER_BYTES));
+        }
+    }
+
     record PlaybackStop(int x, int y, int z) implements Clientbound {
         public static final int ID = 14;
 

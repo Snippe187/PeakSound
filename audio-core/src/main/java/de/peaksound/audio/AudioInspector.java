@@ -24,7 +24,7 @@ public final class AudioInspector {
     private AudioInspector() {}
 
     /** Maximale Cover-Groesse, die uebernommen wird. Groessere Bilder werden ignoriert. */
-    public static final int MAX_COVER_BYTES = 512 * 1024;
+    public static final int MAX_COVER_BYTES = Limits.MAX_COVER_BYTES;
 
     /** Untersucht Rohdaten. Das Format wird an den ersten Bytes erkannt, nie an einem Dateinamen. */
     public static AudioInfo inspect(byte[] data) throws AudioException {
@@ -61,7 +61,7 @@ public final class AudioInspector {
      * MP3 ohne VBR-Kopf falsch sein. OGG wird nicht decodiert (dort ist die Header-Laenge exakt).
      */
     public static int measureExactMs(byte[] data, AudioFormat format) throws AudioException {
-        if (format == AudioFormat.OGG) return inspect(data).durationMs();
+        if (format == AudioFormat.OGG) return inspect(data).durationMs(); // Header-Laenge ist bei Ogg exakt
         try (PcmSource source = PcmSource.open(data, format)) {
             short[] buf = new short[4096 * Math.max(1, source.channels())];
             long frames = 0;

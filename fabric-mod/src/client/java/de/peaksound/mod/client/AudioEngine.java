@@ -24,6 +24,11 @@ public final class AudioEngine {
         SongLibrary.request(start.hash(), voice::onData);
     }
 
+    static void update(Packet.PlaybackUpdate update) {
+        JukeboxVoice voice = voices.get(JukeboxVoice.key(update.x(), update.y(), update.z()));
+        if (voice != null) voice.update(update.range(), update.volume());
+    }
+
     static void stop(int x, int y, int z) {
         JukeboxVoice voice = voices.remove(JukeboxVoice.key(x, y, z));
         if (voice != null) voice.stop();

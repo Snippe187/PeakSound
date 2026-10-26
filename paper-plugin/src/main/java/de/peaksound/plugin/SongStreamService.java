@@ -68,6 +68,30 @@ final class SongStreamService {
         });
     }
 
+    /** Cover-Bild fuer den Platten-Tooltip. Leer, wenn der Song keins hat. */
+    void onCover(Player player, Packet.CoverRequest request) {
+        if (!allow(player.getUniqueId()) || !SongStore.validHash(request.hash())) return;
+        Song song = store.get(request.hash()).orElse(null);
+        if (song == null || song.status() != Song.Status.OK) return;
+        UUID uuid = player.getUniqueId();
+        Bukkit.getAsyncScheduler().runNow(plugin, task -> {
+            byte[] image = new byte[0];
+            if (song.hasCover()) {
+                try {
+                    byte[] raw = java.nio.file.Files.readAllBytes(store.coverPath(song.hash()));
+                    if (raw.length <= Limits.MAX_COVER_BYTES) image = raw;
+                } catch (IOException e) {
+                    plugin.getLogger().log(Level.WARNING, "Cover nicht lesbar: " + song.hash(), e);
+                }
+            }
+            byte[] result = image;
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null) Net.send(plugin, p, new Packet.CoverData(song.hash(), result));
+            });
+        });
+    }
+
     void onQuit(Player player) {
         buckets.remove(player.getUniqueId());
     }

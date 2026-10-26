@@ -43,6 +43,11 @@ public final class PacketCodec {
                 case Packet.SongUnavailable.ID -> Packet.SongUnavailable.decode(in);
                 case Packet.PlaybackStart.ID -> Packet.PlaybackStart.decode(in);
                 case Packet.PlaybackStop.ID -> Packet.PlaybackStop.decode(in);
+                case Packet.PlaybackUpdate.ID -> Packet.PlaybackUpdate.decode(in);
+                case Packet.OpenJukeboxMenu.ID -> Packet.OpenJukeboxMenu.decode(in);
+                case Packet.JukeboxUpdate.ID -> Packet.JukeboxUpdate.decode(in);
+                case Packet.CoverRequest.ID -> Packet.CoverRequest.decode(in);
+                case Packet.CoverData.ID -> Packet.CoverData.decode(in);
                 default -> throw new MalformedPacketException("Unbekannte Paket-ID " + id);
             };
             if (in.hasRemaining()) throw new MalformedPacketException("Ueberzaehlige Bytes");
