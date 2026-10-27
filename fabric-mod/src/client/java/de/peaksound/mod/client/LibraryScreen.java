@@ -50,6 +50,14 @@ final class LibraryScreen extends Screen {
         Minecraft.getInstance().setScreenAndShow(new LibraryScreen(menu));
     }
 
+    /** Song-Browser aus dem Upload-Fenster: ohne Block, der Server erlaubt es nur mit gueltigem Upload-Ticket. */
+    static void openFromUpload() {
+        int r = Limits.LIBRARY_REMOTE;
+        Minecraft.getInstance().setScreenAndShow(new LibraryScreen(new Packet.OpenLibraryMenu(r, r, r)));
+    }
+
+    private boolean remote() { return bx == Limits.LIBRARY_REMOTE; }
+
     static void onResults(Packet.LibraryResults r) {
         LibraryScreen s = active;
         if (s == null || s.bx != r.x() || s.by != r.y() || s.bz != r.z()) return;
@@ -94,8 +102,16 @@ final class LibraryScreen extends Screen {
         prev = addRenderableWidget(Button.builder(Component.literal("<"), b -> goPage(page - 1)).bounds(left, bottom, 28, 20).build());
         next = addRenderableWidget(Button.builder(Component.literal(">"), b -> goPage(page + 1)).bounds(left + 30, bottom, 28, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).bounds(left + 240, bottom, 80, 20).build());
+        if (remote()) {
+            addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.library.upload"), b -> backToUpload())
+                    .bounds(left + 64, bottom, 170, 20).build());
+        }
         refresh();
         sendQuery(query, page); // beim Oeffnen und nach Fenstergroessen-Aenderung neu laden
+    }
+
+    private void backToUpload() {
+        UploadClient.reopen();
     }
 
     private void sendQuery(String q, int p) {

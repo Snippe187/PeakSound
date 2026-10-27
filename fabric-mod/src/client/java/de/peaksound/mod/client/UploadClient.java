@@ -37,6 +37,13 @@ final class UploadClient {
         Minecraft.getInstance().setScreenAndShow(screen);
     }
 
+    /** Zurueck zum Upload-Fenster mit demselben Ticket (aus dem Song-Browser). */
+    static void reopen() {
+        UploadScreen screen = new UploadScreen(ticket);
+        active = screen;
+        Minecraft.getInstance().setScreenAndShow(screen);
+    }
+
     static Phase phase() { return phase; }
 
     static Packet.UploadReject reject() { return lastReject; }

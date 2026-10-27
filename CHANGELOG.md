@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.1.0
+- Jukebox mit eigenem Inventar (15 Platten-Slots), Hopper/Kisten nur ueber Seiten-Einstellung "Items rein/raus".
+- Upload-Fenster (Shift-Klick mit leerer Platte): Knopf "Song vom Server auswaehlen" oeffnet die durchsuchbare Song-Liste; ein Klick schreibt den Song auf die Platte, ohne neuen Upload (Server prueft Upload-Ticket und leere Platte).
 
 Erste Version für Minecraft 26.2 (Fabric-Mod + Paper-Plugin).
 

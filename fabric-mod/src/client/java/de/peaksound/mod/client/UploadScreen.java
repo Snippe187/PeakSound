@@ -39,6 +39,8 @@ final class UploadScreen extends Screen {
     @Override
     protected void init() {
         int cx = width / 2;
+        addRenderableWidget(Button.builder(Component.translatable("peaksound.upload.browse"), b -> LibraryScreen.openFromUpload())
+                .bounds(cx - 100, height / 2 - 64, 200, 20).build());
         chooseButton = addRenderableWidget(Button.builder(Component.translatable("peaksound.upload.choose"), b -> chooseFile())
                 .bounds(cx - 100, height / 2 - 40, 200, 20).build());
         uploadButton = addRenderableWidget(Button.builder(Component.translatable("peaksound.upload.start"), b -> startUpload())

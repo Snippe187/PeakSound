@@ -24,6 +24,8 @@ public final class Limits {
     public static final int MAX_DEBUG_BYTES = 60_000;
     /** Song-Bibliothek: Eintraege pro Seite und laengster Suchtext. */
     public static final int LIBRARY_PAGE_SIZE = 6;
+    /** Marker-Koordinate fuer Bibliotheks-Anfragen ohne Block (ueber ein Upload-Ticket, statt am Song-Library-Block). */
+    public static final int LIBRARY_REMOTE = Integer.MIN_VALUE;
     public static final int LIBRARY_MAX_QUERY = 32;
     /** Laenge eines SHA-256-Hex-Strings. */
     public static final int HASH_LENGTH = 64;

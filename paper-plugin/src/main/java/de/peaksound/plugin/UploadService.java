@@ -87,6 +87,12 @@ final class UploadService {
         Net.send(plugin, player, new Packet.OpenUpload(ticket));
     }
 
+    /** Hat der Spieler ein gueltiges Upload-Ticket (also gerade das Upload-Fenster mit einer leeren Platte offen)? */
+    boolean hasTicket(Player player) {
+        long now = System.currentTimeMillis();
+        return tickets.values().stream().anyMatch(t -> t.player().equals(player.getUniqueId()) && t.expiresAt() >= now);
+    }
+
     void onStart(Player player, Packet.UploadStart start) {
         UUID id = player.getUniqueId();
         Ticket ticket = tickets.remove(start.ticket());

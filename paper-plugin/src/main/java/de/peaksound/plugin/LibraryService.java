@@ -44,13 +44,28 @@ final class LibraryService {
         Net.send(plugin, player, new Packet.OpenLibraryMenu(block.getX(), block.getY(), block.getZ()));
     }
 
-    void onQuery(Player player, Packet.LibraryQuery query) {
-        Block block = access.validated(player, query.x(), query.y(), query.z(), PeakBlockType.SONG_LIBRARY);
-        if (block == null || !enabled()) return;
-        send(player, block, query.query(), query.page());
+    private UploadService uploads;
+
+    void setUploads(UploadService uploads) { this.uploads = uploads; }
+
+    /** Zugriff ohne Block: Anfrage mit Marker-Koordinaten, erlaubt nur mit gueltigem Upload-Ticket (Shift-Klick mit leerer Platte). */
+    private boolean remoteAccess(Player player, int x, int y, int z) {
+        return x == Limits.LIBRARY_REMOTE && y == Limits.LIBRARY_REMOTE && z == Limits.LIBRARY_REMOTE
+                && uploads != null && uploads.hasTicket(player) && access.rateOk(player);
     }
 
-    private void send(Player player, Block block, String query, int page) {
+    void onQuery(Player player, Packet.LibraryQuery query) {
+        if (!enabled()) return;
+        if (remoteAccess(player, query.x(), query.y(), query.z())) {
+            send(player, query.x(), query.y(), query.z(), query.query(), query.page());
+            return;
+        }
+        Block block = access.validated(player, query.x(), query.y(), query.z(), PeakBlockType.SONG_LIBRARY);
+        if (block == null) return;
+        send(player, block.getX(), block.getY(), block.getZ(), query.query(), query.page());
+    }
+
+    private void send(Player player, int bx, int by, int bz, String query, int page) {
         List<Song> hits = new ArrayList<>();
         for (Song s : songs.all()) {
             if (s.status() == Song.Status.OK && LibraryLogic.matches(query, s.title(), s.artist(), s.uploaderName())) hits.add(s);
@@ -62,13 +77,14 @@ final class LibraryService {
         for (Song s : LibraryLogic.slice(hits, clamped, Limits.LIBRARY_PAGE_SIZE)) {
             entries.add(new Packet.LibrarySong(s.hash(), cut(s.title()), cut(s.artist()), cut(s.uploaderName()), s.durationMs()));
         }
-        Net.send(plugin, player, new Packet.LibraryResults(block.getX(), block.getY(), block.getZ(), clamped, pages, hits.size(),
+        Net.send(plugin, player, new Packet.LibraryResults(bx, by, bz, clamped, pages, hits.size(),
                 countBlank(player), entries));
     }
 
     void onWrite(Player player, Packet.LibraryWrite write) {
-        Block block = access.validated(player, write.x(), write.y(), write.z(), PeakBlockType.SONG_LIBRARY);
-        if (block == null || !enabled() || !SongStore.validHash(write.hash())) return;
+        if (!enabled() || !SongStore.validHash(write.hash())) return;
+        if (!remoteAccess(player, write.x(), write.y(), write.z())
+                && access.validated(player, write.x(), write.y(), write.z(), PeakBlockType.SONG_LIBRARY) == null) return;
         Song song = songs.get(write.hash()).filter(s -> s.status() == Song.Status.OK).orElse(null);
         if (song == null) {
             player.sendMessage(Messages.error(player, "Dieser Song ist nicht mehr verfuegbar.", "This song is no longer available."));

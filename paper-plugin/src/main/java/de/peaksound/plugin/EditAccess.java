@@ -25,6 +25,13 @@ final class EditAccess {
         this.registry = registry;
     }
 
+    /** Nur das Rate-Limit (fuer Anfragen ohne Block, z. B. Bibliothek ueber ein Upload-Ticket). */
+    boolean rateOk(Player player) {
+        long now = System.currentTimeMillis();
+        Long last = lastRequest.put(player.getUniqueId(), now);
+        return last == null || now - last >= MIN_INTERVAL_MS;
+    }
+
     /** @return der Block, oder null, wenn die Anfrage abgelehnt wird */
     Block validated(Player player, int x, int y, int z, PeakBlockType expected) {
         long now = System.currentTimeMillis();

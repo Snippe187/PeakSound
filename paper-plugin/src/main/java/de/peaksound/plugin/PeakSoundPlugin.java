@@ -101,6 +101,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         network.setDebug(debugService);
         LibraryService library = new LibraryService(this, songs, items, access);
         network.setLibrary(library);
+        library.setUploads(uploads);
         BlockSettingsStore<de.peaksound.protocol.RemoteSettings> remoteStore = new BlockSettingsStore<>(this, "remotes.json",
                 de.peaksound.protocol.RemoteSettings.class, de.peaksound.protocol.RemoteSettings.defaults(),
                 de.peaksound.protocol.RemoteSettings::sanitized);

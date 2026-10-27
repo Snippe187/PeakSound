@@ -9,6 +9,8 @@
   "peaksound.upload.title": "Schallplatte brennen",
   "peaksound.upload.hint": "Datei wählen oder in dieses Fenster ziehen (MP3, FLAC, WAV, OGG)",
   "peaksound.upload.choose": "Datei wählen ...",
+  "peaksound.upload.browse": "Song vom Server auswählen ...",
+  "peaksound.menu.library.upload": "Neuen Song hochladen",
   "peaksound.upload.dialog": "Musikdatei wählen",
   "peaksound.upload.start": "Hochladen",
   "peaksound.upload.details": "%1$d:%2$s min · %3$d Kanäle · %4$s kHz",

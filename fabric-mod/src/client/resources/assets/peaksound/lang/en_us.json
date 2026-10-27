@@ -9,6 +9,8 @@
   "peaksound.upload.title": "Burn a record",
   "peaksound.upload.hint": "Choose a file or drag it into this window (MP3, FLAC, WAV, OGG)",
   "peaksound.upload.choose": "Choose file...",
+  "peaksound.upload.browse": "Pick a song from the server...",
+  "peaksound.menu.library.upload": "Upload new song",
   "peaksound.upload.dialog": "Choose a music file",
   "peaksound.upload.start": "Upload",
   "peaksound.upload.details": "%1$d:%2$s min · %3$d channels · %4$s kHz",
