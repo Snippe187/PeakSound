@@ -59,6 +59,8 @@ final class Messages {
             case MICROPHONE -> t(p, "Mikrofon", "Microphone");
             case SONG_LIBRARY -> t(p, "Song-Bibliothek", "Song library");
             case MUSIC_REMOTE -> t(p, "Musik-Fernbedienung", "Music remote");
+            case RADIO_TRANSMITTER -> t(p, "Radio-Sender", "Radio transmitter");
+            case RADIO_RECEIVER -> t(p, "Radio", "Radio");
         };
     }
 

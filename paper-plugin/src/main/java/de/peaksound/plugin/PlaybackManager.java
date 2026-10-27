@@ -110,6 +110,7 @@ final class PlaybackManager {
     private final AnalysisStore analysis;
     /** Zaehlt jeden gestarteten Song (Beliebtheit in der Bibliothek). */
     private java.util.function.Consumer<String> playCounter;
+    private RadioService radio;
     private final PlaylistService playlist;
     private final NetworkRegistry networks;
     private final EqualizerService equalizer;
@@ -131,6 +132,8 @@ final class PlaybackManager {
         this.settings = settings;
         this.analysis = analysis;
     }
+
+    void setRadio(RadioService radio) { this.radio = radio; }
 
     void setPlayCounter(java.util.function.Consumer<String> counter) { this.playCounter = counter; }
 
@@ -505,6 +508,7 @@ final class PlaybackManager {
                 }
             }
         }
+        if (radio != null) emitters.putAll(radio.emittersFor(jukeboxes)); // Empfaenger spielen den Song ihres Senders
         return new Effective(jukeboxes, emitters);
     }
 

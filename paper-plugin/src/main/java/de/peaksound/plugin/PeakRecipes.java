@@ -106,6 +106,27 @@ public final class PeakRecipes {
         remote.setCategory(CraftingBookCategory.REDSTONE);
         add(remote);
 
+        // Radio-Empfaenger: Blitzableiter (Antenne) oben, Notenblock zwischen Eisen, Redstone unten
+        ShapedRecipe receiver = new ShapedRecipe(key("radio_receiver"), items.create(PeakItemType.RADIO_RECEIVER, 1));
+        receiver.shape(" L ", "INI", "IRI");
+        receiver.setIngredient('L', Material.LIGHTNING_ROD);
+        receiver.setIngredient('I', Material.IRON_INGOT);
+        receiver.setIngredient('N', Material.NOTE_BLOCK);
+        receiver.setIngredient('R', Material.REDSTONE);
+        receiver.setCategory(CraftingBookCategory.REDSTONE);
+        add(receiver);
+
+        // Radio-Sender: wie der Empfaenger, aber mit Gold an den Seiten und Amethystsplittern als Kristall unten
+        ShapedRecipe transmitter = new ShapedRecipe(key("radio_transmitter"), items.create(PeakItemType.RADIO_TRANSMITTER, 1));
+        transmitter.shape(" L ", "GNG", "ARA");
+        transmitter.setIngredient('L', Material.LIGHTNING_ROD);
+        transmitter.setIngredient('G', Material.GOLD_INGOT);
+        transmitter.setIngredient('N', Material.NOTE_BLOCK);
+        transmitter.setIngredient('A', Material.AMETHYST_SHARD);
+        transmitter.setIngredient('R', Material.REDSTONE);
+        transmitter.setCategory(CraftingBookCategory.REDSTONE);
+        add(transmitter);
+
         // Holzhacke + Redstone-Staub
         ShapelessRecipe tuner = new ShapelessRecipe(key("peak_tuner"), items.create(PeakItemType.PEAK_TUNER, 1));
         tuner.addIngredient(Material.WOODEN_HOE);

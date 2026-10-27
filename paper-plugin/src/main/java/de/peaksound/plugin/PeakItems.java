@@ -103,6 +103,8 @@ public final class PeakItems {
             case MICROPHONE -> "Microphone";
             case SONG_LIBRARY -> "Song Library";
             case MUSIC_REMOTE -> "Music Remote";
+            case RADIO_TRANSMITTER -> "Radio Transmitter";
+            case RADIO_RECEIVER -> "Radio";
         };
     }
 }

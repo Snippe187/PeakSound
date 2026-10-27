@@ -2050,13 +2050,13 @@
       "model": "minecraft:block/note_block"
     },
     "instrument=bit,note=16,powered=true": {
-      "model": "minecraft:block/note_block"
+      "model": "peaksound:block/radio_receiver"
     },
     "instrument=bit,note=17,powered=false": {
       "model": "minecraft:block/note_block"
     },
     "instrument=bit,note=17,powered=true": {
-      "model": "minecraft:block/note_block"
+      "model": "peaksound:block/radio_transmitter"
     },
     "instrument=bit,note=18,powered=false": {
       "model": "minecraft:block/note_block"

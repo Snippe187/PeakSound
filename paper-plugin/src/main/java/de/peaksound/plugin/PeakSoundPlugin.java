@@ -21,6 +21,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
     private BlockSettingsStore<de.peaksound.protocol.MicSettings> micStore;
     private MicService micService;
     private JukeboxStorage storageRef;
+    private BlockSettingsStore<de.peaksound.protocol.RadioSettings> radioStoreRef;
     private BlockSettingsStore<de.peaksound.protocol.RemoteSettings> remoteStoreRef;
 
     SongStore songs() { return songs; }
@@ -114,6 +115,16 @@ public final class PeakSoundPlugin extends JavaPlugin {
         this.remoteStoreRef = remoteStore;
         RemoteService remote = new RemoteService(this, blocks, networks, remoteStore, playback, playlist, jukeboxSettings, access);
         network.setRemote(remote);
+        BlockSettingsStore<de.peaksound.protocol.RadioSettings> radioStore = new BlockSettingsStore<>(this, "radio.json",
+                de.peaksound.protocol.RadioSettings.class, de.peaksound.protocol.RadioSettings.defaults(),
+                de.peaksound.protocol.RadioSettings::sanitized);
+        radioStore.load();
+        radioStore.startAutosave();
+        this.radioStoreRef = radioStore;
+        RadioService radio = new RadioService(this, blocks, networks, radioStore, access, network);
+        radio.setPlayback(playback);
+        playback.setRadio(radio);
+        network.setRadio(radio);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, PeakIds.CHANNEL, network);
         getServer().getMessenger().registerOutgoingPluginChannel(this, PeakIds.CHANNEL);
@@ -121,7 +132,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         SettingsClipboard clipboard = new SettingsClipboard(items, jukeboxSettings, playback, speakers, lightService, dj, micService, remote);
         getServer().getPluginManager().registerEvents(clipboard, this);
         getServer().getPluginManager().registerEvents(network, this);
-        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj, micService, library, remote, storage), this);
+        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj, micService, library, remote, storage, radio), this);
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(new NetworkListener(networks, equalizer), this);
         PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj, lightService, debugService, library, remote, jukeboxSettings, menu);
@@ -138,6 +149,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, dj::tick, 20L, 20L);
         Bukkit.getScheduler().runTaskTimer(this, micService::tick, 5L, 5L);
         Bukkit.getScheduler().runTaskTimer(this, remote::tick, 2L, 2L);
+        Bukkit.getScheduler().runTaskTimer(this, radio::tick, 10L, 10L);
         Bukkit.getScheduler().runTaskTimer(this, new JukeboxItemIo(blocks, jukeboxSettings, playlist)::tick, 8L, 8L);
         Bukkit.getScheduler().runTaskTimer(this, dj::redstoneTick, 4L, 4L);
         // Lautsprecher-Nummern und Standard-Kanaele abgleichen (nutzt den Netz-Cache, rechnet nur bei Aenderungen)
@@ -164,6 +176,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         if (micService != null) micService.shutdown();
         if (micStore != null) micStore.saveNow();
         if (remoteStoreRef != null) remoteStoreRef.saveNow();
+        if (radioStoreRef != null) radioStoreRef.saveNow();
         if (storageRef != null) storageRef.saveNow();
     }
 }

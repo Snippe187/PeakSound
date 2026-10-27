@@ -34,6 +34,11 @@ final class EditAccess {
 
     /** @return der Block, oder null, wenn die Anfrage abgelehnt wird */
     Block validated(Player player, int x, int y, int z, PeakBlockType expected) {
+        return validatedAny(player, x, y, z, expected);
+    }
+
+    /** Wie {@link #validated}, aber der Block darf einer von mehreren Typen sein. */
+    Block validatedAny(Player player, int x, int y, int z, PeakBlockType... expected) {
         long now = System.currentTimeMillis();
         Long last = lastRequest.put(player.getUniqueId(), now);
         if (last != null && now - last < MIN_INTERVAL_MS) return null;
@@ -41,7 +46,7 @@ final class EditAccess {
         World world = player.getWorld();
         if (!world.isChunkLoaded(x >> 4, z >> 4)) return null;
         Block block = world.getBlockAt(x, y, z);
-        if (registry.get(block).filter(t -> t == expected).isEmpty()) return null;
+        if (registry.get(block).filter(t -> java.util.Arrays.asList(expected).contains(t)).isEmpty()) return null;
         double dx = player.getX() - (block.getX() + 0.5);
         double dy = player.getY() - block.getY();
         double dz = player.getZ() - (block.getZ() + 0.5);

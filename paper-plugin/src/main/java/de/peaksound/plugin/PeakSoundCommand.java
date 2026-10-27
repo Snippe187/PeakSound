@@ -80,6 +80,8 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
                 case "microphone", "mic" -> de.peaksound.protocol.PeakBlockType.MICROPHONE;
                 case "library", "song_library" -> de.peaksound.protocol.PeakBlockType.SONG_LIBRARY;
                 case "remote", "music_remote" -> de.peaksound.protocol.PeakBlockType.MUSIC_REMOTE;
+                case "transmitter", "radio_transmitter" -> de.peaksound.protocol.PeakBlockType.RADIO_TRANSMITTER;
+                case "receiver", "radio_receiver" -> de.peaksound.protocol.PeakBlockType.RADIO_RECEIVER;
                 default -> de.peaksound.protocol.PeakBlockType.JUKEBOX;
             };
             PeakBlocks.install(block, type, registry);

@@ -72,6 +72,7 @@ public final class AudioEngine {
                 byKey.values().removeIf(v -> v == s);
             }
         }
+        StaticNoise.tick();
         if (++ticks % 20 == 0) SongLibrary.tick();
     }
 
@@ -87,5 +88,6 @@ public final class AudioEngine {
         sessions.clear();
         byKey.clear();
         SongLibrary.clear();
+        StaticNoise.clear();
     }
 }

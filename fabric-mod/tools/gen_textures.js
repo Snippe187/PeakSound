@@ -129,6 +129,35 @@ module.exports = function (png, write, PS) {
     save("textures/block/remote_top", top);
   }
 
+  // ---------- Radio-Empfaenger: Holzradio mit Lautsprecher-Gitter, Skala und Drehknoepfen ----------
+  {
+    const side = canvas().fill("#8a5a2e").border("#4d3118", "#a8743c");
+    side.rect(2, 2, 13, 5, "#1a1208").rect(3, 3, 12, 4, "#e8d9a8");                                      // Frequenz-Skala
+    for (let x = 3; x <= 12; x += 3) side.set(x, 3, "#4d3118");
+    side.rect(9, 2, 9, 5, "#e03939");                                                                     // Zeiger
+    for (let y = 7; y <= 13; y += 2) side.rect(2, y, 8, y, "#241608");                                    // Lautsprecher-Gitter
+    side.disc(11.5, 9, 2.0, "#3a2512").disc(11.5, 9, 1.4, "#d9c27a").set(11, 8, "#4d3118");               // Knopf 1
+    side.disc(11.5, 13, 1.4, "#3a2512").disc(11.5, 13, 0.9, "#d9c27a");                                   // Knopf 2
+    save("textures/block/radio_receiver_side", side);
+    const top = canvas().fill("#8a5a2e").border("#4d3118", "#a8743c");
+    top.disc(8, 8, 3.2, "#3a2512").disc(8, 8, 2.2, "#b0b4bc").disc(8, 8, 1.0, "#e8ebf0");                  // Antennen-Fuss
+    top.line(8, 8, 13, 3, "#e8ebf0");
+    save("textures/block/radio_receiver_top", top);
+  }
+  // ---------- Radio-Sender: dunkles Metallgehaeuse mit Funkwellen und "ON AIR"-Lampe ----------
+  {
+    const side = canvas().fill("#22304a").border("#101826", "#33466a");
+    side.rect(3, 2, 12, 4, "#0a0f1a").rect(4, 3, 5, 3, "#e03939").rect(7, 3, 7, 3, "#e03939").rect(9, 3, 11, 3, "#e03939"); // ON AIR
+    side.disc(8, 10, 1.4, "#e8ebf0");                                                                       // Sendemast-Fuss
+    side.ring(8, 10, 2.6, 3.1, "#3fd0ee").ring(8, 10, 4.2, 4.7, "#3fd0ee").ring(8, 10, 5.8, 6.3, "#3fd0ee");
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (y < 7 && !(x > 1 && x < 14)) side.set(x, y, "#22304a");
+    side.rect(2, 2, 13, 2, "#10182a").rect(3, 3, 12, 4, "#0a0f1a").rect(4, 3, 5, 3, "#e03939").rect(7, 3, 7, 3, "#e03939").rect(9, 3, 11, 3, "#e03939");
+    save("textures/block/radio_transmitter_side", side);
+    const top = canvas().fill("#22304a").border("#101826", "#33466a");
+    top.disc(8, 8, 5.4, "#0a0f1a").ring(8, 8, 3.6, 4.0, "#3fd0ee").ring(8, 8, 1.8, 2.2, "#3fd0ee").disc(8, 8, 0.9, "#e8ebf0");
+    save("textures/block/radio_transmitter_top", top);
+  }
+
   // ---------- Items ----------
   function record(label) {
     const r = canvas();

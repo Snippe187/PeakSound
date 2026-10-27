@@ -869,6 +869,75 @@ public sealed interface Packet {
         }
     }
 
+    // ---- Radio ----
+
+    /**
+     * Server -> Client: Radio-Menue oeffnen. {@code transmitter} unterscheidet Sender und Empfaenger,
+     * {@code station} ist der Titel des Senders auf der Frequenz (Empfaenger) bzw. was der Sender gerade sendet ("" = nichts).
+     */
+    record OpenRadioMenu(int x, int y, int z, RadioSettings settings, boolean transmitter, String station) implements Clientbound {
+        public static final int ID = 54;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            return w.writeBoolean(transmitter).writeString(station, Limits.MAX_TEXT).toBytes();
+        }
+
+        static OpenRadioMenu decode(ByteBuffer in) {
+            return new OpenRadioMenu(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), RadioSettings.read(in),
+                    PacketIO.readBoolean(in), PacketIO.readString(in, Limits.MAX_TEXT));
+        }
+    }
+
+    /** Client -> Server: geaenderte Radio-Einstellungen. */
+    record RadioUpdate(int x, int y, int z, RadioSettings settings) implements Serverbound {
+        public static final int ID = 55;
+
+        @Override
+        public byte[] encode() {
+            PacketIO.Writer w = new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z);
+            settings.write(w);
+            return w.toBytes();
+        }
+
+        static RadioUpdate decode(ByteBuffer in) {
+            return new RadioUpdate(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), RadioSettings.read(in));
+        }
+    }
+
+    /** Server -> Client: der Sender auf der Frequenz hat gewechselt (Anzeige im offenen Radio-Menue). */
+    record RadioStatus(int x, int y, int z, String station) implements Clientbound {
+        public static final int ID = 56;
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeString(station, Limits.MAX_TEXT).toBytes();
+        }
+
+        static RadioStatus decode(ByteBuffer in) {
+            return new RadioStatus(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readString(in, Limits.MAX_TEXT));
+        }
+    }
+
+    /** Server -> Client: Rauschen an einem Empfaenger. {@code level} 1-100 = Staerke, 0 = Rauschen beenden. */
+    record RadioStatic(int x, int y, int z, int range, int volume, int level) implements Clientbound {
+        public static final int ID = 57;
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeByte(range).writeByte(volume).writeByte(level).toBytes();
+        }
+
+        static RadioStatic decode(ByteBuffer in) {
+            int x = PacketIO.readInt(in), y = PacketIO.readInt(in), z = PacketIO.readInt(in);
+            int range = PacketIO.readByte(in), volume = PacketIO.readByte(in), level = PacketIO.readByte(in);
+            if (range < 1 || range > RadioSettings.MAX_RANGE || volume > 100 || level > 100) throw new MalformedPacketException("Wert ausserhalb des Bereichs");
+            return new RadioStatic(x, y, z, range, volume, level);
+        }
+    }
+
     // ---- Diagnose ----
 
     /** Client -> Server: Diagnosetext anfordern (wird auch ohne abgeschlossenen Handshake beantwortet). */

@@ -38,6 +38,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     private DebugService debug;
     private LibraryService library;
     private RemoteService remote;
+    private RadioService radio;
     /** Spieler, deren HelloAck noch aussteht, weil ihr Client den Kanal beim Server noch nicht angemeldet hatte (Paper verwirft solche Sendungen still). */
     private final Set<UUID> pendingAck = ConcurrentHashMap.newKeySet();
     /** Letztes Hello je Spieler (auch bei Versionskonflikt) und Paketzaehler, nur fuer die Diagnose. */
@@ -73,6 +74,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     void setLibrary(LibraryService library) { this.library = library; }
 
     void setRemote(RemoteService remote) { this.remote = remote; }
+
+    void setRadio(RadioService radio) { this.radio = radio; }
 
     /** Diagnosezeilen ueber diesen Spieler: Hello, Paketzaehler, letzter Fehler. */
     String describe(Player player) {
@@ -140,6 +143,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             case Packet.LibraryQuery query -> library.onQuery(player, query);
             case Packet.LibraryWrite write -> library.onWrite(player, write);
             case Packet.LibraryManage manage -> library.onManage(player, manage);
+            case Packet.RadioUpdate update -> radio.onUpdate(player, update);
             case Packet.DebugRequest ignored -> { /* oben behandelt */ }
             case Packet.Hello ignored -> { /* oben behandelt */ }
         }
@@ -167,7 +171,10 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         HelloInfo h = hellos.get(player.getUniqueId());
         if (h == null || !player.getListeningPluginChannels().contains(PeakIds.CHANNEL)) return;
         if (!pendingAck.remove(player.getUniqueId())) return;
-        if (h.compatible()) playback.forget(player); // Client startet leer: laufende Jukeboxen erneut melden
+        if (h.compatible()) { // Client startet leer: laufende Jukeboxen und Rauschen erneut melden
+            playback.forget(player);
+            if (radio != null) radio.forget(player);
+        }
         Net.send(plugin, player, new Packet.HelloAck(PeakIds.PROTOCOL_VERSION, h.compatible(),
                 h.compatible() && Permissions.admin(player), System.currentTimeMillis(), UploadService.maxSongSeconds(plugin)));
         if (h.compatible()) lastOperator.put(player.getUniqueId(), Permissions.admin(player));
@@ -201,6 +208,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent event) {
         playback.forget(event.getPlayer());
+        if (radio != null) radio.forget(event.getPlayer());
     }
 
     @EventHandler
@@ -210,6 +218,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         uploads.onQuit(player);
         streams.onQuit(player);
         playback.onQuit(player);
+        if (radio != null) radio.onQuit(player);
         access.onQuit(player);
         admin.onQuit(player);
         lights.onQuit(player);

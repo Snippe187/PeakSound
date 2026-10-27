@@ -39,10 +39,12 @@ final class BlockListener implements Listener {
     private final LibraryService library;
     private final RemoteService remote;
     private final JukeboxStorage storage;
+    private final RadioService radio;
 
     BlockListener(PeakItems items, BlockRegistry registry, PlaybackManager playback, JukeboxSettingsStore settings,
                   JukeboxMenuService menu, NetworkHandler network, SpeakerService speakers, SpeakerMenuService speakerMenu,
-                  SettingsClipboard clipboard, LightService lights, DjService dj, MicService mic, LibraryService library, RemoteService remote, JukeboxStorage storage) {
+                  SettingsClipboard clipboard, LightService lights, DjService dj, MicService mic, LibraryService library, RemoteService remote, JukeboxStorage storage, RadioService radio) {
+        this.radio = radio;
         this.storage = storage;
         this.remote = remote;
         this.library = library;
@@ -90,6 +92,7 @@ final class BlockListener implements Listener {
         if (type.get() == PeakBlockType.DJ_DESK) dj.remove(block);
         if (type.get() == PeakBlockType.MICROPHONE) mic.remove(block);
         if (type.get() == PeakBlockType.MUSIC_REMOTE) remote.remove(block);
+        if (type.get() == PeakBlockType.RADIO_TRANSMITTER || type.get() == PeakBlockType.RADIO_RECEIVER) radio.remove(block);
         registry.remove(block);
         // Statt des Vanilla-Drops faellt das PeakSound-Item (nicht im Kreativmodus)
         event.setDropItems(false);
@@ -159,7 +162,7 @@ final class BlockListener implements Listener {
         if (tuner) {
             event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
             if (player.isSneaking()) {
-                if (type.get() != PeakBlockType.SONG_LIBRARY) clipboard.use(player, block, type.get()); // Einstellungen kopieren / einfuegen
+                if (type.get() != PeakBlockType.SONG_LIBRARY && type.get() != PeakBlockType.RADIO_TRANSMITTER && type.get() != PeakBlockType.RADIO_RECEIVER) clipboard.use(player, block, type.get()); // Einstellungen kopieren / einfuegen
             } else if (type.get() == PeakBlockType.JUKEBOX && network.hasMod(player)) {
                 menu.open(player, block);
             } else if (type.get() == PeakBlockType.SPEAKER && network.hasMod(player)) {
@@ -172,6 +175,8 @@ final class BlockListener implements Listener {
                 mic.open(player, block);
             } else if (type.get() == PeakBlockType.MUSIC_REMOTE && network.hasMod(player)) {
                 remote.open(player, block);
+            } else if ((type.get() == PeakBlockType.RADIO_TRANSMITTER || type.get() == PeakBlockType.RADIO_RECEIVER) && network.hasMod(player)) {
+                radio.open(player, block, type.get());
             } else {
                 player.sendActionBar(Messages.tunerInfo(player, Messages.blockName(player, type.get()),
                         block.getX(), block.getY(), block.getZ()));

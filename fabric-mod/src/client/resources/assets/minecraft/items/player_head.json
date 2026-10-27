@@ -1,0 +1,54 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:custom_model_data",
+    "index": 0,
+    "cases": [
+      {
+        "when": "radio_receiver",
+        "model": {
+          "type": "minecraft:model",
+          "model": "peaksound:block/radio_receiver"
+        }
+      },
+      {
+        "when": "radio_transmitter",
+        "model": {
+          "type": "minecraft:model",
+          "model": "peaksound:block/radio_transmitter"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:special",
+      "base": "minecraft:item/template_skull",
+      "model": {
+        "type": "minecraft:player_head"
+      },
+      "transformation": {
+        "left_rotation": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "right_rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "translation": [
+          0.5,
+          0,
+          0.5
+        ]
+      }
+    }
+  }
+}

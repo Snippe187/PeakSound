@@ -18,7 +18,10 @@ public enum PeakItemType {
     SPOTLIGHT("spotlight", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.SPOTLIGHT),
     MICROPHONE("microphone", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.MICROPHONE),
     SONG_LIBRARY("song_library", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.SONG_LIBRARY),
-    MUSIC_REMOTE("music_remote", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.MUSIC_REMOTE);
+    MUSIC_REMOTE("music_remote", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.MUSIC_REMOTE),
+    // Radios sind Spielerkoepfe als Traeger: ohne Mod sieht man einen Kopf, mit Mod das Radio-Modell
+    RADIO_TRANSMITTER("radio_transmitter", "PLAYER_HEAD", PeakBlockType.RADIO_TRANSMITTER),
+    RADIO_RECEIVER("radio_receiver", "PLAYER_HEAD", PeakBlockType.RADIO_RECEIVER);
 
     private final String id;
     private final String carrier;
