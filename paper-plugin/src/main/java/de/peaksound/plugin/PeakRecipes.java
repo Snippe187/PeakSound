@@ -127,6 +127,16 @@ public final class PeakRecipes {
         transmitter.setCategory(CraftingBookCategory.REDSTONE);
         add(transmitter);
 
+        // Taschenradio: Blitzableiter (Antenne) oben, Notenblock zwischen Eisen, Redstone unten
+        ShapedRecipe pocket = new ShapedRecipe(key("pocket_radio"), items.create(PeakItemType.POCKET_RADIO, 1));
+        pocket.shape(" L ", "INI", " R ");
+        pocket.setIngredient('L', Material.LIGHTNING_ROD);
+        pocket.setIngredient('I', Material.IRON_INGOT);
+        pocket.setIngredient('N', Material.NOTE_BLOCK);
+        pocket.setIngredient('R', Material.REDSTONE);
+        pocket.setCategory(CraftingBookCategory.EQUIPMENT);
+        add(pocket);
+
         // Holzhacke + Redstone-Staub
         ShapelessRecipe tuner = new ShapelessRecipe(key("peak_tuner"), items.create(PeakItemType.PEAK_TUNER, 1));
         tuner.addIngredient(Material.WOODEN_HOE);

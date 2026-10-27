@@ -1,5 +1,6 @@
 package de.peaksound.mod.client;
 
+import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.RadioLogic;
 import de.peaksound.protocol.RadioSettings;
@@ -19,13 +20,16 @@ final class RadioMenuScreen extends Screen {
 
     private final int bx, by, bz;
     private final boolean transmitter;
+    private final boolean pocket;
     private RadioSettings cur;
     private String station;
     private boolean dirty;
     private long lastChange;
 
     private RadioMenuScreen(Packet.OpenRadioMenu menu) {
-        super(Component.translatable(menu.transmitter() ? "peaksound.menu.radio.title.tx" : "peaksound.menu.radio.title.rx"));
+        super(Component.translatable(menu.transmitter() ? "peaksound.menu.radio.title.tx"
+                : menu.x() == Limits.POCKET_COORD ? "peaksound.menu.radio.title.pocket" : "peaksound.menu.radio.title.rx"));
+        this.pocket = menu.x() == Limits.POCKET_COORD;
         this.bx = menu.x();
         this.by = menu.y();
         this.bz = menu.z();
@@ -57,13 +61,17 @@ final class RadioMenuScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("+0.1"), b -> tune(1)).bounds(left + 134, top + 56, 34, 20).build());
         addRenderableWidget(Button.builder(Component.literal("+1"), b -> tune(10)).bounds(left + 170, top + 56, 30, 20).build());
         if (!transmitter) {
-            addRenderableWidget(new IntSlider(left, top + 108, 200, "peaksound.menu.radio.range", 1, RadioSettings.MAX_RANGE, cur.range(),
-                    v -> change(cur.withRange(v))));
-            addRenderableWidget(new IntSlider(left, top + 132, 200, "peaksound.menu.radio.volume", 0, 100, cur.volume(),
+            int y = top + 108;
+            if (!pocket) {
+                addRenderableWidget(new IntSlider(left, y, 200, "peaksound.menu.radio.range", 1, RadioSettings.MAX_RANGE, cur.range(),
+                        v -> change(cur.withRange(v))));
+                y += 24;
+            }
+            addRenderableWidget(new IntSlider(left, y, 200, "peaksound.menu.radio.volume", 0, 100, cur.volume(),
                     v -> change(cur.withVolume(v))));
         }
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
-                .bounds(left, top + (transmitter ? 112 : 160), 200, 20).build());
+                .bounds(left, top + (transmitter ? 112 : pocket ? 136 : 160), 200, 20).build());
     }
 
     private static Component onOff(String key, boolean on) {

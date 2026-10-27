@@ -1,5 +1,6 @@
 package de.peaksound.mod.client;
 
+import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.Packet;
 import java.nio.ShortBuffer;
 import java.util.HashMap;
@@ -23,10 +24,12 @@ final class StaticNoise {
 
     private static final class Entry {
         final double x, y, z;
+        final boolean relative;
         int range, volume, level;
         int source = -1;
 
         Entry(Packet.RadioStatic p) {
+            relative = p.x() == Limits.POCKET_COORD;
             x = p.x() + 0.5;
             y = p.y() + 0.5;
             z = p.z() + 0.5;
@@ -67,7 +70,7 @@ final class StaticNoise {
         for (Entry e : entries.values()) {
             if (e.source < 0 && !create(e)) continue;
             double dx = e.x - lx[0], dy = e.y - ly[0], dz = e.z - lz[0];
-            double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            double distance = e.relative ? 0 : Math.sqrt(dx * dx + dy * dy + dz * dz);
             double gain = master * ClientSettings.volumeFactor() * (e.volume / 100.0) * (e.level / 100.0) * NOISE_GAIN
                     * PlaybackSession.attenuation(distance, e.range);
             AL10.alSourcef(e.source, AL10.AL_GAIN, (float) gain);
@@ -94,10 +97,10 @@ final class StaticNoise {
         e.source = AL10.alGenSources();
         AL10.alSourcei(e.source, AL10.AL_BUFFER, buffer);
         AL10.alSourcei(e.source, AL10.AL_LOOPING, AL10.AL_TRUE);
-        AL10.alSourcei(e.source, AL10.AL_SOURCE_RELATIVE, AL10.AL_FALSE);
+        AL10.alSourcei(e.source, AL10.AL_SOURCE_RELATIVE, e.relative ? AL10.AL_TRUE : AL10.AL_FALSE);
         AL10.alSourcef(e.source, AL10.AL_ROLLOFF_FACTOR, 0f);
         AL10.alSourcef(e.source, AL10.AL_REFERENCE_DISTANCE, 1f);
-        AL10.alSource3f(e.source, AL10.AL_POSITION, (float) e.x, (float) e.y, (float) e.z);
+        AL10.alSource3f(e.source, AL10.AL_POSITION, e.relative ? 0f : (float) e.x, e.relative ? 0f : (float) e.y, e.relative ? 0f : (float) e.z);
         if (AL10.alGetError() != AL10.AL_NO_ERROR) {
             release(e);
             return false;

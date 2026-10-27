@@ -159,6 +159,15 @@ module.exports = function (png, write, PS) {
   }
 
   // ---------- Items ----------
+  {
+    const t = canvas();                                                                                 // Taschenradio
+    t.line(11, 1, 8, 5, "#c9ced6").set(11, 0, "#e03939");                                              // Antenne
+    t.rect(2, 5, 13, 14, "#2b2b31").rect(3, 6, 12, 13, "#8a5a2e").rect(3, 6, 12, 6, "#a8743c");           // Gehaeuse
+    t.rect(4, 7, 11, 8, "#e8d9a8").rect(8, 7, 8, 8, "#e03939");                                          // Skala
+    t.disc(6, 11.2, 1.6, "#241608").disc(6, 11.2, 0.9, "#4d3118");                                       // Lautsprecher
+    t.disc(10.5, 11.2, 1.3, "#d9c27a").set(10, 10, "#4d3118");                                           // Knopf
+    save("textures/item/pocket_radio", t);
+  }
   function record(label) {
     const r = canvas();
     r.disc(8, 8, 7.4, "#0b0b0e").disc(8, 8, 7.0, "#1a1a1f").ring(8, 8, 5.7, 6.0, "#26262d").ring(8, 8, 4.6, 4.9, "#26262d");

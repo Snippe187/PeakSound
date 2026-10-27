@@ -19,6 +19,8 @@ public enum PeakItemType {
     MICROPHONE("microphone", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.MICROPHONE),
     SONG_LIBRARY("song_library", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.SONG_LIBRARY),
     MUSIC_REMOTE("music_remote", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.MUSIC_REMOTE),
+    // Taschenradio: tragbarer Empfaenger, weltweit empfangbar
+    POCKET_RADIO("pocket_radio", "TRIAL_KEY", null),
     // Radios sind Spielerkoepfe als Traeger: ohne Mod sieht man einen Kopf, mit Mod das Radio-Modell
     RADIO_TRANSMITTER("radio_transmitter", "PLAYER_HEAD", PeakBlockType.RADIO_TRANSMITTER),
     RADIO_RECEIVER("radio_receiver", "PLAYER_HEAD", PeakBlockType.RADIO_RECEIVER);

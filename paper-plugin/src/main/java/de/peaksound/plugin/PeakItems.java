@@ -37,7 +37,7 @@ public final class PeakItems {
         meta.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, type.id());
         meta.itemName(Component.translatable("item.peaksound." + type.id(), fallbackName(type)));
         applyModelData(meta, type);
-        if (type == PeakItemType.PEAK_TUNER) {
+        if (type == PeakItemType.PEAK_TUNER || type == PeakItemType.POCKET_RADIO) {
             meta.setMaxStackSize(1);
         }
         stack.setItemMeta(meta);
@@ -103,6 +103,7 @@ public final class PeakItems {
             case MICROPHONE -> "Microphone";
             case SONG_LIBRARY -> "Song Library";
             case MUSIC_REMOTE -> "Music Remote";
+            case POCKET_RADIO -> "Pocket Radio";
             case RADIO_TRANSMITTER -> "Radio Transmitter";
             case RADIO_RECEIVER -> "Radio";
         };

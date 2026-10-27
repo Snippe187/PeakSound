@@ -6,6 +6,7 @@ import de.peaksound.protocol.AudioFormat;
 import de.peaksound.protocol.ChannelLayout;
 import de.peaksound.protocol.ChannelMixer;
 import de.peaksound.protocol.DjMath;
+import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.SpeakerChannel;
 import de.peaksound.protocol.SpeakerKind;
@@ -47,6 +48,8 @@ final class PlaybackSession {
         final double x, y, z;
         final int channel; // 0 = Mono-Mix, 1-12 = Lautsprecher-Kanal
         final SpeakerKind kind;
+        /** Taschenradio: folgt dem Hoerer, ohne Entfernungsdaempfung. */
+        final boolean relative;
         volatile int range;
         volatile int volume;
         /** Ueberblendung (DJ-Pult): Lautstaerke rampt linear von fadeFrom nach volume ueber fadeMs. */
@@ -62,6 +65,7 @@ final class PlaybackSession {
 
         Emitter(Packet.PlaybackStart start) {
             this.key = key(start.x(), start.y(), start.z());
+            this.relative = start.x() == Limits.POCKET_COORD;
             this.x = start.x() + 0.5;
             this.y = start.y() + 0.5;
             this.z = start.z() + 0.5;
@@ -255,10 +259,10 @@ final class PlaybackSession {
             e.buffers[i] = AL10.alGenBuffers();
             e.free.add(e.buffers[i]);
         }
-        AL10.alSourcei(e.source, AL10.AL_SOURCE_RELATIVE, AL10.AL_FALSE);
+        AL10.alSourcei(e.source, AL10.AL_SOURCE_RELATIVE, e.relative ? AL10.AL_TRUE : AL10.AL_FALSE);
         AL10.alSourcef(e.source, AL10.AL_ROLLOFF_FACTOR, 0f); // Dampfung berechnen wir selbst (Reichweite 1-30)
         AL10.alSourcef(e.source, AL10.AL_REFERENCE_DISTANCE, 1f);
-        AL10.alSource3f(e.source, AL10.AL_POSITION, (float) e.x, (float) e.y, (float) e.z);
+        AL10.alSource3f(e.source, AL10.AL_POSITION, e.relative ? 0f : (float) e.x, e.relative ? 0f : (float) e.y, e.relative ? 0f : (float) e.z);
         if (AL10.alGetError() != AL10.AL_NO_ERROR) {
             release(e);
             return false;
@@ -357,6 +361,12 @@ final class PlaybackSession {
     }
 
     private void updatePositionAndGain(Emitter e) {
+        if (e.relative) { // Taschenradio: direkt am Ohr, ohne Entfernung
+            float m = Minecraft.getInstance().options.getFinalSoundSourceVolume(SoundSource.RECORDS);
+            AL10.alSource3f(e.source, AL10.AL_POSITION, 0f, 0f, 0f);
+            AL10.alSourcef(e.source, AL10.AL_GAIN, (float) (m * ClientSettings.volumeFactor() * currentVolume(e) / 100.0));
+            return;
+        }
         float[] lx = new float[1], ly = new float[1], lz = new float[1];
         AL10.alGetListener3f(AL10.AL_POSITION, lx, ly, lz);
         double dx = e.x - lx[0], dy = e.y - ly[0], dz = e.z - lz[0];

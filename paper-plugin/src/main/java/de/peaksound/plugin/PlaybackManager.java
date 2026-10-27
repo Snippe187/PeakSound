@@ -581,6 +581,12 @@ final class PlaybackManager {
         }
     }
 
+    /** Startpaket fuer eine Quelle an beliebiger (auch Marker-)Position, z. B. das Taschenradio. */
+    Packet.PlaybackStart startPacket(State s, int x, int y, int z, int range, int volume, long now) {
+        int offset = (int) Math.min(Integer.MAX_VALUE, now - s.startedAt);
+        return new Packet.PlaybackStart(x, y, z, s.hash, offset, now, s.durationMs, songChannels(s.hash), range, volume, 0, 0);
+    }
+
     /** "Jetzt laeuft"-Anzeige (Actionbar) fuer alle Spieler, auch ohne Mod. */
     private void announce(Player p, Map<BlockRegistry.Key, State> jukeboxes) {
         Set<BlockRegistry.Key> shown = announced.computeIfAbsent(p.getUniqueId(), k -> new HashSet<>());

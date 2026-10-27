@@ -121,7 +121,8 @@ public final class PeakSoundPlugin extends JavaPlugin {
         radioStore.load();
         radioStore.startAutosave();
         this.radioStoreRef = radioStore;
-        RadioService radio = new RadioService(this, blocks, networks, radioStore, access, network);
+        RadioService radio = new RadioService(this, blocks, networks, radioStore, access, network, items);
+        getServer().getPluginManager().registerEvents(radio, this);
         radio.setPlayback(playback);
         playback.setRadio(radio);
         network.setRadio(radio);

@@ -1,6 +1,9 @@
 package de.peaksound.plugin;
 
+import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.Packet;
+import de.peaksound.protocol.PeakIds;
+import de.peaksound.protocol.PeakItemType;
 import de.peaksound.protocol.PeakBlockType;
 import de.peaksound.protocol.RadioLogic;
 import de.peaksound.protocol.RadioSettings;
@@ -12,6 +15,15 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
@@ -22,7 +34,7 @@ import org.bukkit.entity.Player;
  * {@link PlaybackManager#effective()}). Liegt kein Sender auf der Frequenz, rauscht der Empfaenger.
  * Der Sender muss in einem geladenen Chunk stehen.
  */
-final class RadioService {
+final class RadioService implements Listener {
     /** Wie weit ueber die Reichweite hinaus ein Spieler das Rauschen schon vorgeladen bekommt. */
     private static final int STATIC_MARGIN = 6;
 
@@ -32,6 +44,12 @@ final class RadioService {
     private final BlockSettingsStore<RadioSettings> store;
     private final EditAccess access;
     private final NetworkHandler network;
+    private final PeakItems items;
+    private final NamespacedKey pocketFreq = new NamespacedKey(PeakIds.NAMESPACE, "pocket_freq");
+    private final NamespacedKey pocketOn = new NamespacedKey(PeakIds.NAMESPACE, "pocket_on");
+    private final NamespacedKey pocketVol = new NamespacedKey(PeakIds.NAMESPACE, "pocket_vol");
+    /** Je Spieler: was sein Taschenradio gerade an den Client geschickt hat ("" = nichts). */
+    private final Map<UUID, String> pocketHeard = new ConcurrentHashMap<>();
     private PlaybackManager playback;
     /** Zuletzt berechnete Sender: Frequenz -> laufender Song (nur Hauptthread, wird in {@link #emittersFor} erneuert). */
     private volatile Map<Integer, PlaybackManager.State> stations = Map.of();
@@ -39,7 +57,8 @@ final class RadioService {
     private final Map<UUID, Map<BlockRegistry.Key, int[]>> staticHeard = new ConcurrentHashMap<>();
 
     RadioService(PeakSoundPlugin plugin, BlockRegistry registry, NetworkRegistry networks, BlockSettingsStore<RadioSettings> store,
-                 EditAccess access, NetworkHandler network) {
+                 EditAccess access, NetworkHandler network, PeakItems items) {
+        this.items = items;
         this.network = network;
         this.plugin = plugin;
         this.registry = registry;
@@ -129,16 +148,95 @@ final class RadioService {
                 Net.send(plugin, p, new Packet.RadioStatic(k.x(), k.y(), k.z(), Math.max(1, e.getValue()[1]), e.getValue()[2], 0));
                 return true;
             });
+            pocketTick(p, current);
         }
+    }
+
+    // ---- Taschenradio ----
+
+    private ItemStack pocketItem(Player p) {
+        ItemStack main = p.getInventory().getItemInMainHand();
+        if (items.typeOf(main).filter(t -> t == PeakItemType.POCKET_RADIO).isPresent()) return main;
+        ItemStack off = p.getInventory().getItemInOffHand();
+        return items.typeOf(off).filter(t -> t == PeakItemType.POCKET_RADIO).isPresent() ? off : null;
+    }
+
+    private RadioSettings pocketSettings(ItemStack item) {
+        var pdc = item.getItemMeta().getPersistentDataContainer();
+        return new RadioSettings(pdc.getOrDefault(pocketOn, PersistentDataType.BYTE, (byte) 0) != 0,
+                pdc.getOrDefault(pocketFreq, PersistentDataType.INTEGER, 1000), 16,
+                pdc.getOrDefault(pocketVol, PersistentDataType.INTEGER, 80)).sanitized();
+    }
+
+    private void writePocket(ItemStack item, RadioSettings s) {
+        ItemMeta meta = item.getItemMeta();
+        var pdc = meta.getPersistentDataContainer();
+        pdc.set(pocketOn, PersistentDataType.BYTE, (byte) (s.enabled() ? 1 : 0));
+        pdc.set(pocketFreq, PersistentDataType.INTEGER, s.frequency());
+        pdc.set(pocketVol, PersistentDataType.INTEGER, s.volume());
+        item.setItemMeta(meta);
+    }
+
+    /** Das Taschenradio spielt weltweit: der Sender kommt ohne Entfernung direkt "ins Ohr" (Marker-Quelle am Spieler). */
+    private void pocketTick(Player p, Map<Integer, PlaybackManager.State> current) {
+        ItemStack item = pocketItem(p);
+        String want = "";
+        PlaybackManager.State st = null;
+        int level = 0;
+        RadioSettings cfg = null;
+        if (item != null) {
+            cfg = pocketSettings(item);
+            if (cfg.enabled() && cfg.volume() > 0) {
+                st = current.get(cfg.frequency());
+                if (st != null) {
+                    want = "song:" + st.hash + "@" + st.startedAt + "/" + cfg.volume();
+                } else {
+                    level = RadioLogic.staticLevel(cfg.frequency(), current.keySet());
+                    want = "static:" + level + "/" + cfg.volume();
+                }
+            }
+        }
+        String old = pocketHeard.getOrDefault(p.getUniqueId(), "");
+        if (want.equals(old)) return;
+        int c = Limits.POCKET_COORD;
+        if (old.startsWith("song:")) Net.send(plugin, p, new Packet.PlaybackStop(c, 0, c));
+        else if (old.startsWith("static:")) Net.send(plugin, p, new Packet.RadioStatic(c, 0, c, 16, 80, 0));
+        if (st != null) Net.send(plugin, p, playback.startPacket(st, c, 0, c, 16, cfg.volume(), System.currentTimeMillis()));
+        else if (want.startsWith("static:")) Net.send(plugin, p, new Packet.RadioStatic(c, 0, c, 16, cfg.volume(), level));
+        if (want.isEmpty()) pocketHeard.remove(p.getUniqueId());
+        else pocketHeard.put(p.getUniqueId(), want);
+    }
+
+    /** Rechtsklick: Taschenradio ein/aus, mit Shift das Einstell-Menue (mit Mod). */
+    @EventHandler
+    public void onUse(PlayerInteractEvent event) {
+        if (event.getHand() != EquipmentSlot.HAND) return;
+        if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        Player p = event.getPlayer();
+        ItemStack hand = p.getInventory().getItemInMainHand();
+        if (items.typeOf(hand).filter(t -> t == PeakItemType.POCKET_RADIO).isEmpty()) return;
+        event.setCancelled(true);
+        RadioSettings cfg = pocketSettings(hand);
+        if (p.isSneaking() && network.hasMod(p)) {
+            int c = Limits.POCKET_COORD;
+            Net.send(plugin, p, new Packet.OpenRadioMenu(c, 0, c, cfg, false, stationTitle(cfg.frequency())));
+            return;
+        }
+        RadioSettings next = cfg.withEnabled(!cfg.enabled());
+        writePocket(hand, next);
+        p.sendActionBar(Messages.info(p, next.enabled() ? "Taschenradio an: " + RadioLogic.format(next.frequency()) : "Taschenradio aus.",
+                next.enabled() ? "Pocket radio on: " + RadioLogic.format(next.frequency()) : "Pocket radio off."));
     }
 
     void onQuit(Player player) {
         staticHeard.remove(player.getUniqueId());
+        pocketHeard.remove(player.getUniqueId());
     }
 
     /** Dem Spieler vergessen, was sein Client hoert (Welt- oder Verbindungswechsel: der Client startet leer). */
     void forget(Player player) {
         staticHeard.remove(player.getUniqueId());
+        pocketHeard.remove(player.getUniqueId());
     }
 
     // ---- Menue ----
@@ -151,6 +249,14 @@ final class RadioService {
     }
 
     void onUpdate(Player player, Packet.RadioUpdate update) {
+        if (update.x() == Limits.POCKET_COORD && update.z() == Limits.POCKET_COORD) { // Taschenradio in der Hand
+            ItemStack hand = player.getInventory().getItemInMainHand();
+            if (items.typeOf(hand).filter(t -> t == PeakItemType.POCKET_RADIO).isEmpty() || !access.rateOk(player)) return;
+            RadioSettings next = update.settings().sanitized();
+            writePocket(hand, next);
+            Net.send(plugin, player, new Packet.RadioStatus(update.x(), update.y(), update.z(), stationTitle(next.frequency())));
+            return;
+        }
         Block block = access.validatedAny(player, update.x(), update.y(), update.z(),
                 PeakBlockType.RADIO_RECEIVER, PeakBlockType.RADIO_TRANSMITTER);
         if (block == null) return;

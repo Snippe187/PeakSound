@@ -54,7 +54,7 @@ json(path.join(PS, "models/block/spotlight.json"), cube("peaksound:block/spotlig
 json(path.join(PS, "models/block/radio_receiver.json"), cube("peaksound:block/radio_receiver_side", "peaksound:block/radio_receiver_top"));
 json(path.join(PS, "models/block/radio_transmitter.json"), cube("peaksound:block/radio_transmitter_side", "peaksound:block/radio_transmitter_top"));
 // Items nutzen direkt vorhandene Vanilla-Texturen (es werden keine Mojang-Dateien kopiert)
-const items = { blank_record: "peaksound:item/blank_record", written_record: "peaksound:item/written_record", peak_tuner: "peaksound:item/peak_tuner" };
+const items = { blank_record: "peaksound:item/blank_record", written_record: "peaksound:item/written_record", peak_tuner: "peaksound:item/peak_tuner", pocket_radio: "peaksound:item/pocket_radio" };
 for (const [id, tex] of Object.entries(items)) {
   json(path.join(PS, `models/item/${id}.json`), {
     parent: id === "peak_tuner" ? "minecraft:item/handheld" : "minecraft:item/generated",
@@ -76,7 +76,7 @@ function itemDef(file, vanillaModel, cases, fallbackOverride) {
 }
 itemDef("disc_fragment_5.json", "minecraft:item/disc_fragment_5",
   { blank_record: "peaksound:item/blank_record", written_record: "peaksound:item/written_record" });
-itemDef("trial_key.json", "minecraft:item/trial_key", { peak_tuner: "peaksound:item/peak_tuner" });
+itemDef("trial_key.json", "minecraft:item/trial_key", { peak_tuner: "peaksound:item/peak_tuner", pocket_radio: "peaksound:item/pocket_radio" });
 itemDef("note_block.json", "minecraft:block/note_block",
   { jukebox: "peaksound:block/jukebox", speaker: "peaksound:block/speaker",
     dj_desk: "peaksound:block/dj_desk", spotlight: "peaksound:block/spotlight", microphone: "peaksound:block/microphone", song_library: "peaksound:block/song_library", music_remote: "peaksound:block/music_remote" });

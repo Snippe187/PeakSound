@@ -26,6 +26,8 @@ public final class Limits {
     public static final int LIBRARY_PAGE_SIZE = 6;
     /** Marker-Koordinate fuer Bibliotheks-Anfragen ohne Block (ueber ein Upload-Ticket, statt am Song-Library-Block). */
     public static final int LIBRARY_REMOTE = Integer.MIN_VALUE;
+    /** Marker-Koordinate fuer Quellen, die dem Spieler folgen (Taschenradio): ausserhalb der Weltgrenze und ohne Kollision mit echten Bloecken. */
+    public static final int POCKET_COORD = 33_554_432;
     public static final int LIBRARY_MAX_QUERY = 32;
     /** Laenge eines SHA-256-Hex-Strings. */
     public static final int HASH_LENGTH = 64;
