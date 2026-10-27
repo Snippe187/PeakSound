@@ -42,6 +42,20 @@ public final class PeakSoundClient implements ClientModInitializer {
                     return 1;
                 })));
         ClientNetwork.register();
+        NowPlayingHud.register();
+        // /peaksoundhud und /peaksoundlyrics: Songanzeige und Songtext-Zeile ein- bzw. ausschalten
+        net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("peaksoundhud").executes(context -> {
+                ClientSettings.setHud(!ClientSettings.hud());
+                context.getSource().sendFeedback(Component.translatable(ClientSettings.hud() ? "peaksound.hud.on" : "peaksound.hud.off"));
+                return 1;
+            }));
+            dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("peaksoundlyrics").executes(context -> {
+                ClientSettings.setLyrics(!ClientSettings.lyrics());
+                context.getSource().sendFeedback(Component.translatable(ClientSettings.lyrics() ? "peaksound.lyrics.on" : "peaksound.lyrics.off"));
+                return 1;
+            }));
+        });
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             ServerState.reset();

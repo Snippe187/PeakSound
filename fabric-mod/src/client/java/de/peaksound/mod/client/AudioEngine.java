@@ -89,5 +89,6 @@ public final class AudioEngine {
         byKey.clear();
         SongLibrary.clear();
         StaticNoise.clear();
+        NowPlayingHud.clear();
     }
 }

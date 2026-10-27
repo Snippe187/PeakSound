@@ -125,6 +125,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             case Packet.UploadChunk chunk -> uploads.onChunk(player, chunk);
             case Packet.SongRequest request -> streams.onRequest(player, request);
             case Packet.CoverRequest request -> streams.onCover(player, request);
+            case Packet.LyricsRequest request -> streams.onLyrics(player, request);
             case Packet.JukeboxUpdate update -> menu.onUpdate(player, update);
             case Packet.PlaylistRequest request -> menu.onPlaylistRequest(player, request);
             case Packet.PlaylistAction action -> menu.onPlaylistAction(player, action);

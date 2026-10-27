@@ -96,11 +96,21 @@ public final class SongStore {
         return songsDir.resolve(hash + ".cover");
     }
 
+    /** Songtext (UTF-8) aus den Tags der hochgeladenen Datei; die Datei fehlt, wenn es keinen gibt. */
+    public Path lyricsPath(String hash) {
+        return songsDir.resolve(hash + ".lyrics");
+    }
+
     /**
      * Legt einen Song an, wenn Quota und Speicher-Limit es erlauben. Gleiche Dateien (gleicher Hash)
      * werden nur einmal gespeichert und kosten weder Quota noch Speicher.
      */
     public synchronized AddResult add(Song song, byte[] audio, byte[] cover, int maxSongsPerPlayer, long maxBytes)
+            throws IOException {
+        return add(song, audio, cover, "", maxSongsPerPlayer, maxBytes);
+    }
+
+    public synchronized AddResult add(Song song, byte[] audio, byte[] cover, String lyrics, int maxSongsPerPlayer, long maxBytes)
             throws IOException {
         if (songs.containsKey(song.hash())) return AddResult.ALREADY_PRESENT;
         if (!LimitLogic.mayUpload(countByUploader(song.uploader()), maxSongsPerPlayer)) return AddResult.QUOTA_REACHED;
@@ -108,6 +118,7 @@ public final class SongStore {
         Files.createDirectories(songsDir);
         Files.write(audioPath(song), audio);
         if (cover.length > 0) Files.write(coverPath(song.hash()), cover);
+        if (!lyrics.isBlank()) Files.writeString(lyricsPath(song.hash()), lyrics);
         songs.put(song.hash(), song);
         totalBytes += audio.length;
         dirty = true;
@@ -151,7 +162,7 @@ public final class SongStore {
         if (song == null) return Optional.empty();
         totalBytes = Math.max(0, totalBytes - song.sizeBytes());
         dirty = true;
-        for (Path p : new Path[] {audioPath(song), coverPath(hash), songsDir.resolve(hash + ".analysis")}) {
+        for (Path p : new Path[] {audioPath(song), coverPath(hash), lyricsPath(hash), songsDir.resolve(hash + ".analysis")}) {
             try {
                 Files.deleteIfExists(p);
             } catch (IOException e) {

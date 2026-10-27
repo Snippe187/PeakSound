@@ -75,6 +75,9 @@ public final class PacketCodec {
                 case Packet.LibraryResults.ID -> Packet.LibraryResults.decode(in);
                 case Packet.LibraryWrite.ID -> Packet.LibraryWrite.decode(in);
                 case Packet.LibraryManage.ID -> Packet.LibraryManage.decode(in);
+                case Packet.SongInfo.ID -> Packet.SongInfo.decode(in);
+                case Packet.LyricsRequest.ID -> Packet.LyricsRequest.decode(in);
+                case Packet.LyricsData.ID -> Packet.LyricsData.decode(in);
                 case Packet.OpenRadioMenu.ID -> Packet.OpenRadioMenu.decode(in);
                 case Packet.RadioUpdate.ID -> Packet.RadioUpdate.decode(in);
                 case Packet.RadioStatus.ID -> Packet.RadioStatus.decode(in);

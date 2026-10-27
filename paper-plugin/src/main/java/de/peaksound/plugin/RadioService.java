@@ -201,7 +201,11 @@ final class RadioService implements Listener {
         int c = Limits.POCKET_COORD;
         if (old.startsWith("song:")) Net.send(plugin, p, new Packet.PlaybackStop(c, 0, c));
         else if (old.startsWith("static:")) Net.send(plugin, p, new Packet.RadioStatic(c, 0, c, 16, 80, 0));
-        if (st != null) Net.send(plugin, p, playback.startPacket(st, c, 0, c, 16, cfg.volume(), System.currentTimeMillis()));
+        if (st != null) {
+            Net.send(plugin, p, new Packet.SongInfo(st.hash, st.title.length() > Limits.MAX_TEXT ? st.title.substring(0, Limits.MAX_TEXT) : st.title,
+                    st.artist.length() > Limits.MAX_TEXT ? st.artist.substring(0, Limits.MAX_TEXT) : st.artist, st.startedAt, st.durationMs));
+            Net.send(plugin, p, playback.startPacket(st, c, 0, c, 16, cfg.volume(), System.currentTimeMillis()));
+        }
         else if (want.startsWith("static:")) Net.send(plugin, p, new Packet.RadioStatic(c, 0, c, 16, cfg.volume(), level));
         if (want.isEmpty()) pocketHeard.remove(p.getUniqueId());
         else pocketHeard.put(p.getUniqueId(), want);

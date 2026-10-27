@@ -113,6 +113,28 @@ final class SongStreamService {
         });
     }
 
+    /** Songtext fuer die Anzeige. "" , wenn der Song keinen hat. */
+    void onLyrics(Player player, Packet.LyricsRequest request) {
+        if (!allow(player.getUniqueId()) || !SongStore.validHash(request.hash())) return;
+        Song song = store.get(request.hash()).orElse(null);
+        if (song == null || (song.status() != Song.Status.OK && !Permissions.admin(player))) return;
+        UUID uuid = player.getUniqueId();
+        Bukkit.getAsyncScheduler().runNow(plugin, task -> {
+            String text = "";
+            try {
+                java.nio.file.Path file = store.lyricsPath(song.hash());
+                if (java.nio.file.Files.exists(file)) text = java.nio.file.Files.readString(file);
+            } catch (IOException | RuntimeException e) {
+                plugin.getLogger().log(Level.WARNING, "Songtext nicht lesbar: " + song.hash(), e);
+            }
+            String result = text.length() > Limits.MAX_LYRICS_CHARS ? text.substring(0, Limits.MAX_LYRICS_CHARS) : text;
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null) Net.send(plugin, p, new Packet.LyricsData(song.hash(), result));
+            });
+        });
+    }
+
     void onQuit(Player player) {
         buckets.remove(player.getUniqueId());
     }

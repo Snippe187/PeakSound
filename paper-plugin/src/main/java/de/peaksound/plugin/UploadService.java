@@ -227,7 +227,7 @@ final class UploadService {
                 stored.data().length, stored.format().extension(), status, System.currentTimeMillis(),
                 info.cover().length > 0);
 
-        SongStore.AddResult added = store.add(song, stored.data(), info.cover(),
+        SongStore.AddResult added = store.add(song, stored.data(), info.cover(), info.lyrics(),
                 limits.maxSongsFor(uploader), maxStorageBytes());
         return switch (added) {
             case ADDED -> {

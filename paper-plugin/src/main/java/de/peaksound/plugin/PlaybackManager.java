@@ -3,6 +3,7 @@ package de.peaksound.plugin;
 import de.peaksound.audio.Analysis;
 import de.peaksound.protocol.ChannelLayout;
 import de.peaksound.protocol.JukeboxSettings;
+import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.LoopMode;
 import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.PlaylistLogic;
@@ -573,6 +574,7 @@ final class PlaybackManager {
         boolean fading = fade != null && fade.startMs() + fade.durationMs() > now;
         if (fade != null && !fading) fades.remove(em.key());
         int offset = (int) Math.min(Integer.MAX_VALUE, now - s.startedAt);
+        Net.send(plugin, p, new Packet.SongInfo(s.hash, cutText(s.title), cutText(s.artist), s.startedAt, s.durationMs)); // Anzeige am Bildschirm
         Net.send(plugin, p, new Packet.PlaybackStart(em.key().x(), em.key().y(), em.key().z(), s.hash, offset, now,
                 s.durationMs, songChannels(s.hash), em.range(), fading ? (int) Math.round(fade.current(now)) : em.volume(), em.channel(), em.kind()));
         if (fading) { // mitten in einer Ueberblendung: von hier aus zum Ziel weiterrampen
@@ -580,6 +582,8 @@ final class PlaybackManager {
                     (int) (fade.startMs() + fade.durationMs() - now)));
         }
     }
+
+    private static String cutText(String s) { return s.length() > Limits.MAX_TEXT ? s.substring(0, Limits.MAX_TEXT) : s; }
 
     /** Startpaket fuer eine Quelle an beliebiger (auch Marker-)Position, z. B. das Taschenradio. */
     Packet.PlaybackStart startPacket(State s, int x, int y, int z, int range, int volume, long now) {

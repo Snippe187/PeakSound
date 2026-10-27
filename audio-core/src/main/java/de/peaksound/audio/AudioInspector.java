@@ -82,8 +82,10 @@ public final class AudioInspector {
             String title = "";
             String artist = "";
             byte[] cover = new byte[0];
+            String lyrics = "";
             Tag tag = audio.getTag();
             if (tag != null) {
+                lyrics = cleanLyrics(readLyrics(tag));
                 title = clean(tag.getFirst(FieldKey.TITLE));
                 artist = clean(tag.getFirst(FieldKey.ARTIST));
                 Artwork art = tag.getFirstArtwork();
@@ -92,10 +94,25 @@ public final class AudioInspector {
                 }
             }
             return new AudioInfo(format, durationMs, channels, header.getSampleRateAsNumber(),
-                    header.getBitsPerSample(), title, artist, cover);
+                    header.getBitsPerSample(), title, artist, cover, lyrics);
         } catch (Exception e) {
             throw new AudioException("Audiodatei nicht lesbar: " + e.getMessage(), e);
         }
+    }
+
+    private static String readLyrics(Tag tag) {
+        try {
+            return tag.getFirst(FieldKey.LYRICS);
+        } catch (RuntimeException e) {
+            return ""; // Songtext ist optional: kaputte Tags duerfen den Upload nicht verhindern
+        }
+    }
+
+    /** Songtext bereinigen: Zeilenumbrueche vereinheitlichen, Steuerzeichen (ausser Zeilenumbruch) entfernen, Laenge begrenzen. */
+    public static String cleanLyrics(String s) {
+        if (s == null) return "";
+        String t = s.replace("\r\n", "\n").replace('\r', '\n').replaceAll("[\\p{Cntrl}&&[^\n]]", " ").strip();
+        return t.length() > Limits.MAX_LYRICS_CHARS ? t.substring(0, Limits.MAX_LYRICS_CHARS) : t;
     }
 
     private static int parseInt(String s, int fallback) {

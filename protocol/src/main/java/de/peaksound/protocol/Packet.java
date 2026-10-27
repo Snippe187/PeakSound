@@ -869,6 +869,48 @@ public sealed interface Packet {
         }
     }
 
+    // ---- Anzeige: Songinfo und Songtext ----
+
+    /** Server -> Client: Titel eines Songs, der gleich in Hoerweite spielt (vor dem PlaybackStart gesendet; Anzeige am Bildschirm). */
+    record SongInfo(String hash, String title, String artist, long startedAtServerMs, int durationMs) implements Clientbound {
+        public static final int ID = 58;
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeString(hash, Limits.HASH_LENGTH).writeString(title, Limits.MAX_TEXT)
+                    .writeString(artist, Limits.MAX_TEXT).writeLong(startedAtServerMs).writeInt(durationMs).toBytes();
+        }
+
+        static SongInfo decode(ByteBuffer in) {
+            return new SongInfo(PacketIO.readString(in, Limits.HASH_LENGTH), PacketIO.readString(in, Limits.MAX_TEXT),
+                    PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readLong(in), PacketIO.readIntRange(in, 0, Integer.MAX_VALUE));
+        }
+    }
+
+    /** Client -> Server: Songtext eines Songs anfordern. */
+    record LyricsRequest(String hash) implements Serverbound {
+        public static final int ID = 59;
+
+        @Override
+        public byte[] encode() { return new PacketIO.Writer(ID).writeString(hash, Limits.HASH_LENGTH).toBytes(); }
+
+        static LyricsRequest decode(ByteBuffer in) { return new LyricsRequest(PacketIO.readString(in, Limits.HASH_LENGTH)); }
+    }
+
+    /** Server -> Client: Songtext ("" = der Song hat keinen). */
+    record LyricsData(String hash, String text) implements Clientbound {
+        public static final int ID = 60;
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeString(hash, Limits.HASH_LENGTH).writeString(text, Limits.MAX_LYRICS_CHARS).toBytes();
+        }
+
+        static LyricsData decode(ByteBuffer in) {
+            return new LyricsData(PacketIO.readString(in, Limits.HASH_LENGTH), PacketIO.readString(in, Limits.MAX_LYRICS_CHARS));
+        }
+    }
+
     // ---- Radio ----
 
     /**

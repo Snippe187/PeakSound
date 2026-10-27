@@ -17,6 +17,8 @@ public final class ClientSettings {
     private static final class Data {
         int volume = 100;
         boolean strobe = true;
+        boolean hud = true;
+        boolean lyrics = true;
     }
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -58,6 +60,16 @@ public final class ClientSettings {
         data.volume = Math.max(0, Math.min(100, percent));
         save();
     }
+
+    /** Now-Playing-Anzeige beim Songstart. */
+    public static synchronized boolean hud() { ensureLoaded(); return data.hud; }
+
+    public static synchronized void setHud(boolean on) { ensureLoaded(); data.hud = on; save(); }
+
+    /** Songtext-Zeile am unteren Bildschirmrand, solange ein Song mit Text laeuft. */
+    public static synchronized boolean lyrics() { ensureLoaded(); return data.lyrics; }
+
+    public static synchronized void setLyrics(boolean on) { ensureLoaded(); data.lyrics = on; save(); }
 
     /** Faktor 0-1 fuer die Wiedergabe. */
     public static float volumeFactor() { return volumePercent() / 100f; }

@@ -86,6 +86,8 @@ public final class ClientNetwork {
             case Packet.LibraryResults results -> LibraryScreen.onResults(results);
             case Packet.DebugInfo info -> DebugReport.onServerText(info.text());
             case Packet.OpenMicMenu menu -> MicMenuScreen.open(menu);
+            case Packet.SongInfo info -> NowPlayingHud.onInfo(info);
+            case Packet.LyricsData lyrics -> NowPlayingHud.onLyrics(lyrics);
             case Packet.OpenRadioMenu menu -> RadioMenuScreen.open(menu);
             case Packet.RadioStatus status -> RadioMenuScreen.onStatus(status);
             case Packet.RadioStatic noise -> StaticNoise.onPacket(noise);
