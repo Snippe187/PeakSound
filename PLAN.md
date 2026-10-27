@@ -96,3 +96,26 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [x] Musik-Fernbedienung, Pause/Zurück, Redstone-Steuerung für Lautsprecher, Mikrofon, DJ-Pult
 - [x] Jukebox-Ausgänge pro Seite (Bass/Mitten/Höhen/gesamt/läuft/Song-Ende/Takt) mit 3D-Würfel im Menü
 - [ ] Manuelle Abnahme
+
+## Phase 12 – Jukebox-Inventar, Song-Browser, Bibliotheks-Verwaltung
+- [x] Jukebox mit eigenem Inventar (15 Slots), Hopper/Kisten nur über Seiten-Einstellung „Items rein/raus“
+- [x] Song-Browser im Upload-Fenster (vorhandene Server-Songs auf leere Platte, per Upload-Ticket geprüft)
+- [x] Bibliothek: Cover, Sortierung, Filter, Favoriten, Beliebtheit, Umbenennen/Löschen eigener Songs (Protokoll 2)
+- [ ] Manuelle Abnahme
+
+## Phase 13 – Radio (geplant)
+- [ ] Sender-Block mit Spieler-Kopf, Playlist und Frequenz (87,5–108,0 MHz), läuft dauerhaft auf dem Server
+- [ ] Empfänger-Block: Frequenz, Reichweite einstellbar, Rauschen zwischen den Sendern
+- [ ] Taschenradio-Item (weltweit empfangbar)
+- [ ] Tests (Frequenz-/Reichweitenlogik), Testliste, Abnahme
+
+## Phase 14 – Anzeige (geplant)
+- [ ] Display-Block, mehrere Blöcke zu einer Cover-Wand verbindbar
+- [ ] Now-Playing-HUD (nur bei Songwechsel/Nutzung), Songtexte aus MP3-Tags
+- [ ] Wunsch-Warteschlange mit Skip-Abstimmung
+
+## Phase 15 – Audio-Effekte (geplant)
+- [ ] Raumhall-Preset je Lautsprecher, Laufzeit je Lautsprecher in ms, Crossfade in Sekunden
+
+## Phase 16 – Server-Technik (geplant)
+- [ ] Rechte-Nodes (Standard: alle erlaubt, Admin nur OP), Statistik (Befehl + Admin-Tab), Backups (Befehl + täglich mit Rotation)
