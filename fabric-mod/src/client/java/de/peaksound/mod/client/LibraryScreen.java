@@ -50,6 +50,9 @@ final class LibraryScreen extends Screen {
     /** Song, der gerade umbenannt wird, bzw. dessen Loeschen noch bestaetigt werden muss (je null = keiner). */
     private String renameHash;
     private String confirmDeleteHash;
+    /** true: "Wuenschen" statt "Auf Platte" (Wunsch-Warteschlange der angeschlossenen Jukebox). */
+    private boolean wishMode;
+    private Button modeButton;
 
     private LibraryScreen(Packet.OpenLibraryMenu menu) {
         super(Component.translatable("peaksound.menu.library.title"));
@@ -136,6 +139,12 @@ final class LibraryScreen extends Screen {
         if (remote()) {
             addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.library.upload"), b -> backToUpload())
                     .bounds(left + 124, bottom, 170, 20).build());
+        } else {
+            modeButton = addRenderableWidget(Button.builder(modeLabel(), b -> {
+                wishMode = !wishMode;
+                b.setMessage(modeLabel());
+                refresh();
+            }).bounds(left + 124, bottom, 170, 20).tooltip(Tooltip.create(Component.translatable("peaksound.menu.library.mode.tooltip"))).build());
         }
 
         renameBox = new EditBox(font, left, bottom + 26, 310, 20, Component.translatable("peaksound.menu.library.rename"));
@@ -147,6 +156,10 @@ final class LibraryScreen extends Screen {
         renameOk.visible = false;
         refresh();
         sendQuery(query, page); // beim Oeffnen und nach Fenstergroessen-Aenderung neu laden
+    }
+
+    private Component modeLabel() {
+        return Component.translatable(wishMode ? "peaksound.menu.library.mode.wish" : "peaksound.menu.library.mode.record");
     }
 
     private Component sortLabel() {
@@ -170,6 +183,10 @@ final class LibraryScreen extends Screen {
     }
 
     private void write(int row) {
+        if (wishMode) {
+            manage(row, Packet.LibraryManage.Kind.QUEUE);
+            return;
+        }
         if (row >= songs.size() || blank <= 0) return;
         ClientNetwork.send(new Packet.LibraryWrite(bx, by, bz, songs.get(row).hash()));
         requeryAt = System.currentTimeMillis() + 350; // danach Anzahl der leeren Platten neu holen (der Server begrenzt die Abfragerate)
@@ -230,7 +247,8 @@ final class LibraryScreen extends Screen {
             listen[i].visible = has;
             write[i].visible = has;
             fav[i].visible = has;
-            write[i].active = has && blank > 0;
+            write[i].active = has && (wishMode || blank > 0);
+            write[i].setMessage(Component.translatable(wishMode ? "peaksound.menu.library.wish" : "peaksound.menu.library.write"));
             boolean mine = has && songs.get(i).mine();
             edit[i].visible = mine;
             del[i].visible = mine;
@@ -309,7 +327,7 @@ final class LibraryScreen extends Screen {
             Component ask = Component.translatable("peaksound.menu.library.delete.confirm");
             g.text(font, ask, left + WIDTH - font.width(ask), bottom - 11, 0xFFFF5555);
         }
-        if (blank <= 0 && loaded && renameHash == null) {
+        if (blank <= 0 && loaded && renameHash == null && !wishMode) {
             Component hint = Component.translatable("peaksound.menu.library.noblank");
             g.text(font, hint, width / 2 - font.width(hint) / 2, bottom + 28, 0xFFFFAA00);
         }

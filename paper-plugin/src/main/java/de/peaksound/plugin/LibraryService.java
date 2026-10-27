@@ -28,6 +28,9 @@ final class LibraryService {
     private final PlaybackManager playback;
     private final AnalysisStore analysis;
     private UploadService uploads;
+    private QueueService queue;
+
+    void setQueue(QueueService queue) { this.queue = queue; }
 
     LibraryService(PeakSoundPlugin plugin, SongStore songs, PeakItems items, EditAccess access, FavoriteStore favorites,
                    PlaybackManager playback, AnalysisStore analysis) {
@@ -130,6 +133,11 @@ final class LibraryService {
         if (song == null) return;
         switch (manage.kind()) {
             case FAVORITE -> favorites.toggle(player.getUniqueId(), song.hash());
+            case QUEUE -> {
+                if (manage.x() == Limits.LIBRARY_REMOTE || queue == null || song.status() != Song.Status.OK) return;
+                Block block = player.getWorld().getBlockAt(manage.x(), manage.y(), manage.z());
+                queue.request(player, block, song);
+            }
             case RENAME -> {
                 String title = de.peaksound.audio.AudioInspector.clean(manage.text());
                 if (title.isEmpty() || !LibraryLogic.mayManage(song.uploader().equals(player.getUniqueId()), Permissions.admin(player))) return;

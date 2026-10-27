@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.1.0
+- Anzeige: Now-Playing-Meldung (Cover, Titel, Interpret) und Songtext-Zeile aus MP3-Tags (zeitgenau mit LRC-Zeitstempeln, sonst gleichmaessig verteilt); /peaksoundhud, /peaksoundlyrics.
+- Wunsch-Warteschlange an der Song-Bibliothek (Wuensche laufen nach dem aktuellen Song, danach die Playlist) mit Skip-Abstimmung /peaksoundvote.
 - Radio: Radio-Sender (haengt im Redstone-Netz einer Jukebox, einstellbare Frequenz 87,5-108,0 MHz), Radio-Empfaenger (Frequenz, Reichweite, Lautstaerke, Rauschen ohne Sender) und Taschenradio (weltweit, Frequenz im Item). Radios sind Spielerkoepfe als Traeger.
 - Song-Bibliothek: Cover-Vorschau je Song, Sortierung (Titel, Interpret, Neueste, Laengste, Beliebt), Filter (alle, Favoriten, meine), Favoriten, Beliebtheitszaehler (Wiedergaben und Beschreiben von Platten); eigene Songs umbenennen und loeschen (Operatoren auch fremde). Protokollversion 2: Mod und Plugin muessen beide aktualisiert werden.
 - Jukebox mit eigenem Inventar (15 Platten-Slots), Hopper/Kisten nur ueber Seiten-Einstellung "Items rein/raus".

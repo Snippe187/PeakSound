@@ -126,6 +126,10 @@ public final class PeakSoundPlugin extends JavaPlugin {
         radio.setPlayback(playback);
         debugService.setRadio(radio);
         playback.setRadio(radio);
+        QueueService queueService = new QueueService(this, blocks, networks, songs, playback, jukeboxSettings, items);
+        playback.setQueue(queueService);
+        library.setQueue(queueService);
+        getCommand("peaksoundvote").setExecutor(queueService);
         network.setRadio(radio);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, PeakIds.CHANNEL, network);

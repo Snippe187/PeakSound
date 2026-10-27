@@ -110,10 +110,11 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [x] Tests (Frequenz-/Rauschlogik, Pakete), Testliste in docs/TESTS.md
 - [ ] Manuelle Abnahme (Menüs, Rauschen, Taschenradio im Spiel noch nicht geprüft)
 
-## Phase 14 – Anzeige (geplant)
-- [ ] Display-Block, mehrere Blöcke zu einer Cover-Wand verbindbar
-- [ ] Now-Playing-HUD (nur bei Songwechsel/Nutzung), Songtexte aus MP3-Tags
-- [ ] Wunsch-Warteschlange mit Skip-Abstimmung
+## Phase 14 – Anzeige, Songtext, Wünsche
+- [x] Now-Playing-Anzeige (nur beim Songstart), Songtexte aus MP3-Tags (Zeitstempel oder gleichmäßig verteilt)
+- [x] Wunsch-Warteschlange an der Song-Bibliothek mit Skip-Abstimmung
+- [ ] Display-Block, mehrere Blöcke zu einer Cover-Wand verbindbar (offen: braucht Zeichnen einer Textur in der Welt, noch nicht untersucht)
+- [ ] Manuelle Abnahme (noch nichts im Spiel gesehen)
 
 ## Phase 15 – Audio-Effekte (geplant)
 - [ ] Raumhall-Preset je Lautsprecher, Laufzeit je Lautsprecher in ms, Crossfade in Sekunden

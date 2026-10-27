@@ -1045,7 +1045,7 @@ public sealed interface Packet {
         public static final int ID = 53;
 
         public enum Kind {
-            RENAME, DELETE, FAVORITE;
+            RENAME, DELETE, FAVORITE, QUEUE;
 
             static Kind byOrdinal(int o) {
                 Kind[] v = values();

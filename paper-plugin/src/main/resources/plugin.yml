@@ -9,6 +9,9 @@ commands:
     description: PeakSound-Diagnose fuer Operatoren
     usage: /peaksound <eqtest|place|play> ...
     permission: peaksound.admin
+  peaksoundvote:
+    description: Abstimmen, den laufenden Song der Jukebox in deiner Naehe zu ueberspringen
+    usage: /peaksoundvote
 permissions:
   peaksound.admin:
     description: Zugriff auf PeakSound-Diagnosebefehle

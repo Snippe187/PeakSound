@@ -56,6 +56,8 @@ final class PlaybackManager {
         /** true: Der Song kommt aus der Playlist (Hopper/Kiste); record ist dann nur eine Kopie und wird nie ausgegeben. */
         final boolean fromPlaylist;
         int playlistIndex;
+        /** Wunsch-Songs: Playlist-Position, an der es nach dem Wunsch weitergeht (-1 = kein Wunsch-Song). */
+        int resumeIndex = -1;
         /** Bereits gespielte Playlist-Eintraege dieses Durchlaufs (fuer Shuffle). */
         final Set<Integer> played = new HashSet<>();
 
@@ -112,6 +114,7 @@ final class PlaybackManager {
     /** Zaehlt jeden gestarteten Song (Beliebtheit in der Bibliothek). */
     private java.util.function.Consumer<String> playCounter;
     private RadioService radio;
+    private QueueService queue;
     private final PlaylistService playlist;
     private final NetworkRegistry networks;
     private final EqualizerService equalizer;
@@ -135,6 +138,8 @@ final class PlaybackManager {
     }
 
     void setRadio(RadioService radio) { this.radio = radio; }
+
+    void setQueue(QueueService queue) { this.queue = queue; }
 
     void setPlayCounter(java.util.function.Consumer<String> counter) { this.playCounter = counter; }
 
@@ -242,7 +247,9 @@ final class PlaybackManager {
         World world = Bukkit.getWorld(key.world());
         if (world == null || !world.isChunkLoaded(key.x() >> 4, key.z() >> 4)) return; // nichts zu tun, solange nicht geladen
         Block block = world.getBlockAt(key.x(), key.y(), key.z());
-        if (ended.fromPlaylist) {
+        if (queue != null && queue.hasQueued(key) && ended.fromPlaylist) {
+            playNext(block, ended, false); // Wuensche gehen vor
+        } else if (ended.fromPlaylist) {
             playNext(block, ended, false);
         } else if (settings.get(key).loop() == LoopMode.ONE) {
             // Einzelne eingelegte Platte wiederholen
@@ -277,7 +284,14 @@ final class PlaybackManager {
         List<PlaylistService.Track> tracks = playlist.tracks(block);
         JukeboxSettings cfg = settings.get(key);
         Set<Integer> played = current != null ? current.played : new HashSet<>();
-        int index = current != null ? locate(tracks, current) : -1;
+        if (queue != null && (current == null || current.fromPlaylist)) { // Wuensche zuerst; die Playlist laeuft danach an derselben Stelle weiter
+            Song wished = queue.poll(key);
+            if (wished != null) {
+                startWished(block, current, tracks, wished);
+                return true;
+            }
+        }
+        int index = current != null ? (current.resumeIndex >= 0 ? current.resumeIndex : locate(tracks, current)) : -1;
         for (int tries = 0; tries <= tracks.size(); tries++) {
             index = tries == 0 && !skip
                     ? PlaylistLogic.next(tracks.size(), index, cfg.loop(), cfg.shuffle(), played, ThreadLocalRandom.current())
@@ -290,6 +304,22 @@ final class PlaybackManager {
         }
         if (states.remove(key) != null) save();
         return false;
+    }
+
+    private void startWished(Block block, State current, List<PlaylistService.Track> tracks, Song song) {
+        BlockRegistry.Key key = BlockRegistry.Key.of(block);
+        State next = new State(queue.recordFor(song), song.hash(), song.title(), song.artist(), song.durationMs(),
+                System.currentTimeMillis(), true, true, -1);
+        if (current != null) {
+            next.resumeIndex = current.resumeIndex >= 0 ? current.resumeIndex : locate(tracks, current);
+            next.played.addAll(current.played);
+        }
+        if (states.containsKey(key)) stopFor(key);
+        analysis.peek(song);
+        if (playCounter != null) playCounter.accept(song.hash());
+        states.put(key, next);
+        save();
+        Bukkit.getScheduler().runTask(plugin, this::tick);
     }
 
     /** Einen bestimmten Playlist-Eintrag starten (Auswahl im Menue). */

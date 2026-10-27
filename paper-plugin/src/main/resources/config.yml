@@ -35,3 +35,10 @@ network:
 library:
   # Song-Bibliothek-Block: Spieler schreiben bereits hochgeladene Songs auf leere Platten (false = Block ausgeschaltet).
   enabled: true
+
+queue:
+  # Wunsch-Warteschlange: Spieler waehlen an einer Song-Bibliothek (im Redstone-Netz einer Jukebox) Songs, die nach dem
+  # laufenden Song gespielt werden. /peaksoundvote startet eine Skip-Abstimmung der Zuhoerer.
+  enabled: true
+  max-size: 10
+  max-per-player: 3

@@ -99,3 +99,13 @@ Vorbereitung: eine Jukebox mit Platte(n), ein Stück Redstone-Staub daneben und 
 
 Bekannte Grenzen: Der Sender muss in einem geladenen Chunk stehen. Bei gleicher Frequenz gewinnt der erste Sender. Der Radio-Kopf
 sieht ohne Mod wie ein normaler Spielerkopf aus.
+## Phase 14 – Anzeige, Songtext, Wünsche
+
+- [ ] Now-Playing: Betritt man die Reichweite einer spielenden Jukebox oder startet ein neuer Song, erscheint oben in der Mitte ca. 6 s lang Cover, Titel und Interpret (ohne Cover das Standardbild). `/peaksoundhud` schaltet es aus und wieder an.
+- [ ] Songtext: Eine MP3 mit Songtext in den Tags (USLT) hochladen. Beim Abspielen steht unten über der Hotbar die aktuelle Zeile, darunter die nächste. Mit Zeitstempeln `[mm:ss.xx]` läuft sie zeitgenau, sonst gleichmäßig verteilt und mit „~“ markiert. `/peaksoundlyrics` schaltet sie aus und an.
+- [ ] Songs ohne Text zeigen keine Zeile; schon vorhandene (früher hochgeladene) Songs haben keinen Text und müssten neu hochgeladen werden.
+- [ ] Wünsche: Song-Bibliothek per Redstone-Staub an eine Jukebox mit Playlist anschließen. In der Bibliothek „Modus: Song wünschen“ wählen, bei einem Song auf „Wünschen“ klicken: Chat zeigt den Platz, Zuhörer in der Nähe sehen die Meldung mit klickbarer „[Skip-Abstimmung]“. Der Wunsch läuft nach dem aktuellen Song, danach geht die Playlist an der alten Stelle weiter.
+- [ ] Grenzen: höchstens 10 Wünsche gesamt, 3 je Spieler, derselbe Song nicht doppelt (`config.yml`, Abschnitt `queue`). Steht die Jukebox still, startet der Wunsch sofort. Mit einer von Hand eingelegten Platte werden Wünsche abgelehnt (die Platte darf nie verloren gehen).
+- [ ] `/peaksoundvote`: Mehrheit der Zuhörer in Reichweite (Hälfte + 1) überspringt den Song; die Chat-Zeile zeigt den Stand.
+
+Nicht umgesetzt: der Display-Block (Cover-Wand). Die Warteschlange liegt nur im Speicher (nach einem Neustart leer).
