@@ -154,8 +154,12 @@ final class AdminService {
                         e.getKey().getLeastSignificantBits(), counts.getOrDefault(e.getKey(), 0), limits.overrideFor(e.getKey()))));
 
         Net.send(plugin, player, new Packet.AdminSongs(songs, all.size(), store.totalBytes(), limits.maxStorageBytes(),
-                limits.defaultMaxSongs(), players));
+                limits.defaultMaxSongs(), players, stats == null ? "" : stats.describe()));
     }
+
+    private StatsService stats;
+
+    void setStats(StatsService stats) { this.stats = stats; }
 
     private static String cut(String s) {
         return s.length() > Limits.MAX_TEXT ? s.substring(0, Limits.MAX_TEXT) : s;

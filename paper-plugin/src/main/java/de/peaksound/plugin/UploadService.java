@@ -41,9 +41,12 @@ final class UploadService {
         final UUID player;
         final String fallbackTitle;
         final ChunkAssembler assembler;
+        /** Songlimit des Spielers (auf dem Hauptthread beim Start bestimmt; die Verarbeitung laeuft asynchron). */
+        final int maxSongs;
         int lastAcked;
 
-        Session(int id, UUID player, String fallbackTitle, ChunkAssembler assembler) {
+        Session(int id, UUID player, String fallbackTitle, ChunkAssembler assembler, int maxSongs) {
+            this.maxSongs = maxSongs;
             this.id = id;
             this.player = player;
             this.fallbackTitle = fallbackTitle;
@@ -81,6 +84,7 @@ final class UploadService {
 
     /** Gibt dem Spieler ein Ticket und oeffnet sein Upload-Fenster. Ein Spieler hat hoechstens ein Ticket. */
     void openUpload(Player player) {
+        if (!Permissions.check(player, "peaksound.upload", "Du darfst keine Songs hochladen.", "You may not upload songs.")) return;
         tickets.values().removeIf(t -> t.player().equals(player.getUniqueId()) || t.expiresAt() < System.currentTimeMillis());
         int ticket = random.nextInt(Integer.MAX_VALUE - 1) + 1;
         tickets.put(ticket, new Ticket(player.getUniqueId(), System.currentTimeMillis() + TICKET_LIFETIME_MS));
@@ -112,7 +116,7 @@ final class UploadService {
             reject(player, 0, Reason.RATE_LIMIT, (int) ((cooldownMs - since + 999) / 1000));
             return;
         }
-        int maxSongs = limits.maxSongsFor(id);
+        int maxSongs = limits.maxSongsFor(player);
         if (!LimitLogic.mayUpload(store.countByUploader(id), maxSongs)) {
             reject(player, 0, Reason.QUOTA_REACHED, maxSongs);
             return;
@@ -123,7 +127,7 @@ final class UploadService {
         }
         int uploadId = nextUploadId++;
         String fallback = AudioInspector.clean(start.fallbackTitle());
-        sessions.put(id, new Session(uploadId, id, fallback, new ChunkAssembler(start.fileSize(), Limits.UPLOAD_CHUNK_BYTES)));
+        sessions.put(id, new Session(uploadId, id, fallback, new ChunkAssembler(start.fileSize(), Limits.UPLOAD_CHUNK_BYTES), maxSongs));
         lastUpload.put(id, System.currentTimeMillis());
         Net.send(plugin, player, new Packet.UploadAccept(uploadId, Limits.UPLOAD_CHUNK_BYTES, Limits.UPLOAD_WINDOW));
     }
@@ -171,7 +175,7 @@ final class UploadService {
         Bukkit.getAsyncScheduler().runNow(plugin, task -> {
             Outcome outcome;
             try {
-                outcome = process(data, s.fallbackTitle, uuid, uploaderName);
+                outcome = process(data, s.fallbackTitle, uuid, uploaderName, s.maxSongs);
             } catch (RuntimeException | IOException e) {
                 plugin.getLogger().log(Level.SEVERE, "Upload-Verarbeitung fehlgeschlagen", e);
                 outcome = Outcome.fail(Reason.INTERNAL, 0);
@@ -191,7 +195,7 @@ final class UploadService {
         return Math.max(30, Math.min(3600, plugin.getConfig().getInt("upload.max-song-seconds", Limits.MAX_SONG_SECONDS)));
     }
 
-    private Outcome process(byte[] data, String fallbackTitle, UUID uploader, String uploaderName) throws IOException {
+    private Outcome process(byte[] data, String fallbackTitle, UUID uploader, String uploaderName, int maxSongs) throws IOException {
         int maxSeconds = maxSongSeconds(plugin);
         int maxMs = maxSeconds * 1000;
         AudioFormat format = AudioFormat.detect(data).orElse(null);
@@ -228,14 +232,14 @@ final class UploadService {
                 info.cover().length > 0);
 
         SongStore.AddResult added = store.add(song, stored.data(), info.cover(), info.lyrics(),
-                limits.maxSongsFor(uploader), maxStorageBytes());
+                maxSongs, maxStorageBytes());
         return switch (added) {
             case ADDED -> {
                 analysis.store(song, stored.data(), stored.format()); // Takt und Frequenzbaender fuer Partikel/Equalizer
                 yield new Outcome(null, 0, song, true);
             }
             case ALREADY_PRESENT -> new Outcome(null, 0, store.get(hash).orElse(song), false);
-            case QUOTA_REACHED -> Outcome.fail(Reason.QUOTA_REACHED, limits.maxSongsFor(uploader));
+            case QUOTA_REACHED -> Outcome.fail(Reason.QUOTA_REACHED, maxSongs);
             case STORAGE_FULL -> Outcome.fail(Reason.STORAGE_FULL, 0);
         };
     }

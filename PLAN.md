@@ -116,8 +116,13 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [ ] Display-Block, mehrere Blöcke zu einer Cover-Wand verbindbar (offen: braucht Zeichnen einer Textur in der Welt, noch nicht untersucht)
 - [ ] Manuelle Abnahme (noch nichts im Spiel gesehen)
 
-## Phase 15 – Audio-Effekte (geplant)
-- [ ] Raumhall-Preset je Lautsprecher, Laufzeit je Lautsprecher in ms, Crossfade in Sekunden
+## Phase 15 – Audio-Effekte
+- [x] Raumhall-Preset je Lautsprecher (OpenAL-EFX), Laufzeit je Lautsprecher in ms
+- [x] Überblendung in Sekunden (aus-/einblenden; echtes Übereinanderlegen geht mit der Ein-Quelle-je-Block-Architektur nicht)
+- [ ] Manuelle Abnahme (im Spiel noch nicht gehört)
 
-## Phase 16 – Server-Technik (geplant)
-- [ ] Rechte-Nodes (Standard: alle erlaubt, Admin nur OP), Statistik (Befehl + Admin-Tab), Backups (Befehl + täglich mit Rotation)
+## Phase 16 – Server-Technik
+- [x] Rechte-Nodes (Standard: alle erlaubt, Admin nur OP), Limits per Node
+- [x] Statistik (Befehl + Admin-Reiter)
+- [x] Sicherungen (Befehl + täglich mit Rotation, Wiederherstellen beim nächsten Start) - auf dem Testserver geprüft
+- [ ] Manuelle Abnahme

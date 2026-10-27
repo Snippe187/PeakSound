@@ -18,7 +18,7 @@ import net.minecraft.network.chat.Component;
  * jeder Aktion erneut, ob der Spieler Operator ist.
  */
 final class AdminScreen extends Screen {
-    private enum Tab { SONGS, APPROVAL, LIMITS }
+    private enum Tab { SONGS, APPROVAL, LIMITS, STATS }
 
     private static final int ROWS = 8;
     private static final int PLAYER_ROWS = 4;
@@ -26,7 +26,7 @@ final class AdminScreen extends Screen {
     private static final long CONFIRM_MS = 3000;
 
     private static AdminScreen active;
-    private static Packet.AdminSongs data = new Packet.AdminSongs(List.of(), 0, 0, 0, 0, List.of());
+    private static Packet.AdminSongs data = new Packet.AdminSongs(List.of(), 0, 0, 0, 0, List.of(), "");
 
     private final Screen parent;
     private Tab tab = Tab.SONGS;
@@ -78,10 +78,11 @@ final class AdminScreen extends Screen {
         int top = height / 2 - 105;
         int left = width / 2 - 160;
         addTab(Tab.SONGS, Component.translatable("peaksound.admin.tab.songs"), left, top);
-        addTab(Tab.APPROVAL, Component.translatable("peaksound.admin.tab.approval", pendingCount()), left + 108, top);
-        addTab(Tab.LIMITS, Component.translatable("peaksound.admin.tab.limits"), left + 216, top);
+        addTab(Tab.APPROVAL, Component.translatable("peaksound.admin.tab.approval", pendingCount()), left + 80, top);
+        addTab(Tab.LIMITS, Component.translatable("peaksound.admin.tab.limits"), left + 160, top);
+        addTab(Tab.STATS, Component.translatable("peaksound.admin.tab.stats"), left + 240, top);
         if (tab == Tab.LIMITS) initLimits(top + 28);
-        else initSongs(top + 28);
+        else if (tab != Tab.STATS) initSongs(top + 28);
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
                 .bounds(width / 2 - 100, top + 224, 200, 20).build());
     }
@@ -92,7 +93,7 @@ final class AdminScreen extends Screen {
             page = 0;
             confirmHash = null;
             rebuildWidgets();
-        }).bounds(x, y, 104, 20).build());
+        }).bounds(x, y, 76, 20).build());
         b.active = tab != target;
     }
 
@@ -232,6 +233,7 @@ final class AdminScreen extends Screen {
         int top = height / 2 - 105;
         g.text(font, title, width / 2 - font.width(title) / 2, top - 14, 0xFFFFFFFF);
         if (tab == Tab.LIMITS) extractLimits(g, top + 28);
+        else if (tab == Tab.STATS) extractStats(g, top + 28);
         else extractSongs(g, top + 28);
     }
 
@@ -257,6 +259,22 @@ final class AdminScreen extends Screen {
         int pages = Math.max(1, (list.size() + ROWS - 1) / ROWS);
         Component info = Component.translatable("peaksound.admin.page", page + 1, pages, data.totalSongs());
         g.text(font, info, width / 2 - font.width(info) / 2, top + ROWS * 20 + 9, 0xFFAAAAAA);
+    }
+
+    /** Statistik-Reiter: der Server schickt einen fertigen, mehrzeiligen Text (Songs, Speicher, Top-Songs, Hochlader, Bloecke). */
+    private void extractStats(GuiGraphicsExtractor g, int top) {
+        int left = width / 2 - 160;
+        String text = data.stats();
+        if (text.isBlank()) {
+            Component none = Component.translatable("peaksound.admin.stats.empty");
+            g.text(font, none, width / 2 - font.width(none) / 2, top + 40, 0xFFAAAAAA);
+            return;
+        }
+        String[] lines = text.split("\n");
+        for (int i = 0; i < Math.min(lines.length, 19); i++) {
+            boolean header = !lines[i].startsWith(" ");
+            g.text(font, Component.literal(trim(lines[i], 320)), left, top + i * 10, header ? 0xFFFFFFFF : 0xFFAAAAAA);
+        }
     }
 
     private void extractLimits(GuiGraphicsExtractor g, int top) {

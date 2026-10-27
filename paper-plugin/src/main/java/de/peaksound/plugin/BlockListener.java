@@ -62,6 +62,15 @@ final class BlockListener implements Listener {
         this.speakerMenu = speakerMenu;
     }
 
+    /** Wer das Recht peaksound.place nicht hat, kann keine PeakSound-Bloecke setzen. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onPlaceCheck(BlockPlaceEvent event) {
+        if (items.typeOf(event.getItemInHand()).flatMap(PeakItemType::block).isEmpty()) return;
+        if (!Permissions.check(event.getPlayer(), "peaksound.place", "Du darfst keine PeakSound-Bloecke setzen.", "You may not place PeakSound blocks.")) {
+            event.setCancelled(true);
+        }
+    }
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent event) {
         Optional<PeakBlockType> type = items.typeOf(event.getItemInHand()).flatMap(PeakItemType::block);

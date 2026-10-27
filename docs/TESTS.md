@@ -109,3 +109,18 @@ sieht ohne Mod wie ein normaler Spielerkopf aus.
 - [ ] `/peaksoundvote`: Mehrheit der Zuhörer in Reichweite (Hälfte + 1) überspringt den Song; die Chat-Zeile zeigt den Stand.
 
 Nicht umgesetzt: der Display-Block (Cover-Wand). Die Warteschlange liegt nur im Speicher (nach einem Neustart leer).
+## Phase 15 – Laufzeit, Raumhall, Überblendung
+
+- [ ] Lautsprecher-Menü (Peak-Tuner): Regler **Verzögerung** (0–500 ms) und Knopf **Raumhall** (Aus, Zimmer, Halle, Höhle, Badezimmer).
+- [ ] Verzögerung: Zwei Lautsprecher mit demselben Kanal, einen auf 200 ms stellen: man hört ein Echo/den Versatz; zurück auf 0 ms: wieder deckungsgleich. Spät dazukommende Spieler hören dieselbe Verzögerung.
+- [ ] Raumhall: „Halle“ oder „Höhle“ am Lautsprecher: hörbare Nachhallfahne; „Aus“ klingt wieder trocken. Ohne EFX-Unterstützung des Audiogeräts bleibt der Hall still (kein Fehler).
+- [ ] Jukebox-Menü, Reiter Einstellungen: Regler **Überblendung** (0–12 s). Bei einer Playlist blendet der Song in den letzten Sekunden aus und der nächste dann ein (Aus-/Einblenden, **kein** echtes Übereinanderlegen). Mit 0 s unverändert.
+- [ ] Nach dem Ausblenden bleibt nichts leise: Nächste von Hand eingelegte Platte und Neustart der Wiedergabe sind in voller Lautstärke.
+
+## Phase 16 – Rechte, Statistik, Sicherungen
+
+- [ ] Rechte (mit LuckPerms o. Ä. testen, Standard = alle erlaubt): `peaksound.upload`, `peaksound.library`, `peaksound.library.manage.own`, `peaksound.queue`, `peaksound.vote`, `peaksound.place`, `peaksound.radio` einzeln auf *false* stellen: die jeweilige Aktion wird mit Meldung verweigert. `peaksound.library.manage.any` erlaubt fremde Songs zu verwalten.
+- [ ] Songlimit per Recht: `peaksound.limit.20` gibt 20 Uploads, `peaksound.limit.unlimited` unbegrenzt; ein vom Operator gesetztes Spielerlimit hat Vorrang.
+- [ ] `/peaksound stats` und Admin-Menü → Reiter **Statistik**: Songs, Speicher, Abspielungen, Top-Songs, größte Hochlader, Blöcke, Spieler online.
+- [ ] `/peaksound backup` erzeugt `plugins/PeakSound/backups/manuell-*.zip`; täglich entsteht automatisch `auto-*.zip` (die ältesten über `backup.keep` werden gelöscht).
+- [ ] `/peaksound restore <Name>` (Tab-Vervollständigung) meldet „bereit“; nach dem Neustart steht im Log „Sicherung eingespielt“ und `vor-restore-*.zip` enthält den vorherigen Stand.

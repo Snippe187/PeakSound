@@ -153,6 +153,7 @@ final class QueueService implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) return true;
+        if (!Permissions.check(player, "peaksound.vote", "Du darfst nicht abstimmen.", "You may not vote.")) return true;
         boolean de = player.locale().getLanguage().equals("de");
         BlockRegistry.Key jukebox = listeningTo(player);
         if (jukebox == null) {

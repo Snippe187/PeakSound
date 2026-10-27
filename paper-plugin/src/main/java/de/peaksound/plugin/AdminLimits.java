@@ -68,6 +68,18 @@ final class AdminLimits {
         return LimitLogic.effectiveSongLimit(data.perPlayer.get(player.toString()), defaultMaxSongs());
     }
 
+    /**
+     * Das fuer diesen (online) Spieler geltende Songlimit: Wert des Operators, sonst Rechte-Node peaksound.limit.<n>,
+     * sonst Standard. Nur auf dem Hauptthread aufrufen (liest die Rechte des Spielers).
+     */
+    int maxSongsFor(org.bukkit.entity.Player player) {
+        java.util.List<String> nodes = new java.util.ArrayList<>();
+        for (var info : player.getEffectivePermissions()) if (info.getValue()) nodes.add(info.getPermission());
+        synchronized (this) {
+            return LimitLogic.effectiveSongLimit(data.perPlayer.get(player.getUniqueId().toString()), LimitLogic.permissionLimit(nodes), defaultMaxSongs());
+        }
+    }
+
     /** Eigener Wert des Spielers, oder {@link LimitLogic#USE_DEFAULT}. */
     synchronized int overrideFor(UUID player) {
         Integer v = data.perPlayer.get(player.toString());

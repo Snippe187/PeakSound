@@ -13,6 +13,33 @@ commands:
     description: Abstimmen, den laufenden Song der Jukebox in deiner Naehe zu ueberspringen
     usage: /peaksoundvote
 permissions:
+  peaksound.upload:
+    description: Eigene Songs hochladen
+    default: true
+  peaksound.library:
+    description: Song-Bibliothek benutzen (suchen, Favoriten, auf Platte schreiben)
+    default: true
+  peaksound.library.manage.own:
+    description: Eigene Songs umbenennen und loeschen
+    default: true
+  peaksound.library.manage.any:
+    description: Fremde Songs umbenennen und loeschen
+    default: op
+  peaksound.queue:
+    description: Songs wuenschen (Wunsch-Warteschlange)
+    default: true
+  peaksound.vote:
+    description: Bei der Skip-Abstimmung mitmachen
+    default: true
+  peaksound.place:
+    description: PeakSound-Bloecke setzen
+    default: true
+  peaksound.radio:
+    description: Taschenradio benutzen
+    default: true
+  peaksound.limit.unlimited:
+    description: Kein Songlimit beim Hochladen
+    default: false
   peaksound.admin:
     description: Zugriff auf PeakSound-Diagnosebefehle
     default: op

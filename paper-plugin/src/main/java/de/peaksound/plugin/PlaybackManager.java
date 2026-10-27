@@ -403,6 +403,11 @@ final class PlaybackManager {
         return lastEnded.getOrDefault(key, 0L);
     }
 
+    boolean isPlayingKey(BlockRegistry.Key key) {
+        State s = states.get(key);
+        return s != null && s.playing;
+    }
+
     boolean isPlaying(Block block) {
         State s = states.get(BlockRegistry.Key.of(block));
         return s != null && s.playing;

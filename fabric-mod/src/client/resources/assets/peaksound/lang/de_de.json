@@ -57,6 +57,8 @@
   "peaksound.reverb.hall": "Halle",
   "peaksound.reverb.cave": "Höhle",
   "peaksound.reverb.bath": "Badezimmer",
+  "peaksound.admin.tab.stats": "Statistik",
+  "peaksound.admin.stats.empty": "Noch keine Statistik.",
   "peaksound.menu.library.upload": "Neuen Song hochladen",
   "peaksound.upload.dialog": "Musikdatei wählen",
   "peaksound.upload.start": "Hochladen",

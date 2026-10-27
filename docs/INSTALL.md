@@ -79,3 +79,18 @@ normale Fabric-Client der verlässliche Weg.
 | Equalizer reagiert nicht | Log prüfen („Comparator-Equalizer ausgeschaltet“): Paper-Version hat andere Interna |
 | Upload abgelehnt | Meldung im Chat nennt den Grund (zu lang, Limit, Cooldown, Speicher voll) |
 | Spieler ohne Mod sieht Notenblöcke | Gewollt: Er bekommt einen Hinweis im Chat |
+
+## Rechte, Sicherungen und Statistik (Server)
+
+**Rechte** (Standard: alle erlaubt, ohne Rechte-Plugin ändert sich nichts): `peaksound.upload`, `peaksound.library`,
+`peaksound.library.manage.own`, `peaksound.queue`, `peaksound.vote`, `peaksound.place`, `peaksound.radio`.
+Nur für Operatoren: `peaksound.admin` (Song-Verwaltung, Befehle), `peaksound.library.manage.any` (fremde Songs verwalten).
+Songlimit pro Gruppe: `peaksound.limit.<Zahl>` (der höchste Wert gewinnt) oder `peaksound.limit.unlimited`; ein im Admin-Menü
+gesetztes Spielerlimit hat Vorrang.
+
+**Sicherungen**: `/peaksound backup` erstellt ein Zip in `plugins/PeakSound/backups/`, `/peaksound backups` listet sie auf.
+Täglich entsteht automatisch eine `auto-*.zip` (die letzten `backup.keep` bleiben, Standard 7). Mit
+`backup.include-songs: false` bleiben die Songdateien draußen (spart Platz). Wiederherstellen: `/peaksound restore <Name>`
+und Server neu starten; vorher wird der jetzige Stand als `vor-restore-*.zip` gesichert.
+
+**Statistik**: `/peaksound stats` oder im Spiel Admin-Menü (Esc → PeakSound: Songs) → Reiter *Statistik*.

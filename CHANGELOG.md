@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.1.0
+- Audio: Verzoegerung (0-500 ms) und Raumhall (Zimmer, Halle, Hoehle, Bad; OpenAL-EFX) je Lautsprecher, Ueberblendung zwischen Playlist-Songs (aus-/einblenden, 0-12 s).
+- Server: Rechte-Nodes (peaksound.upload, .library, .queue, .vote, .place, .radio, .library.manage.own/any, .limit.<n>), Statistik (/peaksound stats und Admin-Reiter), Sicherungen (/peaksound backup|backups|restore, taeglich automatisch mit Rotation).
 - Anzeige: Now-Playing-Meldung (Cover, Titel, Interpret) und Songtext-Zeile aus MP3-Tags (zeitgenau mit LRC-Zeitstempeln, sonst gleichmaessig verteilt); /peaksoundhud, /peaksoundlyrics.
 - Wunsch-Warteschlange an der Song-Bibliothek (Wuensche laufen nach dem aktuellen Song, danach die Playlist) mit Skip-Abstimmung /peaksoundvote.
 - Radio: Radio-Sender (haengt im Redstone-Netz einer Jukebox, einstellbare Frequenz 87,5-108,0 MHz), Radio-Empfaenger (Frequenz, Reichweite, Lautstaerke, Rauschen ohne Sender) und Taschenradio (weltweit, Frequenz im Item). Radios sind Spielerkoepfe als Traeger.

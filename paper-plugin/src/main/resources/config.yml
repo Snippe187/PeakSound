@@ -36,6 +36,13 @@ library:
   # Song-Bibliothek-Block: Spieler schreiben bereits hochgeladene Songs auf leere Platten (false = Block ausgeschaltet).
   enabled: true
 
+backup:
+  # Sicherung aller Plugin-Daten (Songs, Bloecke, Einstellungen) als Zip in plugins/PeakSound/backups/.
+  # Per Befehl: /peaksound backup, /peaksound backups, /peaksound restore <Name> (greift beim naechsten Start).
+  daily: true          # einmal am Tag automatisch (Name auto-*.zip, die aeltesten werden geloescht)
+  keep: 7              # so viele automatische Sicherungen bleiben erhalten
+  include-songs: true  # false = Songdateien nicht mitsichern (spart Platz, nur Einstellungen und Bloecke)
+
 queue:
   # Wunsch-Warteschlange: Spieler waehlen an einer Song-Bibliothek (im Redstone-Netz einer Jukebox) Songs, die nach dem
   # laufenden Song gespielt werden. /peaksoundvote startet eine Skip-Abstimmung der Zuhoerer.

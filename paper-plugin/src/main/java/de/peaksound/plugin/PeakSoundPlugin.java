@@ -29,6 +29,8 @@ public final class PeakSoundPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        BackupService backup = new BackupService(this);
+        backup.applyPendingRestore(); // eine bereitgestellte Sicherung wird VOR dem Laden der Daten eingespielt
         PeakItems items = new PeakItems();
 
         blocks = new BlockRegistry(this);
@@ -78,6 +80,9 @@ public final class PeakSoundPlugin extends JavaPlugin {
         JukeboxMenuService menu = new JukeboxMenuService(this, blocks, jukeboxSettings, playback, playlist, access, speakers);
         SpeakerMenuService speakerMenu = new SpeakerMenuService(this, access, speakers, jukeboxSettings);
         AdminService admin = new AdminService(this, songs, limits, playback, analysis);
+        StatsService statsService = new StatsService(songs, limits, blocks, playback, network);
+        admin.setStats(statsService);
+        backup.scheduleDaily();
         lightStore = new BlockSettingsStore<>(this, "lights.json", de.peaksound.protocol.LightSettings.class,
                 de.peaksound.protocol.LightSettings.defaults(), de.peaksound.protocol.LightSettings::sanitized);
         lightStore.load();
@@ -141,7 +146,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj, micService, library, remote, storage, radio), this);
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(new NetworkListener(networks, equalizer), this);
-        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj, lightService, debugService, library, remote, jukeboxSettings, menu, radio);
+        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj, lightService, debugService, library, remote, jukeboxSettings, menu, radio, statsService, backup);
         getCommand("peaksound").setExecutor(command);
         getCommand("peaksound").setTabCompleter(command);
         getServer().getPluginManager().registerEvents(

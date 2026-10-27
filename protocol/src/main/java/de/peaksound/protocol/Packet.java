@@ -510,8 +510,15 @@ public sealed interface Packet {
      * (die neuesten), {@code totalSongs} die Gesamtzahl. {@code maxBytes} 0 = unbegrenzt.
      */
     record AdminSongs(java.util.List<AdminSong> songs, int totalSongs, long usedBytes, long maxBytes, int defaultLimit,
-                      java.util.List<AdminPlayer> players) implements Clientbound {
+                      java.util.List<AdminPlayer> players, String stats) implements Clientbound {
         public static final int ID = 29;
+
+        /** Ohne Statistik-Text. */
+        public AdminSongs(java.util.List<AdminSong> songs, int totalSongs, long usedBytes, long maxBytes, int defaultLimit,
+                          java.util.List<AdminPlayer> players) {
+            this(songs, totalSongs, usedBytes, maxBytes, defaultLimit, players, "");
+        }
+
         public static final int MAX_ADMIN_SONGS = 400;
         public static final int MAX_ADMIN_PLAYERS = 200;
 
@@ -528,7 +535,7 @@ public sealed interface Packet {
             for (AdminPlayer p : players) {
                 w.writeString(p.name(), Limits.MAX_TEXT).writeLong(p.uuidHigh()).writeLong(p.uuidLow()).writeInt(p.songs()).writeInt(p.max());
             }
-            return w.toBytes();
+            return w.writeString(stats, Limits.MAX_STATS_CHARS).toBytes();
         }
 
         static AdminSongs decode(ByteBuffer in) {
@@ -551,7 +558,8 @@ public sealed interface Packet {
                 players.add(new AdminPlayer(PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readLong(in), PacketIO.readLong(in),
                         PacketIO.readInt(in), PacketIO.readInt(in)));
             }
-            return new AdminSongs(java.util.List.copyOf(songs), total, used, max, def, java.util.List.copyOf(players));
+            return new AdminSongs(java.util.List.copyOf(songs), total, used, max, def, java.util.List.copyOf(players),
+                    PacketIO.readString(in, Limits.MAX_STATS_CHARS));
         }
     }
 

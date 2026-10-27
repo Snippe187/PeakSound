@@ -28,12 +28,17 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
     private final DebugService debug;
     private final LibraryService library;
     private final RadioService radio;
+    private final StatsService stats;
+    private final BackupService backup;
     private final RemoteService remote;
     private final JukeboxMenuService jukeboxMenu;
     private final JukeboxSettingsStore jukeboxSettings;
 
     PeakSoundCommand(EqualizerService equalizer, BlockRegistry registry, SongStore songs, PlaybackManager playback, PeakItems items,
-                     SpeakerService speakers, DjService dj, LightService lights, DebugService debug, LibraryService library, RemoteService remote, JukeboxSettingsStore jukeboxSettings, JukeboxMenuService jukeboxMenu, RadioService radio) {
+                     SpeakerService speakers, DjService dj, LightService lights, DebugService debug, LibraryService library, RemoteService remote, JukeboxSettingsStore jukeboxSettings, JukeboxMenuService jukeboxMenu, RadioService radio,
+                     StatsService stats, BackupService backup) {
+        this.stats = stats;
+        this.backup = backup;
         this.radio = radio;
         this.jukeboxMenu = jukeboxMenu;
         this.remote = remote;
@@ -54,6 +59,38 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("peaksound.admin")) {
             sender.sendMessage("Dafuer fehlt dir die Berechtigung / You do not have permission.");
+            return true;
+        }
+        // /peaksound stats | backup | backups | restore <Name>: Statistik und Sicherungen (siehe docs/INSTALL.md)
+        if (args.length == 1 && args[0].equalsIgnoreCase("stats")) {
+            sender.sendMessage(stats.describe());
+            return true;
+        }
+        if (args.length == 1 && args[0].equalsIgnoreCase("backup")) {
+            sender.sendMessage("Sicherung wird erstellt ...");
+            org.bukkit.Bukkit.getAsyncScheduler().runNow(org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(PeakSoundCommand.class), task -> {
+                try {
+                    String name = backup.backupNow("manuell");
+                    sender.sendMessage("Sicherung fertig: backups/" + name + " (" + backup.sizeOf(name) / 1048576 + " MB)");
+                } catch (java.io.IOException | RuntimeException e) {
+                    sender.sendMessage("Sicherung fehlgeschlagen: " + e.getMessage());
+                }
+            });
+            return true;
+        }
+        if (args.length == 1 && args[0].equalsIgnoreCase("backups")) {
+            var names = backup.list();
+            sender.sendMessage(names.isEmpty() ? "Keine Sicherungen vorhanden." : "Sicherungen (neueste zuerst):");
+            for (String n : names) sender.sendMessage("  " + n + " (" + backup.sizeOf(n) / 1048576 + " MB)");
+            return true;
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("restore")) {
+            try {
+                backup.stageRestore(args[1]);
+                sender.sendMessage("Bereit: " + args[1] + " wird beim naechsten Serverstart eingespielt (vorher entsteht eine Sicherung des jetzigen Stands). Server jetzt neu starten.");
+            } catch (java.io.IOException e) {
+                sender.sendMessage(e.getMessage());
+            }
             return true;
         }
         if (args.length == 5 && args[0].equalsIgnoreCase("eqtest")) {
@@ -263,6 +300,7 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker", "dj", "light", "remote", "jukebox", "port", "give", "radio") : List.of();
+        if (args.length == 2 && args[0].equalsIgnoreCase("restore")) return backup.list();
+        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker", "dj", "light", "remote", "jukebox", "port", "give", "radio", "stats", "backup", "backups", "restore") : List.of();
     }
 }

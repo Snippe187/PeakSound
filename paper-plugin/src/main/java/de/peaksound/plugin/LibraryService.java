@@ -55,6 +55,7 @@ final class LibraryService {
                     "The song library is turned off on this server."));
             return;
         }
+        if (!Permissions.check(player, "peaksound.library", "Du darfst die Song-Bibliothek nicht benutzen.", "You may not use the song library.")) return;
         Net.send(plugin, player, new Packet.OpenLibraryMenu(block.getX(), block.getY(), block.getZ()));
     }
 
@@ -66,7 +67,7 @@ final class LibraryService {
 
     /** Darf der Spieler diese Anfrage stellen (Song-Library-Block in Reichweite oder Upload-Ticket)? */
     private boolean allowed(Player player, int x, int y, int z) {
-        if (!enabled()) return false;
+        if (!enabled() || !player.hasPermission("peaksound.library")) return false;
         return remoteAccess(player, x, y, z) || access.validated(player, x, y, z, PeakBlockType.SONG_LIBRARY) != null;
     }
 
@@ -95,9 +96,14 @@ final class LibraryService {
         for (Hit h : LibraryLogic.slice(hits, clamped, Limits.LIBRARY_PAGE_SIZE)) {
             Song s = h.song();
             entries.add(new Packet.LibrarySong(s.hash(), cut(s.title()), cut(s.artist()), cut(s.uploaderName()), s.durationMs(),
-                    h.favorite(), h.mine() || Permissions.admin(player), s.hasCover(), s.plays()));
+                    h.favorite(), canManage(player, h.mine()), s.hasCover(), s.plays()));
         }
         Net.send(plugin, player, new Packet.LibraryResults(bx, by, bz, clamped, pages, hits.size(), countBlank(player), entries));
+    }
+
+    /** Darf der Spieler diesen Song umbenennen/loeschen? Eigene mit peaksound.library.manage.own, fremde mit .manage.any bzw. Operator. */
+    private static boolean canManage(Player player, boolean own) {
+        return LibraryLogic.mayManage(own && player.hasPermission("peaksound.library.manage.own"), Permissions.manageAny(player));
     }
 
     private static LibraryLogic.Item item(Song s) {
@@ -135,17 +141,18 @@ final class LibraryService {
             case FAVORITE -> favorites.toggle(player.getUniqueId(), song.hash());
             case QUEUE -> {
                 if (manage.x() == Limits.LIBRARY_REMOTE || queue == null || song.status() != Song.Status.OK) return;
+                if (!Permissions.check(player, "peaksound.queue", "Du darfst keine Songs wuenschen.", "You may not request songs.")) return;
                 Block block = player.getWorld().getBlockAt(manage.x(), manage.y(), manage.z());
                 queue.request(player, block, song);
             }
             case RENAME -> {
                 String title = de.peaksound.audio.AudioInspector.clean(manage.text());
-                if (title.isEmpty() || !LibraryLogic.mayManage(song.uploader().equals(player.getUniqueId()), Permissions.admin(player))) return;
+                if (title.isEmpty() || !canManage(player, song.uploader().equals(player.getUniqueId()))) return;
                 songs.rename(song.hash(), title);
                 plugin.getLogger().info("[Bibliothek] " + player.getName() + " benennt \"" + song.title() + "\" um in \"" + title + "\"");
             }
             case DELETE -> {
-                if (!LibraryLogic.mayManage(song.uploader().equals(player.getUniqueId()), Permissions.admin(player))) return;
+                if (!canManage(player, song.uploader().equals(player.getUniqueId()))) return;
                 removeSong(player, song);
                 return; // Antwort folgt, wenn die Dateien weg sind
             }

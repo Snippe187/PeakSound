@@ -20,6 +20,8 @@ public final class Limits {
     public static final int MAX_COVER_BYTES = 512 * 1024;
     /** Laengster Songtext (Zeichen); passt auch mit 3-Byte-Zeichen in ein Paket-String-Feld. */
     public static final int MAX_LYRICS_CHARS = 20_000;
+    /** Laengster Statistik-Text fuer den Admin-Tab. */
+    public static final int MAX_STATS_CHARS = 4_000;
     /** Maximale Groesse der Musikanalyse, die an Clients geht (Scheinwerfer-Effekte). */
     public static final int MAX_ANALYSIS_BYTES = 128 * 1024;
     /** Hoechste Groesse des Diagnosetexts (UTF-8) vom Server. */

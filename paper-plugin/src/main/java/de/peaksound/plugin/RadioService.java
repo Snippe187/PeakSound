@@ -220,6 +220,7 @@ final class RadioService implements Listener {
         ItemStack hand = p.getInventory().getItemInMainHand();
         if (items.typeOf(hand).filter(t -> t == PeakItemType.POCKET_RADIO).isEmpty()) return;
         event.setCancelled(true);
+        if (!Permissions.check(p, "peaksound.radio", "Du darfst das Taschenradio nicht benutzen.", "You may not use the pocket radio.")) return;
         RadioSettings cfg = pocketSettings(hand);
         if (p.isSneaking() && network.hasMod(p)) {
             int c = Limits.POCKET_COORD;
