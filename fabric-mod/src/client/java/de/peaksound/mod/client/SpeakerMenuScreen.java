@@ -1,6 +1,7 @@
 package de.peaksound.mod.client;
 
 import de.peaksound.protocol.Packet;
+import de.peaksound.protocol.ReverbPreset;
 import de.peaksound.protocol.SpeakerChannel;
 import de.peaksound.protocol.SpeakerSettings;
 import net.minecraft.client.Minecraft;
@@ -27,6 +28,7 @@ final class SpeakerMenuScreen extends Screen {
     private Button channelButton;
     private Button kindButton;
     private Button redstoneButton;
+    private Button reverbButton;
 
     private SpeakerMenuScreen(Packet.OpenSpeakerMenu menu) {
         super(Component.translatable("peaksound.menu.speaker.title"));
@@ -45,7 +47,7 @@ final class SpeakerMenuScreen extends Screen {
     @Override
     protected void init() {
         int left = width / 2 - 100;
-        int top = height / 2 - 60;
+        int top = height / 2 - 100;
 
         EditBox nameBox = new EditBox(font, left, top + 34, 200, 20, Component.translatable("peaksound.menu.name"));
         nameBox.setMaxLength(SpeakerSettings.MAX_NAME);
@@ -71,20 +73,27 @@ final class SpeakerMenuScreen extends Screen {
         kindButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
             change(cur.withKind(cur.kind().next()));
             refresh();
-        }).bounds(left, top + 90, 200, 20).build());
+        }).bounds(left, top + 86, 200, 20).build());
+        addRenderableWidget(new IntSlider(left, top + 110, 200, "peaksound.menu.speaker.volume", 0, 100, cur.volume(),
+                v -> change(cur.withVolume(v))));
+        addRenderableWidget(new IntSlider(left, top + 134, 200, "peaksound.menu.speaker.delay", 0, SpeakerSettings.MAX_DELAY_MS, cur.delayMs(),
+                v -> change(cur.withDelayMs(v)))).setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("peaksound.menu.speaker.delay.tooltip")));
+        reverbButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
+            change(cur.withReverb(cur.reverb().next()));
+            refresh();
+        }).bounds(left, top + 158, 200, 20).tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("peaksound.menu.speaker.reverb.tooltip"))).build());
         redstoneButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
             change(cur.withRedstone(!cur.redstone()));
             refresh();
-        }).bounds(left, top + 138, 200, 20).tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("peaksound.menu.redstone.speaker.tooltip"))).build());
-        addRenderableWidget(new IntSlider(left, top + 114, 200, "peaksound.menu.speaker.volume", 0, 100, cur.volume(),
-                v -> change(cur.withVolume(v))));
+        }).bounds(left, top + 182, 200, 20).tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("peaksound.menu.redstone.speaker.tooltip"))).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
-                .bounds(left, top + 164, 200, 20).build());
+                .bounds(left, top + 208, 200, 20).build());
         refresh();
     }
 
     private void refresh() {
         redstoneButton.setMessage(Component.translatable("peaksound.menu.redstone", Component.translatable(cur.redstone() ? "options.on" : "options.off")));
+        reverbButton.setMessage(Component.translatable("peaksound.menu.speaker.reverb", Component.translatable("peaksound.reverb." + cur.reverb().key())));
         kindButton.setMessage(Component.translatable("peaksound.menu.speaker.kind", Component.translatable("peaksound.speaker.kind." + cur.kind().key())));
         SpeakerChannel c = cur.channel();
         channelButton.setMessage(Component.translatable("peaksound.menu.speaker.channel",
@@ -120,7 +129,7 @@ final class SpeakerMenuScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
-        int top = height / 2 - 60;
+        int top = height / 2 - 100;
         Component title = cur.name().isBlank() ? Component.translatable("peaksound.menu.speaker.title") : Component.literal(cur.name());
         g.text(font, title, width / 2 - font.width(title) / 2, top - 6, 0xFFFFFFFF);
         // Nummer und verbundene Jukebox (Nummer 0 = nicht verbunden)

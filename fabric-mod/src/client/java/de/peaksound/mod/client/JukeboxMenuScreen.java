@@ -160,6 +160,9 @@ final class JukeboxMenuScreen extends Screen {
             refreshLabels();
         }).bounds(left, top + 100, w, 20).build());
 
+        addRenderableWidget(new IntSlider(left, top + 124, w, "peaksound.menu.crossfade", 0, JukeboxSettings.MAX_CROSSFADE, cur.crossfade(),
+                v -> change(cur.withCrossfade(v))));
+
         particlesButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
             change(cur.withParticles(!cur.particles()));
             refreshLabels();

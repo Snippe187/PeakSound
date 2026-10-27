@@ -19,17 +19,28 @@ import java.nio.ByteBuffer;
  * @param loop             Wiederholmodus der Playlist
  * @param shuffle          Playlist in zufaelliger Reihenfolge spielen
  * @param upmix            Stereo-/Mono-Songs auf alle angeschlossenen Lautsprecher hochmischen (sonst nur vorne links/rechts)
- * @param ports            Funktion der vier Comparator-Seiten (Norden, Osten, Sueden, Westen)
+ * @param ports            Funktion der Comparator-Seiten (Norden, Osten, Sueden, Westen, oben, unten)
+ * @param crossfade        Ueberblendung zwischen Playlist-Songs in Sekunden: der Song blendet am Ende aus, der naechste ein (0 = aus)
  */
 public record JukeboxSettings(String name, int range, int volume, boolean chain, boolean particles,
                               int particleAmount, int particleDensity, int particleHeight, boolean rainbow,
                               boolean showNowPlaying, LoopMode loop, boolean shuffle, boolean upmix,
-                              java.util.List<PortFunction> ports) {
+                              java.util.List<PortFunction> ports, int crossfade) {
     public static final int MAX_NAME = 32;
+    /** Laengste Ueberblendung zwischen Playlist-Songs in Sekunden (0 = aus). */
+    public static final int MAX_CROSSFADE = 12;
     public static final int PORT_COUNT = 6;
 
     public JukeboxSettings {
         if (ports == null) ports = PortFunction.defaultPorts(); // aeltere gespeicherte Jukeboxen
+    }
+
+    /** Aeltere Aufrufe mit Ausgaengen, aber ohne Ueberblendung. */
+    public JukeboxSettings(String name, int range, int volume, boolean chain, boolean particles, int particleAmount,
+                           int particleDensity, int particleHeight, boolean rainbow, boolean showNowPlaying, LoopMode loop,
+                           boolean shuffle, boolean upmix, java.util.List<PortFunction> ports) {
+        this(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight, rainbow, showNowPlaying, loop,
+                shuffle, upmix, ports, 0);
     }
 
     /** Aeltere Aufrufe und gespeicherte Daten ohne Ausgaenge: Standardbelegung (Bass, Mitten, Hoehen, gesamt). */
@@ -37,7 +48,7 @@ public record JukeboxSettings(String name, int range, int volume, boolean chain,
                            int particleDensity, int particleHeight, boolean rainbow, boolean showNowPlaying, LoopMode loop,
                            boolean shuffle, boolean upmix) {
         this(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight, rainbow, showNowPlaying, loop,
-                shuffle, upmix, PortFunction.defaultPorts());
+                shuffle, upmix, PortFunction.defaultPorts(), 0);
     }
 
     public static JukeboxSettings defaults(int range, int volume) {
@@ -51,7 +62,7 @@ public record JukeboxSettings(String name, int range, int volume, boolean chain,
         return new JukeboxSettings(clean,
                 clamp(range, Limits.MIN_RANGE, Limits.MAX_RANGE), clamp(volume, 0, 100), chain, particles,
                 clamp(particleAmount, 1, 10), clamp(particleDensity, 1, 10), clamp(particleHeight, 0, 5),
-                rainbow, showNowPlaying, loop == null ? LoopMode.OFF : loop, shuffle, upmix, cleanPorts(ports));
+                rainbow, showNowPlaying, loop == null ? LoopMode.OFF : loop, shuffle, upmix, cleanPorts(ports), clamp(crossfade, 0, MAX_CROSSFADE));
     }
 
     private static java.util.List<PortFunction> cleanPorts(java.util.List<PortFunction> in) {
@@ -68,7 +79,7 @@ public record JukeboxSettings(String name, int range, int volume, boolean chain,
 
     public JukeboxSettings withPorts(java.util.List<PortFunction> v) {
         return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
-                rainbow, showNowPlaying, loop, shuffle, upmix, v);
+                rainbow, showNowPlaying, loop, shuffle, upmix, v, crossfade);
     }
 
     /** Seite 0 = Norden, 1 = Osten, 2 = Sueden, 3 = Westen. */
@@ -82,62 +93,67 @@ public record JukeboxSettings(String name, int range, int volume, boolean chain,
 
     public JukeboxSettings withName(String v) {
         return new JukeboxSettings(v, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
-                rainbow, showNowPlaying, loop, shuffle, upmix, ports);
+                rainbow, showNowPlaying, loop, shuffle, upmix, ports, crossfade);
     }
 
     public JukeboxSettings withRangeAndVolume(int newRange, int newVolume) {
         return new JukeboxSettings(name, newRange, newVolume, chain, particles, particleAmount, particleDensity,
-                particleHeight, rainbow, showNowPlaying, loop, shuffle, upmix, ports);
+                particleHeight, rainbow, showNowPlaying, loop, shuffle, upmix, ports, crossfade);
     }
 
     public JukeboxSettings withChain(boolean v) {
         return new JukeboxSettings(name, range, volume, v, particles, particleAmount, particleDensity, particleHeight,
-                rainbow, showNowPlaying, loop, shuffle, upmix, ports);
+                rainbow, showNowPlaying, loop, shuffle, upmix, ports, crossfade);
     }
 
     public JukeboxSettings withParticles(boolean v) {
         return new JukeboxSettings(name, range, volume, chain, v, particleAmount, particleDensity, particleHeight,
-                rainbow, showNowPlaying, loop, shuffle, upmix, ports);
+                rainbow, showNowPlaying, loop, shuffle, upmix, ports, crossfade);
     }
 
     public JukeboxSettings withParticleAmount(int v) {
         return new JukeboxSettings(name, range, volume, chain, particles, v, particleDensity, particleHeight,
-                rainbow, showNowPlaying, loop, shuffle, upmix, ports);
+                rainbow, showNowPlaying, loop, shuffle, upmix, ports, crossfade);
     }
 
     public JukeboxSettings withParticleDensity(int v) {
         return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, v, particleHeight,
-                rainbow, showNowPlaying, loop, shuffle, upmix, ports);
+                rainbow, showNowPlaying, loop, shuffle, upmix, ports, crossfade);
     }
 
     public JukeboxSettings withParticleHeight(int v) {
         return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, v,
-                rainbow, showNowPlaying, loop, shuffle, upmix, ports);
+                rainbow, showNowPlaying, loop, shuffle, upmix, ports, crossfade);
     }
 
     public JukeboxSettings withRainbow(boolean v) {
         return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
-                v, showNowPlaying, loop, shuffle, upmix, ports);
+                v, showNowPlaying, loop, shuffle, upmix, ports, crossfade);
     }
 
     public JukeboxSettings withShowNowPlaying(boolean v) {
         return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
-                rainbow, v, loop, shuffle, upmix, ports);
+                rainbow, v, loop, shuffle, upmix, ports, crossfade);
     }
 
     public JukeboxSettings withLoop(LoopMode v) {
         return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
-                rainbow, showNowPlaying, v, shuffle, upmix, ports);
+                rainbow, showNowPlaying, v, shuffle, upmix, ports, crossfade);
     }
 
     public JukeboxSettings withShuffle(boolean v) {
         return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
-                rainbow, showNowPlaying, loop, v, upmix, ports);
+                rainbow, showNowPlaying, loop, v, upmix, ports, crossfade);
+    }
+
+    public JukeboxSettings withCrossfade(int v) {
+        return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
+                rainbow, showNowPlaying, loop, shuffle, upmix, ports, v);
     }
 
     public JukeboxSettings withUpmix(boolean v) {
         return new JukeboxSettings(name, range, volume, chain, particles, particleAmount, particleDensity, particleHeight,
-                rainbow, showNowPlaying, loop, shuffle, v, ports);
+                rainbow, showNowPlaying, loop, shuffle, v, ports, crossfade);
     }
 
     void write(PacketIO.Writer w) {
@@ -145,6 +161,7 @@ public record JukeboxSettings(String name, int range, int volume, boolean chain,
                 .writeByte(particleAmount).writeByte(particleDensity).writeByte(particleHeight)
                 .writeBoolean(rainbow).writeBoolean(showNowPlaying).writeByte(loop.ordinal()).writeBoolean(shuffle).writeBoolean(upmix);
         for (PortFunction p : cleanPorts(ports)) w.writeByte(p.ordinal());
+        w.writeByte(clamp(crossfade, 0, MAX_CROSSFADE));
     }
 
     /** Liest und prueft: Werte ausserhalb des Bereichs machen das Paket ungueltig. */
@@ -164,8 +181,9 @@ public record JukeboxSettings(String name, int range, int volume, boolean chain,
         boolean upmix = PacketIO.readBoolean(in);
         java.util.List<PortFunction> ports = new java.util.ArrayList<>(PORT_COUNT);
         for (int i = 0; i < PORT_COUNT; i++) ports.add(PortFunction.byOrdinal(PacketIO.readByte(in)));
+        int crossfade = PacketIO.readByte(in);
         JukeboxSettings s = new JukeboxSettings(name, range, volume, chain, particles, amount, density, height,
-                rainbow, now, loop, shuffle, upmix, java.util.List.copyOf(ports));
+                rainbow, now, loop, shuffle, upmix, java.util.List.copyOf(ports), crossfade);
         if (!s.equals(s.sanitized().withName(name))) throw new MalformedPacketException("Einstellungen ausserhalb des Bereichs");
         return s;
     }

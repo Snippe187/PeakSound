@@ -206,14 +206,21 @@ public sealed interface Packet {
      * {@code offsetMs + (jetzt - serverTimeMs)}, damit spaeter Hinzukommende richtig einsteigen.
      */
     record PlaybackStart(int x, int y, int z, String hash, int offsetMs, long serverTimeMs, int durationMs,
-                         int channels, int range, int volume, int speakerChannel, int speakerKind) implements Clientbound {
+                         int channels, int range, int volume, int speakerChannel, int speakerKind, int delayMs, int reverb) implements Clientbound {
+        /** Ohne Verzoegerung und Raumhall. */
+        public PlaybackStart(int x, int y, int z, String hash, int offsetMs, long serverTimeMs, int durationMs, int channels, int range,
+                             int volume, int speakerChannel, int speakerKind) {
+            this(x, y, z, hash, offsetMs, serverTimeMs, durationMs, channels, range, volume, speakerChannel, speakerKind, 0, 0);
+        }
+
         public static final int ID = 13;
 
         @Override
         public byte[] encode() {
             return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeString(hash, Limits.HASH_LENGTH)
                     .writeInt(offsetMs).writeLong(serverTimeMs).writeInt(durationMs).writeInt(channels)
-                    .writeInt(range).writeInt(volume).writeByte(speakerChannel).writeByte(speakerKind).toBytes();
+                    .writeInt(range).writeInt(volume).writeByte(speakerChannel).writeByte(speakerKind)
+                    .writeShort(delayMs).writeByte(reverb).toBytes();
         }
 
         static PlaybackStart decode(ByteBuffer in) {
@@ -221,8 +228,15 @@ public sealed interface Packet {
                     PacketIO.readString(in, Limits.HASH_LENGTH), PacketIO.readIntRange(in, 0, Integer.MAX_VALUE),
                     PacketIO.readLong(in), PacketIO.readIntRange(in, 1, Integer.MAX_VALUE),
                     PacketIO.readIntRange(in, 1, 16), PacketIO.readIntRange(in, Limits.MIN_RANGE, Limits.MAX_RANGE),
-                    PacketIO.readIntRange(in, 0, 100), readSpeakerChannel(in), SpeakerKind.byOrdinal(PacketIO.readByte(in)).ordinal());
+                    PacketIO.readIntRange(in, 0, 100), readSpeakerChannel(in), SpeakerKind.byOrdinal(PacketIO.readByte(in)).ordinal(),
+                    readDelay(in), ReverbPreset.byOrdinal(PacketIO.readByte(in)).ordinal());
         }
+    }
+
+    private static int readDelay(ByteBuffer in) {
+        int v = PacketIO.readShort(in);
+        if (v > SpeakerSettings.MAX_DELAY_MS) throw new MalformedPacketException("Verzoegerung ausserhalb des Bereichs");
+        return v;
     }
 
     /** 0 = voller Mono-Mix (Jukebox ohne Lautsprecher), 1-12 = Lautsprecher-Kanal (Ordinal + 1). */

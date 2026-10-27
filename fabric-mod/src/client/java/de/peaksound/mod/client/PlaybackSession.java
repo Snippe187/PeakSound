@@ -50,6 +50,10 @@ final class PlaybackSession {
         final SpeakerKind kind;
         /** Taschenradio: folgt dem Hoerer, ohne Entfernungsdaempfung. */
         final boolean relative;
+        /** Verzoegerung (ms), Raumhall-Preset und daraus berechnete Verzoegerung in Frames (sobald die Abtastrate bekannt ist). */
+        final int delayMs;
+        final int reverb;
+        int delayFrames;
         volatile int range;
         volatile int volume;
         /** Ueberblendung (DJ-Pult): Lautstaerke rampt linear von fadeFrom nach volume ueber fadeMs. */
@@ -66,6 +70,8 @@ final class PlaybackSession {
         Emitter(Packet.PlaybackStart start) {
             this.key = key(start.x(), start.y(), start.z());
             this.relative = start.x() == Limits.POCKET_COORD;
+            this.delayMs = start.delayMs();
+            this.reverb = start.reverb();
             this.x = start.x() + 0.5;
             this.y = start.y() + 0.5;
             this.z = start.z() + 0.5;
@@ -270,7 +276,9 @@ final class PlaybackSession {
         e.mixer = e.channel == 0 ? null : new ChannelMixer(
                 ChannelLayout.mapping(sourceChannels, vorbisOrder, SpeakerChannel.values()[e.channel - 1]), sampleRate, e.kind);
         // Kommt eine Quelle mitten im Song dazu: Stille in Hoehe des schon eingereihten Vorlaufs, damit sie phasengleich bleibt
-        e.pendingSilence = (int) referenceQueuedAhead(e);
+        e.delayFrames = (int) ((long) e.delayMs * sampleRate / 1000);
+        e.pendingSilence = (int) referenceQueuedAhead(e) + e.delayFrames; // eigene Verzoegerung kommt oben drauf
+        if (e.reverb > 0) ReverbFx.attach(e.source, e.reverb);
         return true;
     }
 
@@ -295,7 +303,7 @@ final class PlaybackSession {
     /** Wie weit die anderen Quellen schon voraus sind (0, wenn es noch keine gibt). */
     private long referenceQueuedAhead(Emitter except) {
         for (Emitter o : emitters.values()) {
-            if (o != except && o.source >= 0 && !o.queuedLengths.isEmpty()) return queuedAhead(o);
+            if (o != except && o.source >= 0 && !o.queuedLengths.isEmpty()) return Math.max(0, queuedAhead(o) - o.delayFrames);
         }
         return 0;
     }
@@ -333,7 +341,7 @@ final class PlaybackSession {
                 return;
             }
             // Wo wuerde dieser Block landen, wenn wir ihn jetzt anhaengen?
-            long expectedStart = expectedFrame() + queuedAhead(ref);
+            long expectedStart = expectedFrame() + Math.max(0, queuedAhead(ref) - ref.delayFrames);
             long blockEnd = block.startFrame() + block.frames();
             if (blockEnd < expectedStart - tolerance) continue; // zu spaet: verwerfen (aufholen)
             long gap = block.startFrame() - expectedStart;

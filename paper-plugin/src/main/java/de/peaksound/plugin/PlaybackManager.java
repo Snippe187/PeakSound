@@ -49,6 +49,8 @@ final class PlaybackManager {
         final int durationMs;
         long startedAt;
         boolean playing;
+        /** Ueberblendung: Das Ausblenden am Songende hat schon begonnen. */
+        boolean fadedOut;
         /** Position (ms), an der pausiert wurde; -1 = nicht pausiert. */
         long pausedAtMs = -1;
         /** Songposition (ms), bis zu der Taktschlaege schon verarbeitet wurden. */
@@ -97,7 +99,11 @@ final class PlaybackManager {
     private record Heard(String signature, int range, int volume) {}
 
     /** Eine Schallquelle: Jukebox (Kanal 0, Mono-Mix) oder Lautsprecher (Kanal 1-12) mit Reichweite und Lautstaerke. */
-    record Emitter(BlockRegistry.Key key, State state, int channel, int range, int volume, int kind) {}
+    record Emitter(BlockRegistry.Key key, State state, int channel, int range, int volume, int kind, int delayMs, int reverb) {
+        Emitter(BlockRegistry.Key key, State state, int channel, int range, int volume, int kind) {
+            this(key, state, channel, range, volume, kind, 0, 0);
+        }
+    }
 
     /** Ergebnis von {@link #effective()}: Jukeboxen mit ihrem Song und die tatsaechlichen Schallquellen. */
     record Effective(Map<BlockRegistry.Key, State> jukeboxes, Map<BlockRegistry.Key, Emitter> emitters) {}
@@ -153,8 +159,52 @@ final class PlaybackManager {
                 && world.getBlockAt(key.x(), key.y(), key.z()).getBlockPower() > 0;
     }
 
+    /** Lautstaerke-Faktor (Prozent) der Ueberblendung zwischen Playlist-Songs (ausblenden am Ende, einblenden am Anfang). */
+    private final Map<BlockRegistry.Key, Integer> crossGain = new ConcurrentHashMap<>();
+
     private int gain(BlockRegistry.Key jukebox) {
-        return deckGain.getOrDefault(jukebox, 100) * duckGain.getOrDefault(jukebox, 100) / 100;
+        return deckGain.getOrDefault(jukebox, 100) * duckGain.getOrDefault(jukebox, 100) / 100 * crossGain.getOrDefault(jukebox, 100) / 100;
+    }
+
+    private List<BlockRegistry.Key> netJukeboxes(BlockRegistry.Key key) {
+        NetworkRegistry.Net net = networks.networkOf(key);
+        return net == null ? List.of(key) : net.jukeboxes();
+    }
+
+    /** Spielt diese Jukebox (oder eine im selben Netz) gerade einen Playlist-Song? Nur dann darf die Ueberblendung wirken. */
+    private boolean crossActive(BlockRegistry.Key key) {
+        State s = states.get(key);
+        if (s != null && s.playing && s.fromPlaylist) return true;
+        NetworkRegistry.Net net = networks.networkOf(key);
+        if (net == null) return false;
+        for (BlockRegistry.Key j : net.jukeboxes()) {
+            State sj = states.get(j);
+            if (sj != null && sj.playing && sj.fromPlaylist) return true;
+        }
+        return false;
+    }
+
+    /** Blendet gegen Songende aus (Ueberblendung) und raeumt auf, wenn kein Playlist-Song mehr laeuft. */
+    private void crossfadeStep(long now) {
+        for (Map.Entry<BlockRegistry.Key, State> e : states.entrySet()) {
+            State s = e.getValue();
+            int fadeMs = Math.min(settings.get(e.getKey()).crossfade() * 1000, s.durationMs / 2);
+            if (!s.playing || !s.fromPlaylist || fadeMs <= 0 || s.fadedOut) continue;
+            long remaining = s.durationMs - (now - s.startedAt);
+            if (remaining > 0 && remaining <= fadeMs) {
+                s.fadedOut = true;
+                setGain(crossGain, netJukeboxes(e.getKey()), 0, (int) remaining);
+            }
+        }
+        // Ohne laufenden Playlist-Song darf kein Faktor haengenbleiben (sonst waere die naechste eingelegte Platte stumm)
+        crossGain.keySet().removeIf(k -> !crossActive(k));
+    }
+
+    /** Der neue Playlist-Song beginnt nach einem Ausblenden: einblenden. */
+    private void crossfadeIn(BlockRegistry.Key key, int songDurationMs) {
+        if (crossGain.getOrDefault(key, 100) >= 100) return;
+        int fadeMs = Math.min(settings.get(key).crossfade() * 1000, songDurationMs / 2);
+        setGain(crossGain, netJukeboxes(key), 100, Math.max(0, fadeMs));
     }
 
     int deckGainOf(BlockRegistry.Key jukebox) {
@@ -318,6 +368,7 @@ final class PlaybackManager {
         analysis.peek(song);
         if (playCounter != null) playCounter.accept(song.hash());
         states.put(key, next);
+        crossfadeIn(key, song.durationMs());
         save();
         Bukkit.getScheduler().runTask(plugin, this::tick);
     }
@@ -343,6 +394,7 @@ final class PlaybackManager {
         analysis.peek(song);
         if (playCounter != null) playCounter.accept(song.hash());
         states.put(key, next);
+        crossfadeIn(key, song.durationMs());
         save();
         Bukkit.getScheduler().runTask(plugin, this::tick);
     }
@@ -535,7 +587,7 @@ final class PlaybackManager {
                     JukeboxSettings cfg = settings.get(sp.jukebox());
                     int volume = cfg.volume() * sp.settings().volume() / 100 * gain(sp.jukebox()) / 100;
                     emitters.put(sp.key(), new Emitter(sp.key(), leader, sp.settings().channel().ordinal() + 1, cfg.range(), volume,
-                            sp.settings().kind().ordinal()));
+                            sp.settings().kind().ordinal(), sp.settings().delayMs(), sp.settings().reverb().ordinal()));
                 }
             }
         }
@@ -556,6 +608,7 @@ final class PlaybackManager {
             }
         }
         if (changed) save();
+        crossfadeStep(now);
 
         Effective effective = effective();
         for (Player p : Bukkit.getOnlinePlayers()) {
@@ -568,7 +621,7 @@ final class PlaybackManager {
                 BlockRegistry.Key key = em.key();
                 State s = em.state();
                 double d2 = distanceSquared(key, world, loc);
-                String signature = s.hash + "@" + s.startedAt + "#" + em.channel() + "/" + em.kind();
+                String signature = s.hash + "@" + s.startedAt + "#" + em.channel() + "/" + em.kind() + "/" + em.delayMs() + "/" + em.reverb();
                 Heard known = hearing.get(key);
                 if (known == null) {
                     if (d2 <= sq(em.range() + PRELOAD_MARGIN)) {
@@ -606,7 +659,8 @@ final class PlaybackManager {
         int offset = (int) Math.min(Integer.MAX_VALUE, now - s.startedAt);
         Net.send(plugin, p, new Packet.SongInfo(s.hash, cutText(s.title), cutText(s.artist), s.startedAt, s.durationMs)); // Anzeige am Bildschirm
         Net.send(plugin, p, new Packet.PlaybackStart(em.key().x(), em.key().y(), em.key().z(), s.hash, offset, now,
-                s.durationMs, songChannels(s.hash), em.range(), fading ? (int) Math.round(fade.current(now)) : em.volume(), em.channel(), em.kind()));
+                s.durationMs, songChannels(s.hash), em.range(), fading ? (int) Math.round(fade.current(now)) : em.volume(), em.channel(), em.kind(),
+                em.delayMs(), em.reverb()));
         if (fading) { // mitten in einer Ueberblendung: von hier aus zum Ziel weiterrampen
             Net.send(plugin, p, new Packet.PlaybackFade(em.key().x(), em.key().y(), em.key().z(), fade.to(),
                     (int) (fade.startMs() + fade.durationMs() - now)));
