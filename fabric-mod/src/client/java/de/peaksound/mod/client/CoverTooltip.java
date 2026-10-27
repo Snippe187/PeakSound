@@ -18,6 +18,17 @@ public final class CoverTooltip {
     /** Standardbild ohne eingebettetes Cover: die Vanilla-Schallplatte. */
     private static final Identifier DEFAULT = Identifier.withDefaultNamespace("textures/item/music_disc_cat.png");
 
+    /** Zeichnet das Cover eines Songs (oder das Standardbild) quadratisch; fragt es nur an, wenn der Song eins hat. */
+    static void draw(GuiGraphicsExtractor g, String hash, boolean hasCover, int x, int y, int size) {
+        CoverCache.Entry cover = hasCover ? CoverCache.get(hash) : null;
+        if (cover != null && cover.state() == CoverCache.State.READY) {
+            g.blit(RenderPipelines.GUI_TEXTURED, cover.texture(), x, y, 0f, 0f, size, size,
+                    cover.width(), cover.height(), cover.width(), cover.height());
+        } else {
+            g.blit(RenderPipelines.GUI_TEXTURED, DEFAULT, x, y, 0f, 0f, size, size, 16, 16, 16, 16);
+        }
+    }
+
     static final class Renderer implements ClientTooltipComponent {
         private final String hash;
 

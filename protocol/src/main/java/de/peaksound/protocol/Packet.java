@@ -898,7 +898,8 @@ public sealed interface Packet {
     // ---- Song-Bibliothek ----
 
     /** Ein Song in der Bibliothek (Anzeige in der Liste). */
-    record LibrarySong(String hash, String title, String artist, String uploader, int durationMs) {}
+    record LibrarySong(String hash, String title, String artist, String uploader, int durationMs,
+                       boolean favorite, boolean mine, boolean hasCover, int plays) {}
 
     /** Server -> Client: Bibliotheks-Menue oeffnen. Die Liste folgt auf eine {@link LibraryQuery}. */
     record OpenLibraryMenu(int x, int y, int z) implements Clientbound {
@@ -911,17 +912,46 @@ public sealed interface Packet {
     }
 
     /** Client -> Server: Suche und Seite anfordern (leere Suche = alle Songs). */
-    record LibraryQuery(int x, int y, int z, String query, int page) implements Serverbound {
+    record LibraryQuery(int x, int y, int z, String query, int page, LibraryLogic.Sort sort, LibraryLogic.Filter filter)
+            implements Serverbound {
         public static final int ID = 47;
 
         @Override
         public byte[] encode() {
-            return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeString(query, Limits.LIBRARY_MAX_QUERY).writeInt(page).toBytes();
+            return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeString(query, Limits.LIBRARY_MAX_QUERY)
+                    .writeInt(page).writeByte(sort.ordinal()).writeByte(filter.ordinal()).toBytes();
         }
 
         static LibraryQuery decode(ByteBuffer in) {
             return new LibraryQuery(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in),
-                    PacketIO.readString(in, Limits.LIBRARY_MAX_QUERY), PacketIO.readIntRange(in, 0, 100_000));
+                    PacketIO.readString(in, Limits.LIBRARY_MAX_QUERY), PacketIO.readIntRange(in, 0, 100_000),
+                    LibraryLogic.Sort.byOrdinal(PacketIO.readByte(in)), LibraryLogic.Filter.byOrdinal(PacketIO.readByte(in)));
+        }
+    }
+
+    /** Client -> Server: eigenen Song umbenennen/loeschen oder Favorit umschalten (Operatoren duerfen auch fremde verwalten). */
+    record LibraryManage(int x, int y, int z, Kind kind, String hash, String text) implements Serverbound {
+        public static final int ID = 53;
+
+        public enum Kind {
+            RENAME, DELETE, FAVORITE;
+
+            static Kind byOrdinal(int o) {
+                Kind[] v = values();
+                if (o < 0 || o >= v.length) throw new MalformedPacketException("Unbekannte Aktion");
+                return v[o];
+            }
+        }
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeByte(kind.ordinal())
+                    .writeString(hash, Limits.HASH_LENGTH).writeString(text, Limits.MAX_TEXT).toBytes();
+        }
+
+        static LibraryManage decode(ByteBuffer in) {
+            return new LibraryManage(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), Kind.byOrdinal(PacketIO.readByte(in)),
+                    PacketIO.readString(in, Limits.HASH_LENGTH), PacketIO.readString(in, Limits.MAX_TEXT));
         }
     }
 
@@ -937,7 +967,8 @@ public sealed interface Packet {
                     .writeInt(total).writeInt(blank).writeByte(songs.size());
             for (LibrarySong s : songs) {
                 w.writeString(s.hash(), Limits.HASH_LENGTH).writeString(s.title(), Limits.MAX_TEXT).writeString(s.artist(), Limits.MAX_TEXT)
-                        .writeString(s.uploader(), Limits.MAX_TEXT).writeInt(s.durationMs());
+                        .writeString(s.uploader(), Limits.MAX_TEXT).writeInt(s.durationMs()).writeBoolean(s.favorite())
+                        .writeBoolean(s.mine()).writeBoolean(s.hasCover()).writeInt(s.plays());
             }
             return w.toBytes();
         }
@@ -951,7 +982,8 @@ public sealed interface Packet {
             java.util.List<LibrarySong> songs = new java.util.ArrayList<>(count);
             for (int i = 0; i < count; i++) {
                 songs.add(new LibrarySong(PacketIO.readString(in, Limits.HASH_LENGTH), PacketIO.readString(in, Limits.MAX_TEXT),
-                        PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readInt(in)));
+                        PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readInt(in),
+                        PacketIO.readBoolean(in), PacketIO.readBoolean(in), PacketIO.readBoolean(in), PacketIO.readIntRange(in, 0, Integer.MAX_VALUE)));
             }
             return new LibraryResults(x, y, z, page, pages, total, blank, java.util.List.copyOf(songs));
         }

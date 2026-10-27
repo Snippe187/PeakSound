@@ -29,7 +29,8 @@ class PacketCodecTest {
             new Packet.SpeakerUpdate(1, 2, 3, new SpeakerSettings("R", SpeakerChannel.CENTER, 50, SpeakerKind.WOOFER, true)),
             new Packet.DjUpdate(1, 2, 3, new DjSettings(0, 5, 100, 100, false, true)),
             new Packet.MicUpdate(1, 2, 3, new MicSettings(true, 4, 100, false, 30, true)),
-            new Packet.LibraryQuery(1, 2, 3, "stereo wide", 2),
+            new Packet.LibraryQuery(1, 2, 3, "stereo wide", 2, LibraryLogic.Sort.POPULAR, LibraryLogic.Filter.FAVORITES),
+            new Packet.LibraryManage(1, 2, 3, Packet.LibraryManage.Kind.RENAME, "a".repeat(64), "Neuer Titel"),
             new Packet.LibraryWrite(1, 2, 3, "a".repeat(64)),
             new Packet.MicUpdate(4, 5, 6, new MicSettings(true, 8, 150, true, 25)),
             new Packet.DjUpdate(1, 2, 3, new DjSettings(60, 8, 90, 70, true)),
@@ -214,7 +215,7 @@ class PacketCodecTest {
 
     @Test
     void libraryResultsRoundTrip() {
-        var songs = java.util.List.of(new Packet.LibrarySong("b".repeat(64), "Titel", "Interpret", "Uploader", 123_000));
+        var songs = java.util.List.of(new Packet.LibrarySong("b".repeat(64), "Titel", "Interpret", "Uploader", 123_000, true, false, true, 7));
         var packet = new Packet.LibraryResults(1, 2, 3, 0, 4, 20, 2, songs);
         assertEquals(packet, PacketCodec.decodeClientbound(packet.encode()));
         var tooMany = java.util.Collections.nCopies(Limits.LIBRARY_PAGE_SIZE + 1, songs.get(0));

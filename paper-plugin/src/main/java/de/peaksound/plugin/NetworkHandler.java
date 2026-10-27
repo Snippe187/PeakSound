@@ -139,6 +139,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             case Packet.RemoteUpdate update -> remote.onUpdate(player, update);
             case Packet.LibraryQuery query -> library.onQuery(player, query);
             case Packet.LibraryWrite write -> library.onWrite(player, write);
+            case Packet.LibraryManage manage -> library.onManage(player, manage);
             case Packet.DebugRequest ignored -> { /* oben behandelt */ }
             case Packet.Hello ignored -> { /* oben behandelt */ }
         }

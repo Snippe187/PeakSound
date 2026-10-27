@@ -12,6 +12,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
     private PeakRecipes recipes;
     private SongStore songs;
     private PlaybackManager playback;
+    private FavoriteStore favorites;
     private JukeboxSettingsStore settingsStore;
     private SpeakerStore speakerStoreRef;
     private BlockSettingsStore<de.peaksound.protocol.LightSettings> lightStore;
@@ -35,7 +36,9 @@ public final class PeakSoundPlugin extends JavaPlugin {
 
         songs = new SongStore(this);
         songs.load();
-        Bukkit.getAsyncScheduler().runAtFixedRate(this, t -> songs.saveIfDirty(), 15, 15, TimeUnit.SECONDS);
+        favorites = new FavoriteStore(this);
+        favorites.load();
+        Bukkit.getAsyncScheduler().runAtFixedRate(this, t -> { songs.saveIfDirty(); favorites.saveIfDirty(); }, 15, 15, TimeUnit.SECONDS);
 
         recipes = new PeakRecipes(this, items);
         recipes.register();
@@ -68,6 +71,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         this.speakerStoreRef = speakerStore;
         SpeakerService speakers = new SpeakerService(this, blocks, networks, speakerStore);
         playback = new PlaybackManager(this, network, jukeboxSettings, analysis, playlist, networks, equalizer, speakers);
+        playback.setPlayCounter(songs::countPlay);
         playback.load();
         EditAccess access = new EditAccess(blocks);
         JukeboxMenuService menu = new JukeboxMenuService(this, blocks, jukeboxSettings, playback, playlist, access, speakers);
@@ -99,7 +103,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         network.wire(uploads, streams, playback, menu, speakerMenu, access, admin, lightService, dj, micService);
         DebugService debugService = new DebugService(this, blocks, songs, playback, network, equalizer, micService);
         network.setDebug(debugService);
-        LibraryService library = new LibraryService(this, songs, items, access);
+        LibraryService library = new LibraryService(this, songs, items, access, favorites, playback, analysis);
         network.setLibrary(library);
         library.setUploads(uploads);
         BlockSettingsStore<de.peaksound.protocol.RemoteSettings> remoteStore = new BlockSettingsStore<>(this, "remotes.json",
@@ -150,6 +154,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         if (recipes != null) recipes.unregister();
         if (blocks != null) blocks.saveNow();
         if (songs != null) songs.saveIfDirty();
+        if (favorites != null) favorites.saveIfDirty();
         if (playback != null) playback.saveBlocking();
         if (settingsStore != null) settingsStore.saveNow();
         if (speakerStoreRef != null) speakerStoreRef.saveNow();

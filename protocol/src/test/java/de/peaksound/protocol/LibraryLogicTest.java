@@ -8,6 +8,37 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class LibraryLogicTest {
+    private static List<String> sorted(LibraryLogic.Sort sort) {
+        var items = new java.util.ArrayList<>(List.of(
+                new LibraryLogic.Item("banane", "Zed", 100_000, 30, 5),
+                new LibraryLogic.Item("Apfel", "Abe", 300_000, 10, 1),
+                new LibraryLogic.Item("Citrus", "Mia", 200_000, 20, 9)));
+        items.sort(LibraryLogic.comparator(sort));
+        return items.stream().map(LibraryLogic.Item::title).toList();
+    }
+
+    @Test
+    void sortOrdersByEveryCriterion() {
+        assertEquals(List.of("Apfel", "banane", "Citrus"), sorted(LibraryLogic.Sort.TITLE));
+        assertEquals(List.of("Apfel", "Citrus", "banane"), sorted(LibraryLogic.Sort.ARTIST));
+        assertEquals(List.of("banane", "Citrus", "Apfel"), sorted(LibraryLogic.Sort.NEWEST));
+        assertEquals(List.of("Apfel", "Citrus", "banane"), sorted(LibraryLogic.Sort.LONGEST));
+        assertEquals(List.of("Citrus", "banane", "Apfel"), sorted(LibraryLogic.Sort.POPULAR));
+    }
+
+    @Test
+    void onlyOwnerOrAdminMayManage() {
+        assertTrue(LibraryLogic.mayManage(true, false));
+        assertTrue(LibraryLogic.mayManage(false, true));
+        assertFalse(LibraryLogic.mayManage(false, false));
+    }
+
+    @Test
+    void sortAndFilterCycleThroughAllValues() {
+        assertEquals(LibraryLogic.Sort.TITLE, LibraryLogic.Sort.POPULAR.next());
+        assertEquals(LibraryLogic.Filter.ALL, LibraryLogic.Filter.MINE.next());
+    }
+
     @Test
     void searchNeedsEveryWordAndIgnoresCase() {
         assertTrue(LibraryLogic.matches("", "Testbeat", "PeakSound", "Neo"));

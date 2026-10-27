@@ -108,6 +108,8 @@ final class PlaybackManager {
     private final NetworkHandler network;
     private final JukeboxSettingsStore settings;
     private final AnalysisStore analysis;
+    /** Zaehlt jeden gestarteten Song (Beliebtheit in der Bibliothek). */
+    private java.util.function.Consumer<String> playCounter;
     private final PlaylistService playlist;
     private final NetworkRegistry networks;
     private final EqualizerService equalizer;
@@ -129,6 +131,8 @@ final class PlaybackManager {
         this.settings = settings;
         this.analysis = analysis;
     }
+
+    void setPlayCounter(java.util.function.Consumer<String> counter) { this.playCounter = counter; }
 
     /** Lautstaerke-Faktor (Prozent) je Jukebox, gesetzt vom Mikrofon-Ducking (wirkt zusaetzlich zum DJ-Faktor). */
     private final Map<BlockRegistry.Key, Integer> duckGain = new ConcurrentHashMap<>();
@@ -303,6 +307,7 @@ final class PlaybackManager {
                 System.currentTimeMillis(), true, true, index);
         next.played.addAll(played);
         analysis.peek(song);
+        if (playCounter != null) playCounter.accept(song.hash());
         states.put(key, next);
         save();
         Bukkit.getScheduler().runTask(plugin, this::tick);

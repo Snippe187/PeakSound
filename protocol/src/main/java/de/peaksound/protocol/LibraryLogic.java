@@ -17,6 +17,53 @@ public final class LibraryLogic {
         return true;
     }
 
+    /** Sortierung der Trefferliste. */
+    public enum Sort {
+        TITLE, ARTIST, NEWEST, LONGEST, POPULAR;
+
+        public static Sort byOrdinal(int o) {
+            Sort[] v = values();
+            if (o < 0 || o >= v.length) throw new MalformedPacketException("Unbekannte Sortierung");
+            return v[o];
+        }
+
+        public Sort next() { return values()[(ordinal() + 1) % values().length]; }
+    }
+
+    /** Welche Songs die Liste zeigt. */
+    public enum Filter {
+        ALL, FAVORITES, MINE;
+
+        public static Filter byOrdinal(int o) {
+            Filter[] v = values();
+            if (o < 0 || o >= v.length) throw new MalformedPacketException("Unbekannter Filter");
+            return v[o];
+        }
+
+        public Filter next() { return values()[(ordinal() + 1) % values().length]; }
+    }
+
+    /** Die fuer Sortierung noetigen Felder eines Songs. */
+    public record Item(String title, String artist, int durationMs, long uploadedAt, int plays) {}
+
+    /** Sortierreihenfolge; bei Gleichstand immer nach Titel und dann nach Hochladezeit, damit die Liste stabil bleibt. */
+    public static java.util.Comparator<Item> comparator(Sort sort) {
+        java.util.Comparator<Item> byTitle = java.util.Comparator.comparing((Item i) -> i.title().toLowerCase(Locale.ROOT))
+                .thenComparingLong(Item::uploadedAt);
+        return switch (sort) {
+            case TITLE -> byTitle;
+            case ARTIST -> java.util.Comparator.comparing((Item i) -> i.artist().toLowerCase(Locale.ROOT)).thenComparing(byTitle);
+            case NEWEST -> java.util.Comparator.comparingLong(Item::uploadedAt).reversed().thenComparing(byTitle);
+            case LONGEST -> java.util.Comparator.comparingInt(Item::durationMs).reversed().thenComparing(byTitle);
+            case POPULAR -> java.util.Comparator.comparingInt(Item::plays).reversed().thenComparing(byTitle);
+        };
+    }
+
+    /** Darf dieser Spieler den Song umbenennen oder loeschen? Eigene Songs immer, fremde nur Operatoren. */
+    public static boolean mayManage(boolean isUploader, boolean isAdmin) {
+        return isUploader || isAdmin;
+    }
+
     /** Anzahl der Seiten (mindestens 1). */
     public static int pages(int total, int pageSize) {
         return Math.max(1, (total + pageSize - 1) / pageSize);

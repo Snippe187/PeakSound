@@ -121,11 +121,28 @@ public final class SongStore {
     public synchronized Optional<Song> setStatus(String hash, Song.Status status) {
         Song old = songs.get(hash);
         if (old == null) return Optional.empty();
-        Song updated = new Song(old.hash(), old.title(), old.artist(), old.uploader(), old.uploaderName(), old.channels(),
-                old.durationMs(), old.sizeBytes(), old.format(), status, old.uploadedAt(), old.hasCover());
+        Song updated = old.withStatus(status);
         songs.put(hash, updated);
         dirty = true;
         return Optional.of(updated);
+    }
+
+    /** Benennt einen Song um. @return der aktualisierte Song, oder leer, wenn es ihn nicht gibt */
+    public synchronized Optional<Song> rename(String hash, String title) {
+        Song old = songs.get(hash);
+        if (old == null) return Optional.empty();
+        Song updated = old.withTitle(title);
+        songs.put(hash, updated);
+        dirty = true;
+        return Optional.of(updated);
+    }
+
+    /** Zaehlt eine Wiedergabe bzw. ein Beschreiben einer Platte. */
+    public synchronized void countPlay(String hash) {
+        Song old = songs.get(hash);
+        if (old == null) return;
+        songs.put(hash, old.withPlays(old.plays() + 1));
+        dirty = true;
     }
 
     /** Loescht einen Song samt Dateien (Audio, Cover, Analyse). @return der geloeschte Song, oder leer */

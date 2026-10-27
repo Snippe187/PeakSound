@@ -74,6 +74,7 @@ public final class PacketCodec {
                 case Packet.LibraryQuery.ID -> Packet.LibraryQuery.decode(in);
                 case Packet.LibraryResults.ID -> Packet.LibraryResults.decode(in);
                 case Packet.LibraryWrite.ID -> Packet.LibraryWrite.decode(in);
+                case Packet.LibraryManage.ID -> Packet.LibraryManage.decode(in);
                 case Packet.OpenRemoteMenu.ID -> Packet.OpenRemoteMenu.decode(in);
                 case Packet.RemoteUpdate.ID -> Packet.RemoteUpdate.decode(in);
                 case Packet.JukeboxInvAction.ID -> Packet.JukeboxInvAction.decode(in);
