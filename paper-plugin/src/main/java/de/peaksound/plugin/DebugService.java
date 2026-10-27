@@ -38,6 +38,9 @@ final class DebugService {
     private final EqualizerService equalizer;
     private final MicService mic;
     private final Map<UUID, Long> last = new ConcurrentHashMap<>();
+    private RadioService radio;
+
+    void setRadio(RadioService radio) { this.radio = radio; }
 
     DebugService(PeakSoundPlugin plugin, BlockRegistry blocks, SongStore songs, PlaybackManager playback,
                  NetworkHandler network, EqualizerService equalizer, MicService mic) {
@@ -120,6 +123,7 @@ final class DebugService {
         for (PeakBlockType type : PeakBlockType.values()) line(sb, "Bloecke " + type.id(), String.valueOf(blocks.keysOf(type).size()));
         var effective = playback.effective();
         line(sb, "Spielende Jukeboxen / Schallquellen", effective.jukeboxes().size() + " / " + effective.emitters().size());
+        if (radio != null) sb.append("\n[Radio]\n").append(radio.describe());
         line(sb, "Songs", songs.count() + " (" + songs.totalBytes() / 1024 + " KiB)");
         List<String> modded = new ArrayList<>();
         for (Player p : Bukkit.getOnlinePlayers()) if (network.hasMod(p)) modded.add(p.getName());

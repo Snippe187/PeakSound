@@ -124,6 +124,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         RadioService radio = new RadioService(this, blocks, networks, radioStore, access, network, items);
         getServer().getPluginManager().registerEvents(radio, this);
         radio.setPlayback(playback);
+        debugService.setRadio(radio);
         playback.setRadio(radio);
         network.setRadio(radio);
 
@@ -136,7 +137,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj, micService, library, remote, storage, radio), this);
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(new NetworkListener(networks, equalizer), this);
-        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj, lightService, debugService, library, remote, jukeboxSettings, menu);
+        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj, lightService, debugService, library, remote, jukeboxSettings, menu, radio);
         getCommand("peaksound").setExecutor(command);
         getCommand("peaksound").setTabCompleter(command);
         getServer().getPluginManager().registerEvents(

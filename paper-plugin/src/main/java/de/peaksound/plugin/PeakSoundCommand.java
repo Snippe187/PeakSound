@@ -27,12 +27,14 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
     private final LightService lights;
     private final DebugService debug;
     private final LibraryService library;
+    private final RadioService radio;
     private final RemoteService remote;
     private final JukeboxMenuService jukeboxMenu;
     private final JukeboxSettingsStore jukeboxSettings;
 
     PeakSoundCommand(EqualizerService equalizer, BlockRegistry registry, SongStore songs, PlaybackManager playback, PeakItems items,
-                     SpeakerService speakers, DjService dj, LightService lights, DebugService debug, LibraryService library, RemoteService remote, JukeboxSettingsStore jukeboxSettings, JukeboxMenuService jukeboxMenu) {
+                     SpeakerService speakers, DjService dj, LightService lights, DebugService debug, LibraryService library, RemoteService remote, JukeboxSettingsStore jukeboxSettings, JukeboxMenuService jukeboxMenu, RadioService radio) {
+        this.radio = radio;
         this.jukeboxMenu = jukeboxMenu;
         this.remote = remote;
         this.jukeboxSettings = jukeboxSettings;
@@ -183,8 +185,18 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
                 case "jukebox" -> jukeboxMenu.open(target, block);
                 case "remote" -> remote.open(target, block);
                 case "dj" -> dj.open(target, block);
-                default -> sender.sendMessage("jukebox, remote oder dj");
+                case "radio" -> registry.get(block).ifPresent(t -> radio.open(target, block, t));
+                default -> sender.sendMessage("jukebox, remote, dj oder radio");
             }
+            return true;
+        }
+        // /peaksound radio <x> <y> <z> <frequenz in Zehntel-MHz> [aus]: stellt einen Sender/Empfaenger ein (Test)
+        if ((args.length == 5 || args.length == 6) && args[0].equalsIgnoreCase("radio")) {
+            Block block = blockAt(sender, args);
+            if (block == null) return true;
+            var cfg = radio.settingsOf(block).withFrequency(Integer.parseInt(args[4])).withEnabled(args.length == 5);
+            radio.put(block, cfg);
+            sender.sendMessage("Radio " + cfg);
             return true;
         }
         if (args.length == 1 && args[0].equalsIgnoreCase("debugdump")) { // Server-Bericht in der Konsole (ohne Spieler)
@@ -251,6 +263,6 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker", "dj", "light", "remote", "jukebox", "port", "give") : List.of();
+        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker", "dj", "light", "remote", "jukebox", "port", "give", "radio") : List.of();
     }
 }

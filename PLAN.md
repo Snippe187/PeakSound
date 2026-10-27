@@ -103,11 +103,12 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 - [x] Bibliothek: Cover, Sortierung, Filter, Favoriten, Beliebtheit, Umbenennen/Löschen eigener Songs (Protokoll 2)
 - [ ] Manuelle Abnahme
 
-## Phase 13 – Radio (geplant)
-- [ ] Sender-Block mit Spieler-Kopf, Playlist und Frequenz (87,5–108,0 MHz), läuft dauerhaft auf dem Server
-- [ ] Empfänger-Block: Frequenz, Reichweite einstellbar, Rauschen zwischen den Sendern
-- [ ] Taschenradio-Item (weltweit empfangbar)
-- [ ] Tests (Frequenz-/Reichweitenlogik), Testliste, Abnahme
+## Phase 13 – Radio
+- [x] Sender-Block (Spieler-Kopf als Traeger) im Redstone-Netz einer Jukebox, Frequenz 87,5–108,0 MHz; Playlist = Jukebox-Inventar
+- [x] Empfänger-Block: Frequenz, Reichweite einstellbar, Rauschen ohne Sender (Server geprüft, Blockmodelle gesehen)
+- [x] Taschenradio-Item (weltweit empfangbar, Frequenz im Item)
+- [x] Tests (Frequenz-/Rauschlogik, Pakete), Testliste in docs/TESTS.md
+- [ ] Manuelle Abnahme (Menüs, Rauschen, Taschenradio im Spiel noch nicht geprüft)
 
 ## Phase 14 – Anzeige (geplant)
 - [ ] Display-Block, mehrere Blöcke zu einer Cover-Wand verbindbar

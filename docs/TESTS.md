@@ -81,3 +81,21 @@ Testbefehle: `/peaksound give <Spieler> <item> [n]`, `/peaksound menu <Spieler> 
 - [ ] Reiter Ausgänge: auch Oben und Unten wählbar (Aus, Items rein, Items raus). Eine Kiste oder ein Hopper an einer Seite mit „Items raus“ bekommt die Platten, mit „Items rein“ werden Platten daraus ins Inventar geholt (eine Platte alle 8 Ticks).
 - [ ] Jukebox abbauen: Alle Platten im Inventar fallen heraus. Neustart: Inhalt bleibt (jukebox-inventories.json).
 - [ ] Hinweis: Alte Hopper-/Kisten-Playlisten werden nicht mehr gelesen; Platten manuell ins Inventar legen oder eine Seite auf „Items rein“ stellen.
+
+## Phase 13 – Radio
+
+Vorbereitung: eine Jukebox mit Platte(n), ein Stück Redstone-Staub daneben und daran der **Radio-Sender** (Creative-Tab
+*PeakSound*, Rezept im Rezeptbuch). Weiter weg ein oder zwei **Radios** (Empfänger) und das **Taschenradio**.
+
+- [ ] Sender-Menü (Peak-Tuner, Rechtsklick): Frequenz mit −1 / −0.1 / +0.1 / +1 einstellbar (87.5–108.0 MHz), Strom an/aus; Anzeige „Auf Sendung: Titel“, solange die Jukebox spielt, sonst „Sendet nichts“.
+- [ ] Empfänger auf dieselbe Frequenz stellen: Der Song kommt aus dem Radio-Block, gleichzeitig mit der Jukebox (gleiche Position im Lied), 3D und mit Reichweite (Regler 1–32).
+- [ ] Empfänger auf eine andere Frequenz: Rauschen, in der Nähe lauter, mit Abstand leiser; Menü zeigt „Kein Sender – Rauschen“.
+- [ ] Frequenz im offenen Menü auf die des Senders drehen: Zeile wechselt zu „Empfang: Titel“, das Rauschen verschwindet.
+- [ ] Sender ausschalten oder Jukebox stoppen: Empfänger rauscht (bzw. schweigt, wenn aus).
+- [ ] Zwei Empfänger auf derselben Frequenz spielen synchron.
+- [ ] Taschenradio: Rechtsklick schaltet an/aus (Chat-Zeile über der Hotbar), Shift+Rechtsklick öffnet das Menü (Frequenz, Lautstärke). Der Sender ist überall auf dem Server hörbar, direkt am Ohr; ohne Sender rauscht es.
+- [ ] Block abbauen: Item fällt, Einstellungen sind weg; Server-Neustart behält Frequenzen (`plugins/PeakSound/radio.json`).
+- [ ] `/peaksound debug`: Abschnitt [Radio] listet Sender und Empfänger mit Empfangszustand.
+
+Bekannte Grenzen: Der Sender muss in einem geladenen Chunk stehen. Bei gleicher Frequenz gewinnt der erste Sender. Der Radio-Kopf
+sieht ohne Mod wie ein normaler Spielerkopf aus.

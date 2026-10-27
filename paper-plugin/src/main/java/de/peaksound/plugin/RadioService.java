@@ -268,6 +268,30 @@ final class RadioService implements Listener {
         });
     }
 
+    /** Diagnosezeilen fuer den Debug-Bericht: Sender, Empfaenger und was dort ankommt. */
+    String describe() {
+        StringBuilder sb = new StringBuilder();
+        Map<Integer, PlaybackManager.State> current = stations;
+        sb.append("  Sender im Betrieb: ").append(current.size()).append('\n');
+        current.forEach((f, s) -> sb.append("    ").append(RadioLogic.format(f)).append(" -> ").append(s.title).append('\n'));
+        for (BlockRegistry.Key t : registry.keysOf(PeakBlockType.RADIO_TRANSMITTER)) {
+            RadioSettings c = store.get(t);
+            sb.append("  Sender ").append(t.x()).append(' ').append(t.y()).append(' ').append(t.z()).append(": ")
+                    .append(RadioLogic.format(c.frequency())).append(c.enabled() ? " an" : " aus").append('\n');
+        }
+        for (BlockRegistry.Key r : registry.keysOf(PeakBlockType.RADIO_RECEIVER)) {
+            RadioSettings c = store.get(r);
+            PlaybackManager.State s = c.enabled() ? current.get(c.frequency()) : null;
+            sb.append("  Empfaenger ").append(r.x()).append(' ').append(r.y()).append(' ').append(r.z()).append(": ")
+                    .append(RadioLogic.format(c.frequency())).append(", Reichweite ").append(c.range()).append(", ").append(c.volume()).append(" %, ")
+                    .append(!c.enabled() ? "aus" : s != null ? "empfaengt " + s.title : "Rauschen " + RadioLogic.staticLevel(c.frequency(), current.keySet()) + " %")
+                    .append('\n');
+        }
+        return sb.toString();
+    }
+
+    void put(Block block, RadioSettings settings) { store.set(BlockRegistry.Key.of(block), settings); }
+
     void remove(Block block) {
         store.remove(block);
     }
