@@ -135,6 +135,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             case Packet.DjUpdate update -> dj.onUpdate(player, update);
             case Packet.MicUpdate update -> mic.onUpdate(player, update);
             case Packet.DjDeckAction action -> dj.onDeckAction(player, action);
+            case Packet.JukeboxInvAction action -> menu.onInvAction(player, action);
             case Packet.RemoteUpdate update -> remote.onUpdate(player, update);
             case Packet.LibraryQuery query -> library.onQuery(player, query);
             case Packet.LibraryWrite write -> library.onWrite(player, write);

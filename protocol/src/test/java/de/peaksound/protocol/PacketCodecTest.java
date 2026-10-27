@@ -21,6 +21,9 @@ class PacketCodecTest {
             new Packet.AnalysisRequest("a".repeat(64)),
             new Packet.DjRequest(1, 2, 3),
             new Packet.DebugRequest(),
+            new Packet.JukeboxInvAction(1, 2, 3, Packet.JukeboxInvAction.Kind.PUT, 35),
+            new Packet.JukeboxInvAction(1, 2, 3, Packet.JukeboxInvAction.Kind.TAKE, 14),
+            new Packet.JukeboxUpdate(1, 2, 3, JukeboxSettings.defaults(16, 80).withPort(4, PortFunction.ITEM_IN).withPort(5, PortFunction.ITEM_OUT).withPort(0, PortFunction.ITEM_IN)),
             new Packet.RemoteUpdate(1, 2, 3, new RemoteSettings(RemoteAction.VOLUME_BY_STRENGTH, true)),
             new Packet.JukeboxUpdate(1, 2, 3, JukeboxSettings.defaults(16, 80).withPort(2, PortFunction.BEAT).withPort(3, PortFunction.SONG_END)),
             new Packet.SpeakerUpdate(1, 2, 3, new SpeakerSettings("R", SpeakerChannel.CENTER, 50, SpeakerKind.WOOFER, true)),
@@ -216,6 +219,26 @@ class PacketCodecTest {
         assertEquals(packet, PacketCodec.decodeClientbound(packet.encode()));
         var tooMany = java.util.Collections.nCopies(Limits.LIBRARY_PAGE_SIZE + 1, songs.get(0));
         assertThrows(IllegalArgumentException.class, () -> new Packet.LibraryResults(1, 2, 3, 0, 1, 7, 0, tooMany).encode());
+    }
+
+    @Test
+    void rejectsInvalidInventorySlots() {
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(
+                new Packet.JukeboxInvAction(0, 0, 0, Packet.JukeboxInvAction.Kind.TAKE, 15).encode()));
+        assertThrows(MalformedPacketException.class, () -> PacketCodec.decodeServerbound(
+                new Packet.JukeboxInvAction(0, 0, 0, Packet.JukeboxInvAction.Kind.PUT, 36).encode()));
+    }
+
+    @Test
+    void verticalSidesOnlyAllowItemModes() {
+        JukeboxSettings s = new JukeboxSettings("", 16, 80, false, true, 3, 5, 2, true, true, LoopMode.OFF, false, false,
+                java.util.List.of(PortFunction.BASS, PortFunction.MID, PortFunction.HIGH, PortFunction.OVERALL, PortFunction.BASS, PortFunction.ITEM_OUT)).sanitized();
+        assertEquals(PortFunction.OFF, s.ports().get(4));   // Bass an der Oberseite ist nicht erlaubt
+        assertEquals(PortFunction.ITEM_OUT, s.ports().get(5));
+        assertEquals(6, s.ports().size());
+        assertEquals(PortFunction.ITEM_IN, PortFunction.OFF.next(4));
+        assertEquals(PortFunction.OFF, PortFunction.ITEM_OUT.next(5));
+        assertEquals(PortFunction.ITEM_OUT, PortFunction.OFF.previous(5));
     }
 
     @Test

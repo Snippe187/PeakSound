@@ -150,12 +150,12 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
             Block block = blockAt(sender, args);
             if (block == null) return true;
             try {
-                int side = "nesw".indexOf(args[4].toLowerCase().charAt(0));
+                int side = "neswud".indexOf(args[4].toLowerCase().charAt(0));
                 if (side < 0) throw new IllegalArgumentException();
                 playback.applySettings(block, jukeboxSettings.get(block).withPort(side, de.peaksound.protocol.PortFunction.valueOf(args[5].toUpperCase())));
                 sender.sendMessage("Ausgang " + args[4] + " = " + args[5]);
             } catch (IllegalArgumentException e) {
-                sender.sendMessage("Seite n/e/s/w, Funktion: " + java.util.Arrays.toString(de.peaksound.protocol.PortFunction.values()));
+                sender.sendMessage("Seite n/e/s/w/u/d, Funktion: " + java.util.Arrays.toString(de.peaksound.protocol.PortFunction.values()));
             }
             return true;
         }

@@ -75,3 +75,9 @@ Testbefehle: `/peaksound give <Spieler> <item> [n]`, `/peaksound menu <Spieler> 
 - [ ] Musik-Fernbedienung per Staub an eine Jukebox, Hebel daneben: Aktion im Menü wählen (Pause/Weiter, Skip, Zurück, Shuffle, Wiederholen, Play/Stopp, Song nach Stärke, Lautstärke nach Stärke) und prüfen. „Signal umdrehen“ testen.
 - [ ] Jukebox-Menü → Reiter Ausgänge: Würfel drehen, Seite anklicken, Funktion wählen. Mit Comparator + Lampe prüfen: Bass/Mitten/Höhen/gesamt, „Läuft“, „Song-Ende“ (Impuls), „Takt“ (Impuls).
 - [ ] Lautsprecher-Menü: „Redstone-Steuerung: An“ → Box spielt nur mit Signal. Mikrofon und DJ-Pult genauso (DJ: kein Signal = Deck A, Signal = Deck B mit Überblendzeit).
+
+## Phase 12 – Jukebox-Inventar
+- [ ] Jukebox mit Peak-Tuner öffnen → Reiter Playlist: 15 Slots. Beschriebene Platte im eigenen Inventar anklicken legt sie ein, Rechtsklick auf einen Slot nimmt sie heraus; Abspielen, Stopp, Skip, ▲/▼, Wiederholen und Shuffle funktionieren. Nicht beschriebene Items lassen sich nicht einlegen.
+- [ ] Reiter Ausgänge: auch Oben und Unten wählbar (Aus, Items rein, Items raus). Eine Kiste oder ein Hopper an einer Seite mit „Items raus“ bekommt die Platten, mit „Items rein“ werden Platten daraus ins Inventar geholt (eine Platte alle 8 Ticks).
+- [ ] Jukebox abbauen: Alle Platten im Inventar fallen heraus. Neustart: Inhalt bleibt (jukebox-inventories.json).
+- [ ] Hinweis: Alte Hopper-/Kisten-Playlisten werden nicht mehr gelesen; Platten manuell ins Inventar legen oder eine Seite auf „Items rein“ stellen.

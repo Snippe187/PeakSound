@@ -10,6 +10,8 @@ import java.util.random.RandomGenerator;
 public final class PlaylistLogic {
     /** Hoechstzahl von Playlist-Eintraegen (Hopper + angeschlossene Kisten). */
     public static final int MAX_ENTRIES = 128;
+    /** Anzahl der Platten-Slots im Inventar einer Jukebox. */
+    public static final int INVENTORY_SLOTS = 15;
 
     private PlaylistLogic() {}
 

@@ -11,7 +11,7 @@ Für Minecraft **26.2**: eine **Fabric-Client-Mod**, ein **Paper-Server-Plugin**
   Haltbarkeit zurück) wird per Upload beschrieben. MP3, FLAC, WAV und OGG, bis 4 Minuten. Titel, Interpret und
   Cover kommen aus den Tags. Der Tooltip der Platte zeigt Cover, Titel, Interpret und den Uploader.
 - **PeakSound-Jukebox** mit Menü: Name, Reichweite (1–30), Lautstärke, Ketten-Schalter, Noten-Partikel im Takt,
-  „Jetzt läuft“-Anzeige, Playlist (Hopper als CD-Wechsler, Kisten erweitern ihn) und Lautsprecher-Übersicht.
+  „Jetzt läuft“-Anzeige, eigenes Inventar mit 15 Platten-Slots als Playlist (Hopper und Kisten über die Seiten-Einstellung) und Lautsprecher-Übersicht.
 - **Redstone-Verbund:** Jukeboxen, die über Redstone-Staub verbunden sind, spielen synchron denselben Song.
 - **Comparator-Equalizer:** Comparator an der Jukebox gibt live 0–15 aus (Norden Bass, Osten Mitten, Süden Höhen, Westen gesamt).
 - **Lautsprecher und Surround:** bis zu 25 Lautsprecher je System, jeder eine eigene 3D-Schallquelle mit Kanal

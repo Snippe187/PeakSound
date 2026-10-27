@@ -78,7 +78,7 @@ final class EqualizerService {
                 int beat = x.nextBeatAfter(positionMs - BEAT_PULSE_MS);
                 return beat >= 0 && beat <= positionMs ? 15 : 0;
             }).orElse(0);
-            case OFF -> 0;
+            case OFF, ITEM_IN, ITEM_OUT -> 0;
         };
     }
 

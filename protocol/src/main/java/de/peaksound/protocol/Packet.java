@@ -327,9 +327,20 @@ public sealed interface Packet {
     }
 
     /** Ein Playlist-Eintrag. {@code available} = false, wenn der Song fehlt oder noch gesperrt ist. */
-    record PlaylistEntry(String title, String artist, int durationMs, boolean available) {}
+    record PlaylistEntry(String title, String artist, int durationMs, boolean available, int slot) {
+        /** Ohne Slot (z. B. DJ-Pult-Listen): -1. */
+        public PlaylistEntry(String title, String artist, int durationMs, boolean available) {
+            this(title, artist, durationMs, available, -1);
+        }
+    }
 
     /** Server -> Client: die Playlist (Hopper + Kisten), der laufende Eintrag ({@code -1} = keiner). */
+    private static int readInventorySlot(ByteBuffer in) {
+        int slot = PacketIO.readByte(in);
+        if (slot >= PlaylistLogic.INVENTORY_SLOTS) throw new MalformedPacketException("Ungueltiger Slot");
+        return slot;
+    }
+
     record PlaylistState(int x, int y, int z, int current, boolean playing, java.util.List<PlaylistEntry> entries)
             implements Clientbound {
         public static final int ID = 22;
@@ -341,7 +352,7 @@ public sealed interface Packet {
                     .writeBoolean(playing).writeShort(entries.size());
             for (PlaylistEntry e : entries) {
                 w.writeString(e.title(), Limits.MAX_TEXT).writeString(e.artist(), Limits.MAX_TEXT)
-                        .writeInt(e.durationMs()).writeBoolean(e.available());
+                        .writeInt(e.durationMs()).writeBoolean(e.available()).writeByte(Math.max(0, Math.min(PlaylistLogic.INVENTORY_SLOTS - 1, e.slot())));
             }
             return w.toBytes();
         }
@@ -355,7 +366,7 @@ public sealed interface Packet {
             java.util.List<PlaylistEntry> list = new java.util.ArrayList<>(count);
             for (int i = 0; i < count; i++) {
                 list.add(new PlaylistEntry(PacketIO.readString(in, Limits.MAX_TEXT), PacketIO.readString(in, Limits.MAX_TEXT),
-                        PacketIO.readInt(in), PacketIO.readBoolean(in)));
+                        PacketIO.readInt(in), PacketIO.readBoolean(in), readInventorySlot(in)));
             }
             if (current < -1 || current >= count) throw new MalformedPacketException("Ungueltiger Playlist-Index");
             return new PlaylistState(x, y, z, current, playing, java.util.List.copyOf(list));
@@ -990,6 +1001,39 @@ public sealed interface Packet {
 
         static RemoteUpdate decode(ByteBuffer in) {
             return new RemoteUpdate(PacketIO.readInt(in), PacketIO.readInt(in), PacketIO.readInt(in), RemoteSettings.read(in));
+        }
+    }
+
+    // ---- Jukebox-Inventar ----
+
+    /**
+     * Client -> Server: eine beschriebene Platte aus dem eigenen Inventar ins Jukebox-Inventar legen ({@code PUT}, Slot =
+     * Inventar-Slot 0-35) oder aus dem Jukebox-Inventar nehmen ({@code TAKE}, Slot = Jukebox-Slot 0-14).
+     */
+    record JukeboxInvAction(int x, int y, int z, Kind kind, int slot) implements Serverbound {
+        public static final int ID = 52;
+
+        public enum Kind {
+            PUT, TAKE;
+
+            static Kind byOrdinal(int o) {
+                Kind[] v = values();
+                if (o < 0 || o >= v.length) throw new MalformedPacketException("Unbekannte Aktion");
+                return v[o];
+            }
+        }
+
+        @Override
+        public byte[] encode() {
+            return new PacketIO.Writer(ID).writeInt(x).writeInt(y).writeInt(z).writeByte(kind.ordinal()).writeByte(slot).toBytes();
+        }
+
+        static JukeboxInvAction decode(ByteBuffer in) {
+            int x = PacketIO.readInt(in), y = PacketIO.readInt(in), z = PacketIO.readInt(in);
+            Kind kind = Kind.byOrdinal(PacketIO.readByte(in));
+            int slot = PacketIO.readByte(in);
+            if (slot >= (kind == Kind.PUT ? 36 : PlaylistLogic.INVENTORY_SLOTS)) throw new MalformedPacketException("Ungueltiger Slot");
+            return new JukeboxInvAction(x, y, z, kind, slot);
         }
     }
 }

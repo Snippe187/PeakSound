@@ -229,5 +229,18 @@
   "peaksound.remote.action.song_by_strength": "Song nach St\u00e4rke",
   "peaksound.remote.action.song_by_strength.desc": "St\u00e4rke 1-15 spielt diesen Playlist-Eintrag.",
   "peaksound.remote.action.volume_by_strength": "Lautst\u00e4rke nach St\u00e4rke",
-  "peaksound.remote.action.volume_by_strength.desc": "St\u00e4rke 0-15 stellt 0-100 % Lautst\u00e4rke ein."
+  "peaksound.remote.action.volume_by_strength.desc": "St\u00e4rke 0-15 stellt 0-100 % Lautst\u00e4rke ein.",
+
+  "peaksound.port.item_in": "Items rein",
+  "peaksound.port.item_in.desc": "Nimmt beschriebene Platten aus einem Hopper oder einer Kiste hier",
+  "peaksound.port.item_out": "Items raus",
+  "peaksound.port.item_out.desc": "Legt Platten in einen Hopper oder eine Kiste hier",
+  "peaksound.menu.sides.hint.item": "Hopper oder Kiste an diese Seite setzen.",
+  "peaksound.menu.playlist.play.short": "Abspielen",
+  "peaksound.menu.playlist.take": "Herausnehmen",
+  "peaksound.menu.playlist.hint": "Slot anklicken zum Ausw\u00e4hlen",
+  "peaksound.menu.playlist.rightclick": "Rechtsklick: herausnehmen",
+  "peaksound.menu.playlist.inventory": "Inventar (Platte anklicken zum Einlegen)",
+
+  "peaksound.menu.playlist.help": "Platte unten anklicken zum Einlegen. Rechtsklick auf einen Slot zum Herausnehmen."
 }

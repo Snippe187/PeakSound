@@ -12,7 +12,11 @@ public enum PortFunction {
     SONG_END("song_end"),
     /** Kurzer Impuls (15) bei jedem erkannten Taktschlag. */
     BEAT("beat"),
-    OFF("off");
+    OFF("off"),
+    /** Nimmt beschriebene Platten aus einem Hopper oder Behaelter an dieser Seite ins Jukebox-Inventar. */
+    ITEM_IN("item_in"),
+    /** Legt Platten aus dem Jukebox-Inventar in einen Hopper oder Behaelter an dieser Seite. */
+    ITEM_OUT("item_out");
 
     private final String key;
 
@@ -20,9 +24,24 @@ public enum PortFunction {
 
     public String key() { return key; }
 
-    public PortFunction next() { return values()[(ordinal() + 1) % values().length]; }
+    /** Seiten 0-3 (N, O, S, W) duerfen alles, oben/unten (4, 5) nur Aus und die Item-Modi. */
+    public static java.util.List<PortFunction> allowedFor(int side) {
+        return side < 4 ? java.util.List.of(values()) : java.util.List.of(OFF, ITEM_IN, ITEM_OUT);
+    }
 
-    public PortFunction previous() { return values()[(ordinal() + values().length - 1) % values().length]; }
+    public PortFunction next(int side) {
+        java.util.List<PortFunction> a = allowedFor(side);
+        int i = a.indexOf(this);
+        return a.get((i + 1) % a.size());
+    }
+
+    public PortFunction previous(int side) {
+        java.util.List<PortFunction> a = allowedFor(side);
+        int i = a.indexOf(this);
+        return a.get((i + a.size() - 1) % a.size());
+    }
+
+    public boolean item() { return this == ITEM_IN || this == ITEM_OUT; }
 
     static PortFunction byOrdinal(int o) {
         PortFunction[] v = values();
@@ -30,8 +49,8 @@ public enum PortFunction {
         return v[o];
     }
 
-    /** Standard der vier Seiten Norden, Osten, Sueden, Westen. */
+    /** Standard der sechs Seiten Norden, Osten, Sueden, Westen, oben, unten. */
     public static java.util.List<PortFunction> defaultPorts() {
-        return java.util.List.of(BASS, MID, HIGH, OVERALL);
+        return java.util.List.of(BASS, MID, HIGH, OVERALL, OFF, OFF);
     }
 }

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Oeffnet das Jukebox-Menue beim Client und uebernimmt dessen Aenderungen und Playlist-Aktionen. Jede Aktion
@@ -84,6 +85,27 @@ final class JukeboxMenuService {
         sendPlaylist(player, block);
     }
 
+    /** Platte aus dem eigenen Inventar ins Jukebox-Inventar legen oder zurueck nehmen. */
+    void onInvAction(Player player, Packet.JukeboxInvAction action) {
+        Block block = validated(player, action.x(), action.y(), action.z());
+        if (block == null) return;
+        if (action.kind() == Packet.JukeboxInvAction.Kind.PUT) {
+            ItemStack stack = player.getInventory().getItem(action.slot());
+            if (stack == null || stack.getType().isAir()) return;
+            if (playlist.put(block, stack)) {
+                stack.setAmount(stack.getAmount() - 1);
+                player.getInventory().setItem(action.slot(), stack.getAmount() <= 0 ? null : stack);
+            } else {
+                player.sendActionBar(Messages.error(player, "Nur beschriebene Platten passen hinein, und das Inventar darf nicht voll sein.",
+                        "Only written records fit, and the inventory must not be full."));
+            }
+        } else {
+            ItemStack taken = playlist.take(block, action.slot());
+            if (taken != null) player.getInventory().addItem(taken).values().forEach(rest -> player.getWorld().dropItem(player.getLocation(), rest));
+        }
+        sendPlaylist(player, block);
+    }
+
     /** Lautsprecher-Uebersicht fuer den Reiter "Lautsprecher" im Jukebox-Menue. */
     void onSpeakerOverviewRequest(Player player, Packet.SpeakerOverviewRequest request) {
         Block block = validated(player, request.x(), request.y(), request.z());
@@ -101,7 +123,7 @@ final class JukeboxMenuService {
         for (PlaylistService.Track t : tracks) {
             String title = cut(t.song() != null ? t.song().title() : t.written().title());
             String artist = cut(t.song() != null ? t.song().artist() : t.written().artist());
-            entries.add(new Packet.PlaylistEntry(title, artist, t.song() != null ? t.song().durationMs() : 0, t.playable()));
+            entries.add(new Packet.PlaylistEntry(title, artist, t.song() != null ? t.song().durationMs() : 0, t.playable(), t.slot()));
         }
         var state = playback.state(block);
         Net.send(plugin, player, new Packet.PlaylistState(block.getX(), block.getY(), block.getZ(),

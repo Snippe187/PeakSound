@@ -190,10 +190,10 @@ final class JukeboxMenuScreen extends Screen {
     private void initSides(int top) {
         int right = width / 2 + 20;
         addRenderableWidget(Button.builder(Component.literal("<"), b -> {
-            if (cube.selected < 4) change(cur.withPort(cube.selected, cur.ports().get(cube.selected).previous()));
+            change(cur.withPort(cube.selected, cur.ports().get(cube.selected).previous(cube.selected)));
         }).bounds(right, top + 50, 22, 20).build());
         addRenderableWidget(Button.builder(Component.literal(">"), b -> {
-            if (cube.selected < 4) change(cur.withPort(cube.selected, cur.ports().get(cube.selected).next()));
+            change(cur.withPort(cube.selected, cur.ports().get(cube.selected).next(cube.selected)));
         }).bounds(right + 118, top + 50, 22, 20).build());
     }
 
@@ -207,6 +207,8 @@ final class JukeboxMenuScreen extends Screen {
             case SONG_END -> 0xE08A30;
             case BEAT -> 0xC050D0;
             case OFF -> 0x55555F;
+            case ITEM_IN -> 0x4F9EFF;
+            case ITEM_OUT -> 0xFF7A4F;
         };
     }
 
@@ -220,6 +222,8 @@ final class JukeboxMenuScreen extends Screen {
             case SONG_END -> "END";
             case BEAT -> "BEAT";
             case OFF -> "-";
+            case ITEM_IN -> "IN";
+            case ITEM_OUT -> "OUT";
         };
     }
 
@@ -229,14 +233,9 @@ final class JukeboxMenuScreen extends Screen {
         String[] l1 = new String[6], l2 = new String[6];
         for (int f = 0; f < 6; f++) {
             l1[f] = "";
-            if (f < 4) {
-                de.peaksound.protocol.PortFunction fn = cur.ports().get(f);
-                fill[f] = portColor(fn);
-                l2[f] = portShort(fn);
-            } else {
-                fill[f] = 0x3A3A44;
-                l2[f] = "";
-            }
+            de.peaksound.protocol.PortFunction fn = cur.ports().get(f);
+            fill[f] = portColor(fn);
+            l2[f] = portShort(fn);
         }
         cube.render(g, font, left + 78, top + 74, 84, fill, l1, l2);
         Component drag = Component.translatable("peaksound.menu.sides.drag");
@@ -245,22 +244,17 @@ final class JukeboxMenuScreen extends Screen {
         int right = width / 2 + 20;
         Component face = Component.translatable("peaksound.menu.sides.face." + CubeView.NAMES_KEYS[cube.selected]);
         g.text(font, face, right, top + 28, 0xFFFFFFFF);
-        if (cube.selected < 4) {
-            de.peaksound.protocol.PortFunction fn = cur.ports().get(cube.selected);
-            Component name = Component.translatable("peaksound.port." + fn.key());
-            g.text(font, name, right + 70 - font.width(name) / 2, top + 56, 0xFF000000 | portColor(fn));
-            Component desc = Component.translatable("peaksound.port." + fn.key() + ".desc");
-            g.text(font, desc, right, top + 80, 0xFFAAAAAA);
-            Component hint = Component.translatable("peaksound.menu.sides.hint");
-            g.text(font, hint, right, top + 104, 0xFF777777);
-        } else {
-            Component none = Component.translatable("peaksound.menu.sides.none");
-            g.text(font, none, right, top + 56, 0xFFAAAAAA);
-        }
+        de.peaksound.protocol.PortFunction fn = cur.ports().get(cube.selected);
+        Component name = Component.translatable("peaksound.port." + fn.key());
+        g.text(font, name, right + 70 - font.width(name) / 2, top + 56, 0xFF000000 | portColor(fn));
+        Component desc = Component.translatable("peaksound.port." + fn.key() + ".desc");
+        g.text(font, desc, right, top + 80, 0xFFAAAAAA);
+        Component hint = Component.translatable(fn.item() ? "peaksound.menu.sides.hint.item" : "peaksound.menu.sides.hint");
+        if (fn.item() || cube.selected < 4) g.text(font, hint, right, top + 104, 0xFF777777);
     }
-
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        if (tab == Tab.PLAYLIST && clickPlaylist(event.x(), event.y(), event.button())) return true;
         if (tab == Tab.SIDES && event.button() == 0) {
             int face = cube.pick(event.x(), event.y());
             if (face >= 0) {
@@ -287,51 +281,119 @@ final class JukeboxMenuScreen extends Screen {
         return super.mouseReleased(event);
     }
 
-    private void initPlaylist(int top) {
-        int left = width / 2 - 155;
+    // ---- Reiter "Playlist": eigenes Inventar der Jukebox (15 Slots) ----
+
+    private static final int SLOT = 18;
+    private int selectedSlot = -1;
+
+    private int gridX() { return width / 2 - 155; }
+
+    private int invX() { return width / 2 - 81; }
+
+    /** Der Eintrag im Jukebox-Slot (oder null). */
+    private Packet.PlaylistEntry entryAt(int slot) {
+        for (Packet.PlaylistEntry e : playlist.entries()) if (e.slot() == slot) return e;
+        return null;
+    }
+
+    private int currentSlot() {
+        int cur = playlist.current();
+        return cur >= 0 && cur < playlist.entries().size() ? playlist.entries().get(cur).slot() : -1;
+    }
+
+    /** Position im Eintragsliste (Abspielreihenfolge) zum Slot, oder -1. */
+    private int indexOfSlot(int slot) {
         List<Packet.PlaylistEntry> entries = playlist.entries();
-        int first = page * PAGE_SIZE;
-        for (int row = 0; row < PAGE_SIZE && first + row < entries.size(); row++) {
-            int index = first + row;
-            int y = top + row * 20;
-            Packet.PlaylistEntry e = entries.get(index);
-            Button play = addRenderableWidget(Button.builder(Component.literal("▶"), b -> send(Packet.PlaylistAction.Action.PLAY, index))
-                    .bounds(left, y, 20, 18).tooltip(Tooltip.create(Component.translatable("peaksound.menu.playlist.play"))).build());
-            play.active = e.available();
-            Button up = addRenderableWidget(Button.builder(Component.literal("▲"), b -> send(Packet.PlaylistAction.Action.MOVE_UP, index))
-                    .bounds(left + 268, y, 20, 18).build());
-            up.active = index > 0;
-            Button down = addRenderableWidget(Button.builder(Component.literal("▼"), b -> send(Packet.PlaylistAction.Action.MOVE_DOWN, index))
-                    .bounds(left + 290, y, 20, 18).build());
-            down.active = index < entries.size() - 1;
-        }
-        int controls = top + PAGE_SIZE * 20 + 6;
-        addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.playlist.skip"), b -> send(Packet.PlaylistAction.Action.SKIP, 0))
-                .bounds(left, controls, 74, 20).build());
+        for (int i = 0; i < entries.size(); i++) if (entries.get(i).slot() == slot) return i;
+        return -1;
+    }
+
+    private Button playButton, takeButton, upButton, downButton;
+
+    private void initPlaylist(int top) {
+        int x = gridX() + 100;
+        playButton = addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.playlist.play.short"),
+                b -> { int i = indexOfSlot(selectedSlot); if (i >= 0) send(Packet.PlaylistAction.Action.PLAY, i); })
+                .bounds(x, top, 84, 20).tooltip(Tooltip.create(Component.translatable("peaksound.menu.playlist.play"))).build());
         addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.playlist.stop"), b -> send(Packet.PlaylistAction.Action.STOP, 0))
-                .bounds(left + 78, controls, 74, 20).build());
+                .bounds(x + 86, top, 60, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.playlist.skip"), b -> send(Packet.PlaylistAction.Action.SKIP, 0))
+                .bounds(x + 148, top, 62, 20).build());
+        takeButton = addRenderableWidget(Button.builder(Component.translatable("peaksound.menu.playlist.take"),
+                b -> { if (selectedSlot >= 0) ClientNetwork.send(new Packet.JukeboxInvAction(bx, by, bz, Packet.JukeboxInvAction.Kind.TAKE, selectedSlot)); })
+                .bounds(x, top + 22, 84, 20).build());
+        upButton = addRenderableWidget(Button.builder(Component.literal("\u25B2"), b -> moveSelected(true)).bounds(x + 86, top + 22, 30, 20).build());
+        downButton = addRenderableWidget(Button.builder(Component.literal("\u25BC"), b -> moveSelected(false)).bounds(x + 118, top + 22, 30, 20).build());
         loopButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
             change(cur.withLoop(cur.loop().next()));
             refreshLabels();
-        }).bounds(left + 156, controls, 154, 20).build());
+        }).bounds(x, top + 44, 104, 20).build());
         shuffleButton = addRenderableWidget(Button.builder(Component.empty(), b -> {
             change(cur.withShuffle(!cur.shuffle()));
             refreshLabels();
-        }).bounds(left, controls + 24, 154, 20).build());
-        int pages = Math.max(1, (entries.size() + PAGE_SIZE - 1) / PAGE_SIZE);
-        Button prev = addRenderableWidget(Button.builder(Component.literal("<"), b -> {
-            page = Math.max(0, page - 1);
-            rebuildWidgets();
-        }).bounds(left + 156, controls + 24, 40, 20).build());
-        prev.active = page > 0;
-        Button next = addRenderableWidget(Button.builder(Component.literal(">"), b -> {
-            page = Math.min(pages - 1, page + 1);
-            rebuildWidgets();
-        }).bounds(left + 270, controls + 24, 40, 20).build());
-        next.active = page < pages - 1;
+        }).bounds(x + 106, top + 44, 104, 20).build());
         refreshLabels();
+        refreshPlaylistButtons();
     }
 
+    private void moveSelected(boolean up) {
+        int i = indexOfSlot(selectedSlot);
+        if (i < 0) return;
+        List<Packet.PlaylistEntry> entries = playlist.entries();
+        int j = up ? i - 1 : i + 1;
+        if (j < 0 || j >= entries.size()) return;
+        send(up ? Packet.PlaylistAction.Action.MOVE_UP : Packet.PlaylistAction.Action.MOVE_DOWN, i);
+        selectedSlot = entries.get(j).slot(); // die Auswahl folgt der Platte
+    }
+
+    private void refreshPlaylistButtons() {
+        if (playButton == null) return;
+        Packet.PlaylistEntry e = entryAt(selectedSlot);
+        int i = indexOfSlot(selectedSlot);
+        playButton.active = e != null && e.available();
+        takeButton.active = e != null;
+        upButton.active = e != null && i > 0;
+        downButton.active = e != null && i < playlist.entries().size() - 1;
+    }
+
+    /** Klick im Reiter Playlist: Jukebox-Slot (Linksklick = auswaehlen, Rechtsklick = herausnehmen) oder Platte aus dem eigenen Inventar. */
+    private boolean clickPlaylist(double mx, double my, int button) {
+        int top = height / 2 - 100 + 28;
+        int gx = gridX();
+        for (int slot = 0; slot < 15; slot++) {
+            int sx = gx + (slot % 5) * SLOT, sy = top + (slot / 5) * SLOT;
+            if (mx >= sx && mx < sx + SLOT && my >= sy && my < sy + SLOT) {
+                if (button == 1 && entryAt(slot) != null) {
+                    ClientNetwork.send(new Packet.JukeboxInvAction(bx, by, bz, Packet.JukeboxInvAction.Kind.TAKE, slot));
+                } else if (button == 0) {
+                    selectedSlot = slot;
+                }
+                refreshPlaylistButtons();
+                return true;
+            }
+        }
+        var inv = Minecraft.getInstance().player == null ? null : Minecraft.getInstance().player.getInventory();
+        if (inv == null || button != 0) return false;
+        for (int n = 0; n < 36; n++) {
+            int[] p = invSlotPos(n, top);
+            if (mx >= p[0] && mx < p[0] + SLOT && my >= p[1] && my < p[1] + SLOT) {
+                if (PeakItemStacks.is(inv.getItem(n), de.peaksound.protocol.PeakItemType.WRITTEN_RECORD)) {
+                    ClientNetwork.send(new Packet.JukeboxInvAction(bx, by, bz, Packet.JukeboxInvAction.Kind.PUT, n));
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Bildschirmposition eines Inventar-Slots (0-8 Schnellleiste unten, 9-35 darueber). */
+    private int[] invSlotPos(int n, int top) {
+        int x = invX();
+        int baseY = top + 78;
+        if (n < 9) return new int[] {x + n * SLOT, baseY + 3 * SLOT + 4};
+        int row = (n - 9) / 9, col = (n - 9) % 9;
+        return new int[] {x + col * SLOT, baseY + row * SLOT};
+    }
     private void send(Packet.PlaylistAction.Action action, int index) {
         ClientNetwork.send(new Packet.PlaylistAction(bx, by, bz, action, index));
     }
@@ -430,7 +492,7 @@ final class JukeboxMenuScreen extends Screen {
         g.text(font, now, width / 2 - font.width(now) / 2, top - 10, 0xFFAAAAAA);
 
         if (tab == Tab.SIDES) extractSides(g, top + 28);
-        else if (tab == Tab.PLAYLIST) extractPlaylist(g, top + 28);
+        else if (tab == Tab.PLAYLIST) extractPlaylist(g, top + 28, mouseX, mouseY);
         else if (tab == Tab.SPEAKERS) extractSpeakers(g, top + 28);
         else {
             Component hint = Component.translatable("peaksound.menu.equalizer.hint");
@@ -466,30 +528,52 @@ final class JukeboxMenuScreen extends Screen {
         }
     }
 
-    private void extractPlaylist(GuiGraphicsExtractor g, int top) {
-        int left = width / 2 - 155;
-        List<Packet.PlaylistEntry> entries = playlist.entries();
-        if (entries.isEmpty()) {
-            Component hint = Component.translatable("peaksound.menu.playlist.empty");
-            g.text(font, hint, width / 2 - font.width(hint) / 2, top + 20, 0xFFAAAAAA);
-            Component hint2 = Component.translatable("peaksound.menu.playlist.empty2");
-            g.text(font, hint2, width / 2 - font.width(hint2) / 2, top + 34, 0xFF777777);
-            return;
+    private void slotBackground(GuiGraphicsExtractor g, int x, int y, int border) {
+        g.fill(x, y, x + SLOT, y + SLOT, border);
+        g.fill(x + 1, y + 1, x + SLOT - 1, y + SLOT - 1, 0xFF3B3B42);
+    }
+
+    private void extractPlaylist(GuiGraphicsExtractor g, int top, int mouseX, int mouseY) {
+        int gx = gridX();
+        int playing = currentSlot();
+        net.minecraft.world.item.ItemStack recordIcon = PeakItemStacks.create(de.peaksound.protocol.PeakItemType.WRITTEN_RECORD);
+        for (int slot = 0; slot < 15; slot++) {
+            int sx = gx + (slot % 5) * SLOT, sy = top + (slot / 5) * SLOT;
+            int border = slot == selectedSlot ? 0xFFFFFFFF : slot == playing ? 0xFF55FF55 : 0xFF1E1E24;
+            slotBackground(g, sx, sy, border);
+            Packet.PlaylistEntry e = entryAt(slot);
+            if (e != null) {
+                g.item(recordIcon, sx + 1, sy + 1);
+                if (!e.available()) g.fill(sx + 1, sy + 1, sx + SLOT - 1, sy + SLOT - 1, 0x88AA0000);
+                if (mouseX >= sx && mouseX < sx + SLOT && mouseY >= sy && mouseY < sy + SLOT) {
+                    int seconds = e.durationMs() / 60 * 0 + e.durationMs() / 1000;
+                    String sub = (e.artist().isBlank() ? "" : e.artist() + "  \u00B7  ") + String.format("%d:%02d", seconds / 60, seconds % 60);
+                    g.setTooltipForNextFrame(List.of(Component.literal(e.title()).getVisualOrderText(),
+                            Component.literal(sub).withStyle(net.minecraft.ChatFormatting.GRAY).getVisualOrderText()), mouseX, mouseY);
+                }
+            }
         }
-        int first = page * PAGE_SIZE;
-        for (int row = 0; row < PAGE_SIZE && first + row < entries.size(); row++) {
-            int index = first + row;
-            Packet.PlaylistEntry e = entries.get(index);
-            int seconds = e.durationMs() / 1000;
-            String text = (index + 1) + ". " + e.title() + (e.artist().isBlank() ? "" : " - " + e.artist())
-                    + String.format(" (%d:%02d)", seconds / 60, seconds % 60);
-            // Zu lange Zeilen kuerzen, damit sie nicht in die Knoepfe laufen
-            while (font.width(text) > 236 && text.length() > 4) text = text.substring(0, text.length() - 4) + "...";
-            int color = index == playlist.current() ? 0xFFFFAA00 : e.available() ? 0xFFFFFFFF : 0xFF777777;
-            g.text(font, text, left + 26, top + row * 20 + 5, color);
+        // Bedienungshinweis ueber dem eigenen Inventar
+        g.text(font, Component.literal(fitText(Component.translatable("peaksound.menu.playlist.help").getString(), 310)), gx, top + 66, 0xFF8A8A94);
+        var inv = Minecraft.getInstance().player == null ? null : Minecraft.getInstance().player.getInventory();
+        if (inv == null) return;
+        for (int n = 0; n < 36; n++) {
+            int[] p = invSlotPos(n, top);
+            net.minecraft.world.item.ItemStack stack = inv.getItem(n);
+            boolean record = PeakItemStacks.is(stack, de.peaksound.protocol.PeakItemType.WRITTEN_RECORD);
+            slotBackground(g, p[0], p[1], record ? 0xFF4C9A4C : 0xFF1E1E24);
+            if (!stack.isEmpty()) {
+                g.item(stack, p[0] + 1, p[1] + 1);
+                g.itemDecorations(font, stack, p[0] + 1, p[1] + 1);
+                if (!record) g.fill(p[0] + 1, p[1] + 1, p[0] + SLOT - 1, p[1] + SLOT - 1, 0x99202024);
+            }
         }
-        int pages = Math.max(1, (entries.size() + PAGE_SIZE - 1) / PAGE_SIZE);
-        Component pageText = Component.translatable("peaksound.menu.playlist.page", page + 1, pages);
-        g.text(font, pageText, left + 233 - font.width(pageText) / 2, top + PAGE_SIZE * 20 + 6 + 30, 0xFFAAAAAA);
+    }
+
+    private String fitText(String s, int maxWidth) {
+        if (font.width(s) <= maxWidth) return s;
+        String cut = s;
+        while (cut.length() > 1 && font.width(cut + "\u2026") > maxWidth) cut = cut.substring(0, cut.length() - 1);
+        return cut + "\u2026";
     }
 }

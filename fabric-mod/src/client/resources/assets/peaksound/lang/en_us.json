@@ -229,5 +229,18 @@
   "peaksound.remote.action.song_by_strength": "Song by strength",
   "peaksound.remote.action.song_by_strength.desc": "Strength 1-15 plays that playlist entry.",
   "peaksound.remote.action.volume_by_strength": "Volume by strength",
-  "peaksound.remote.action.volume_by_strength.desc": "Strength 0-15 sets the volume 0-100 %."
+  "peaksound.remote.action.volume_by_strength.desc": "Strength 0-15 sets the volume 0-100 %.",
+
+  "peaksound.port.item_in": "Items in",
+  "peaksound.port.item_in.desc": "Takes written records from a hopper or chest here",
+  "peaksound.port.item_out": "Items out",
+  "peaksound.port.item_out.desc": "Puts records into a hopper or chest here",
+  "peaksound.menu.sides.hint.item": "Place a hopper or chest on this side.",
+  "peaksound.menu.playlist.play.short": "Play",
+  "peaksound.menu.playlist.take": "Take out",
+  "peaksound.menu.playlist.hint": "Click a slot to select it",
+  "peaksound.menu.playlist.rightclick": "Right-click: take out",
+  "peaksound.menu.playlist.inventory": "Inventory (click a record to insert)",
+
+  "peaksound.menu.playlist.help": "Click a record below to insert it. Right-click a slot to take it out."
 }

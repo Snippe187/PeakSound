@@ -26,7 +26,7 @@ public record JukeboxSettings(String name, int range, int volume, boolean chain,
                               boolean showNowPlaying, LoopMode loop, boolean shuffle, boolean upmix,
                               java.util.List<PortFunction> ports) {
     public static final int MAX_NAME = 32;
-    public static final int PORT_COUNT = 4;
+    public static final int PORT_COUNT = 6;
 
     public JukeboxSettings {
         if (ports == null) ports = PortFunction.defaultPorts(); // aeltere gespeicherte Jukeboxen
@@ -55,9 +55,14 @@ public record JukeboxSettings(String name, int range, int volume, boolean chain,
     }
 
     private static java.util.List<PortFunction> cleanPorts(java.util.List<PortFunction> in) {
-        if (in == null || in.size() != PORT_COUNT) return PortFunction.defaultPorts();
+        java.util.List<PortFunction> defaults = PortFunction.defaultPorts();
+        if (in == null) return defaults;
         java.util.List<PortFunction> out = new java.util.ArrayList<>(PORT_COUNT);
-        for (PortFunction f : in) out.add(f == null ? PortFunction.OFF : f);
+        for (int i = 0; i < PORT_COUNT; i++) {
+            // aeltere Daten kennen nur vier Seiten: oben und unten bleiben aus
+            PortFunction f = i < in.size() && in.get(i) != null ? in.get(i) : defaults.get(i);
+            out.add(PortFunction.allowedFor(i).contains(f) ? f : PortFunction.OFF);
+        }
         return java.util.List.copyOf(out);
     }
 

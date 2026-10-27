@@ -38,10 +38,12 @@ final class BlockListener implements Listener {
     private final MicService mic;
     private final LibraryService library;
     private final RemoteService remote;
+    private final JukeboxStorage storage;
 
     BlockListener(PeakItems items, BlockRegistry registry, PlaybackManager playback, JukeboxSettingsStore settings,
                   JukeboxMenuService menu, NetworkHandler network, SpeakerService speakers, SpeakerMenuService speakerMenu,
-                  SettingsClipboard clipboard, LightService lights, DjService dj, MicService mic, LibraryService library, RemoteService remote) {
+                  SettingsClipboard clipboard, LightService lights, DjService dj, MicService mic, LibraryService library, RemoteService remote, JukeboxStorage storage) {
+        this.storage = storage;
         this.remote = remote;
         this.library = library;
         this.mic = mic;
@@ -78,6 +80,9 @@ final class BlockListener implements Listener {
         if (type.isEmpty()) return;
         // Eingelegte Platte faellt heraus, die Wiedergabe endet
         playback.eject(block).ifPresent(record ->
+                block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), record));
+        // Platten im Jukebox-Inventar fallen heraus
+        storage.removeAll(BlockRegistry.Key.of(block)).forEach(record ->
                 block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), record));
         settings.remove(block);
         speakers.remove(block);

@@ -21,6 +21,12 @@ import net.minecraft.world.item.component.CustomModelData;
 public final class PeakItemStacks {
     private PeakItemStacks() {}
 
+    /** Ist das ein PeakSound-Item dieser Art? (erkannt am custom_model_data-String, den auch das Plugin setzt) */
+    public static boolean is(ItemStack stack, PeakItemType type) {
+        CustomModelData data = stack == null ? null : stack.get(DataComponents.CUSTOM_MODEL_DATA);
+        return data != null && !data.strings().isEmpty() && type.id().equals(data.strings().get(0));
+    }
+
     public static ItemStack create(PeakItemType type) {
         Item carrier = BuiltInRegistries.ITEM.getValue(
                 Identifier.withDefaultNamespace(type.carrierMaterial().toLowerCase(Locale.ROOT)));
