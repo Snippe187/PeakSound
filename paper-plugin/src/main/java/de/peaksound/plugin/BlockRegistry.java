@@ -87,6 +87,24 @@ public final class BlockRegistry {
         return Optional.of(type);
     }
 
+    /**
+     * Prueft alle Eintraege in geladenen Chunks: Ist dort kein Notenblock mehr (WorldEdit, /setblock, Explosionen anderer
+     * Plugins), wird der Eintrag entfernt. Nur auf dem Hauptthread aufrufen.
+     * @return die entfernten Bloecke (damit Einstellungen und Wiedergabe aufgeraeumt werden koennen)
+     */
+    Map<Block, PeakBlockType> purgeStale() {
+        Map<Block, PeakBlockType> gone = new java.util.LinkedHashMap<>();
+        for (Map.Entry<Key, PeakBlockType> e : blocks.entrySet()) {
+            Key k = e.getKey();
+            var world = Bukkit.getWorld(k.world());
+            if (world == null || !world.isChunkLoaded(k.x() >> 4, k.z() >> 4)) continue;
+            Block block = world.getBlockAt(k.x(), k.y(), k.z());
+            if (block.getType() != Material.NOTE_BLOCK) gone.put(block, e.getValue());
+        }
+        for (Block b : gone.keySet()) remove(b);
+        return gone;
+    }
+
     synchronized void saveNow() {
         dirty = false;
         List<String> lines = new ArrayList<>(blocks.size());

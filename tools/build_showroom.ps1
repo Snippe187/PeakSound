@@ -176,6 +176,25 @@ Sign 226 -59 247 north @("LICHTSHOW", "4 Scheinwerfer", "am Staub der", "Jukebox
 Sign 228 -59 247 north @("Rot: Bass-Takt", "Gruen: Mitten +", "Schwenken", "Blau: Hoehen")
 Sign 220 -59 247 north @("Mehrfarbig mit", "Farbwechsel.", "Strobo gibt es", "auch (mit Warnung)")
 
+# ---------- Nordost: Radio-Ecke ----------
+C "fill 251 -60 218 263 -58 218 stone_bricks"
+Place jukebox 252 -60 222
+C "setblock 253 -60 222 redstone_wire"
+Place transmitter 254 -60 222
+C "peaksound radio 254 -60 222 1000"
+C "peaksound play 252 -60 222 Testbeat"
+Place receiver 258 -60 222
+C "peaksound radio 258 -60 222 1000"
+Place receiver 258 -60 226
+C "peaksound radio 258 -60 226 950"
+C "peaksound give $Player radio_receiver 2"
+C "peaksound give $Player radio_transmitter 1"
+C "peaksound give $Player pocket_radio 1"
+Sign 252 -59 219 south @("RADIO-SENDER", "haengt am Staub", "der Jukebox und", "sendet ihren Song")
+Sign 254 -59 219 south @("FREQUENZ", "Tuner-Rechtsklick:", "87,5-108,0 MHz", "(hier 100,0)")
+Sign 258 -59 219 south @("RADIO", "gleiche Frequenz", "= Musik, sonst", "Rauschen (95,0)")
+Sign 260 -59 219 south @("TASCHENRADIO", "Rechtsklick an/aus", "Shift: Menue", "ueberall hoerbar")
+
 # ---------- Abschluss ----------
 C "tp $Player 240 -60 236 0 0"
 C "setworldspawn 240 -60 236"

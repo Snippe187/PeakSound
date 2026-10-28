@@ -143,7 +143,9 @@ public final class PeakSoundPlugin extends JavaPlugin {
         SettingsClipboard clipboard = new SettingsClipboard(items, jukeboxSettings, playback, speakers, lightService, dj, micService, remote);
         getServer().getPluginManager().registerEvents(clipboard, this);
         getServer().getPluginManager().registerEvents(network, this);
-        getServer().getPluginManager().registerEvents(new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj, micService, library, remote, storage, radio), this);
+        BlockListener blockListener = new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj, micService, library, remote, storage, radio);
+        getServer().getPluginManager().registerEvents(blockListener, this);
+        Bukkit.getScheduler().runTaskTimer(this, blockListener::purgeStale, 600L, 600L); // verschwundene Bloecke aufraeumen
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(new NetworkListener(networks, equalizer), this);
         PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj, lightService, debugService, library, remote, jukeboxSettings, menu, radio, statsService, backup);

@@ -46,6 +46,7 @@ Das Zip enthält zwei Ordner: `world/` und `plugins/PeakSound/`. Bei **gestoppte
 
 ## 5. Rundgang
 
+- **Radio-Ecke** (Nordost, ab `/tp 255 -60 224`): Jukebox mit Radio-Sender (100,0 MHz), ein Radio auf 100,0 MHz (spielt den Song), eins auf 95,0 MHz (rauscht). Tafeln erklären Frequenz und Taschenradio.
 - **Plaza** (Mitte): Tafelwand mit Rezepten, Menüs und den Redstone-Ausgängen. Südseite = Grundlagen, Nordseite = Redstone.
 - **Nord:** Stereo-Anlage und Mikrofon. **Ost:** Surround 7.1.4. **Süd:** DJ-Pult mit Scheinwerfern.
   **West:** Lichtshow und Comparator-Equalizer.

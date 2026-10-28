@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.1.0
+- Aufraeumen: Verschwundene PeakSound-Bloecke (WorldEdit, /setblock) werden alle 30 s erkannt, ihre Wiedergabe und Einstellungen vergessen.
+- Showroom-Karte mit Radio-Ecke, Rezept-PDF mit Radio-Rezepten.
 - Audio: Verzoegerung (0-500 ms) und Raumhall (Zimmer, Halle, Hoehle, Bad; OpenAL-EFX) je Lautsprecher, Ueberblendung zwischen Playlist-Songs (aus-/einblenden, 0-12 s).
 - Server: Rechte-Nodes (peaksound.upload, .library, .queue, .vote, .place, .radio, .library.manage.own/any, .limit.<n>), Statistik (/peaksound stats und Admin-Reiter), Sicherungen (/peaksound backup|backups|restore, taeglich automatisch mit Rotation).
 - Anzeige: Now-Playing-Meldung (Cover, Titel, Interpret) und Songtext-Zeile aus MP3-Tags (zeitgenau mit LRC-Zeitstempeln, sonst gleichmaessig verteilt); /peaksoundhud, /peaksoundlyrics.

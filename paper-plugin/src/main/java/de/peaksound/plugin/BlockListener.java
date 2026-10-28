@@ -111,6 +111,26 @@ final class BlockListener implements Listener {
         }
     }
 
+    /**
+     * Raeumt auf, wenn PeakSound-Bloecke ohne Abbau-Ereignis verschwunden sind (WorldEdit, /setblock, andere Plugins):
+     * Wiedergabe beenden und Einstellungen vergessen, damit keine "Geister-Jukebox" weiterspielt. Alle 30 Sekunden.
+     */
+    void purgeStale() {
+        for (var e : registry.purgeStale().entrySet()) {
+            Block block = e.getKey();
+            PeakBlockType type = e.getValue();
+            playback.eject(block);
+            storage.removeAll(BlockRegistry.Key.of(block));
+            settings.remove(block);
+            speakers.remove(block);
+            if (type == PeakBlockType.SPOTLIGHT) lights.remove(block);
+            if (type == PeakBlockType.DJ_DESK) dj.remove(block);
+            if (type == PeakBlockType.MICROPHONE) mic.remove(block);
+            if (type == PeakBlockType.MUSIC_REMOTE) remote.remove(block);
+            if (type == PeakBlockType.RADIO_TRANSMITTER || type == PeakBlockType.RADIO_RECEIVER) radio.remove(block);
+        }
+    }
+
     /** PeakSound-Bloecke bleiben bei Explosionen heil (vermeidet Verlust von Playlists und Einstellungen). */
     @EventHandler(ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
