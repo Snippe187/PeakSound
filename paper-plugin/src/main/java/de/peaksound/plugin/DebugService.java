@@ -39,6 +39,9 @@ final class DebugService {
     private final MicService mic;
     private final Map<UUID, Long> last = new ConcurrentHashMap<>();
     private RadioService radio;
+    private DisplayService display;
+
+    void setDisplay(DisplayService display) { this.display = display; }
 
     void setRadio(RadioService radio) { this.radio = radio; }
 
@@ -124,6 +127,7 @@ final class DebugService {
         var effective = playback.effective();
         line(sb, "Spielende Jukeboxen / Schallquellen", effective.jukeboxes().size() + " / " + effective.emitters().size());
         if (radio != null) sb.append("\n[Radio]\n").append(radio.describe());
+        if (display != null) sb.append("\n[Display]\n").append(display.describe());
         line(sb, "Songs", songs.count() + " (" + songs.totalBytes() / 1024 + " KiB)");
         List<String> modded = new ArrayList<>();
         for (Player p : Bukkit.getOnlinePlayers()) if (network.hasMod(p)) modded.add(p.getName());

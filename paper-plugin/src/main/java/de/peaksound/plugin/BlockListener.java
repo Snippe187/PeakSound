@@ -40,10 +40,12 @@ final class BlockListener implements Listener {
     private final RemoteService remote;
     private final JukeboxStorage storage;
     private final RadioService radio;
+    private final DisplayService display;
 
     BlockListener(PeakItems items, BlockRegistry registry, PlaybackManager playback, JukeboxSettingsStore settings,
                   JukeboxMenuService menu, NetworkHandler network, SpeakerService speakers, SpeakerMenuService speakerMenu,
-                  SettingsClipboard clipboard, LightService lights, DjService dj, MicService mic, LibraryService library, RemoteService remote, JukeboxStorage storage, RadioService radio) {
+                  SettingsClipboard clipboard, LightService lights, DjService dj, MicService mic, LibraryService library, RemoteService remote, JukeboxStorage storage, RadioService radio, DisplayService display) {
+        this.display = display;
         this.radio = radio;
         this.storage = storage;
         this.remote = remote;
@@ -75,6 +77,7 @@ final class BlockListener implements Listener {
     public void onPlace(BlockPlaceEvent event) {
         Optional<PeakBlockType> type = items.typeOf(event.getItemInHand()).flatMap(PeakItemType::block);
         type.ifPresent(t -> PeakBlocks.install(event.getBlockPlaced(), t, registry)); // Mod zeigt dafuer das eigene Modell
+        if (type.filter(t -> t == PeakBlockType.DISPLAY).isPresent()) display.placed(event.getBlockPlaced(), event.getPlayer());
     }
 
     /** Verhindert, dass Nachbaraenderungen Instrument, Ton oder powered-Zustand zuruecksetzen. */
@@ -101,6 +104,7 @@ final class BlockListener implements Listener {
         if (type.get() == PeakBlockType.DJ_DESK) dj.remove(block);
         if (type.get() == PeakBlockType.MICROPHONE) mic.remove(block);
         if (type.get() == PeakBlockType.MUSIC_REMOTE) remote.remove(block);
+        if (type.get() == PeakBlockType.DISPLAY) display.remove(block);
         if (type.get() == PeakBlockType.RADIO_TRANSMITTER || type.get() == PeakBlockType.RADIO_RECEIVER) radio.remove(block);
         registry.remove(block);
         // Statt des Vanilla-Drops faellt das PeakSound-Item (nicht im Kreativmodus)
@@ -127,6 +131,7 @@ final class BlockListener implements Listener {
             if (type == PeakBlockType.DJ_DESK) dj.remove(block);
             if (type == PeakBlockType.MICROPHONE) mic.remove(block);
             if (type == PeakBlockType.MUSIC_REMOTE) remote.remove(block);
+            if (type == PeakBlockType.DISPLAY) display.remove(block);
             if (type == PeakBlockType.RADIO_TRANSMITTER || type == PeakBlockType.RADIO_RECEIVER) radio.remove(block);
         }
     }
@@ -191,7 +196,7 @@ final class BlockListener implements Listener {
         if (tuner) {
             event.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
             if (player.isSneaking()) {
-                if (type.get() != PeakBlockType.SONG_LIBRARY && type.get() != PeakBlockType.RADIO_TRANSMITTER && type.get() != PeakBlockType.RADIO_RECEIVER) clipboard.use(player, block, type.get()); // Einstellungen kopieren / einfuegen
+                if (type.get() != PeakBlockType.SONG_LIBRARY && type.get() != PeakBlockType.RADIO_TRANSMITTER && type.get() != PeakBlockType.RADIO_RECEIVER && type.get() != PeakBlockType.DISPLAY) clipboard.use(player, block, type.get()); // Einstellungen kopieren / einfuegen
             } else if (type.get() == PeakBlockType.JUKEBOX && network.hasMod(player)) {
                 menu.open(player, block);
             } else if (type.get() == PeakBlockType.SPEAKER && network.hasMod(player)) {
@@ -206,6 +211,8 @@ final class BlockListener implements Listener {
                 remote.open(player, block);
             } else if ((type.get() == PeakBlockType.RADIO_TRANSMITTER || type.get() == PeakBlockType.RADIO_RECEIVER) && network.hasMod(player)) {
                 radio.open(player, block, type.get());
+            } else if (type.get() == PeakBlockType.DISPLAY) {
+                display.rotate(player, block);
             } else {
                 player.sendActionBar(Messages.tunerInfo(player, Messages.blockName(player, type.get()),
                         block.getX(), block.getY(), block.getZ()));

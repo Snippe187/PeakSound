@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.1.0
+- Display-Block: zeigt Cover, Titel und Interpret des laufenden Songs; nebeneinander liegende Displays bilden eine Cover-Wand (Bilderrahmen mit Karten, serverseitig, auch ohne Mod).
 - Aufraeumen: Verschwundene PeakSound-Bloecke (WorldEdit, /setblock) werden alle 30 s erkannt, ihre Wiedergabe und Einstellungen vergessen.
 - Showroom-Karte mit Radio-Ecke, Rezept-PDF mit Radio-Rezepten.
 - Audio: Verzoegerung (0-500 ms) und Raumhall (Zimmer, Halle, Hoehle, Bad; OpenAL-EFX) je Lautsprecher, Ueberblendung zwischen Playlist-Songs (aus-/einblenden, 0-12 s).

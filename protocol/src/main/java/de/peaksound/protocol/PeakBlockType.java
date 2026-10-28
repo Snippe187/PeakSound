@@ -17,7 +17,8 @@ public enum PeakBlockType {
     SONG_LIBRARY("song_library", "bit", 19),
     MUSIC_REMOTE("music_remote", "bit", 18),
     RADIO_TRANSMITTER("radio_transmitter", "bit", 17),
-    RADIO_RECEIVER("radio_receiver", "bit", 16);
+    RADIO_RECEIVER("radio_receiver", "bit", 16),
+    DISPLAY("display", "bit", 15);
 
     /** Vanilla-Block, der als Traeger dient. */
     public static final String CARRIER_MATERIAL = "NOTE_BLOCK";
@@ -44,7 +45,7 @@ public enum PeakBlockType {
      * Verbindet dieser Block mehrere Redstone-Netze zu einem? Alle ausser dem DJ-Pult: Es haengt zwei getrennte
      * Netze (Deck A und Deck B) an sich, ohne sie zusammenzulegen, damit beide Decks unterschiedliche Songs spielen.
      */
-    public boolean bridgesNetworks() { return this != DJ_DESK && this != SONG_LIBRARY && this != RADIO_RECEIVER; }
+    public boolean bridgesNetworks() { return this != DJ_DESK && this != SONG_LIBRARY && this != RADIO_RECEIVER && this != DISPLAY; }
 
     public static Optional<PeakBlockType> byId(String id) {
         for (PeakBlockType t : values()) {

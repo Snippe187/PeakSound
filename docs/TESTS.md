@@ -108,7 +108,11 @@ sieht ohne Mod wie ein normaler Spielerkopf aus.
 - [ ] Grenzen: höchstens 10 Wünsche gesamt, 3 je Spieler, derselbe Song nicht doppelt (`config.yml`, Abschnitt `queue`). Steht die Jukebox still, startet der Wunsch sofort. Mit einer von Hand eingelegten Platte werden Wünsche abgelehnt (die Platte darf nie verloren gehen).
 - [ ] `/peaksoundvote`: Mehrheit der Zuhörer in Reichweite (Hälfte + 1) überspringt den Song; die Chat-Zeile zeigt den Stand.
 
-Nicht umgesetzt: der Display-Block (Cover-Wand). Die Warteschlange liegt nur im Speicher (nach einem Neustart leer).
+- [ ] **Display-Block**: Per Redstone-Staub an das Netz einer spielenden Jukebox hängen. Der Bildschirm zeigt Cover, Titel und Interpret des Songs (Songs ohne Cover: Farbverlauf). Er zeigt zum Spieler, der ihn setzt; Peak-Tuner-Rechtsklick dreht ihn um 90°.
+- [ ] Mehrere Displays in einer Ebene (volles Rechteck, bis 8×8) ergeben eine zusammenhängende Cover-Wand; ein Block der Wand am Staub genügt. Bei L-Formen oder Lücken zeigt jeder Block sein eigenes Bild.
+- [ ] Wird auch ohne Mod gesehen (unsichtbare leuchtende Bilderrahmen mit Karten). Steht ein Block vor dem Bildschirm, fehlt dort der Rahmen. Nach Songwechsel erscheint das neue Bild nach höchstens etwa einer Sekunde.
+
+Grenzen: Die Warteschlange liegt nur im Speicher (nach einem Neustart leer). Karten haben nur wenige Farben (Vanilla-Palette); jeder Display-Block belegt eine Karten-ID. Auf einem Server ohne Schriften fehlt der Titeltext.
 ## Phase 15 – Laufzeit, Raumhall, Überblendung
 
 - [ ] Lautsprecher-Menü (Peak-Tuner): Regler **Verzögerung** (0–500 ms) und Knopf **Raumhall** (Aus, Zimmer, Halle, Höhle, Badezimmer).

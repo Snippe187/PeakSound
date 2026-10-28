@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "peaksound:block/display_side",
+    "down": "peaksound:block/display_top",
+    "up": "peaksound:block/display_top",
+    "north": "peaksound:block/display_side",
+    "south": "peaksound:block/display_side",
+    "east": "peaksound:block/display_side",
+    "west": "peaksound:block/display_side"
+  }
+}

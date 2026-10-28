@@ -190,6 +190,11 @@ C "peaksound radio 258 -60 226 950"
 C "peaksound give $Player radio_receiver 2"
 C "peaksound give $Player radio_transmitter 1"
 C "peaksound give $Player pocket_radio 1"
+# Display-Wand 3x2: haengt ueber eine Staublinie am Netz der Radio-Jukebox und zeigt Cover und Titel des laufenden Songs
+C "fill 253 -60 223 253 -60 228 redstone_wire"
+foreach ($dy in -60, -59) { foreach ($dx in 252, 253, 254) { Place display $dx $dy 229 } }
+C "peaksound give $Player display 6"
+Sign 262 -59 219 south @("DISPLAY", "am Staub einer", "Jukebox: zeigt", "Cover + Titel")
 Sign 252 -59 219 south @("RADIO-SENDER", "haengt am Staub", "der Jukebox und", "sendet ihren Song")
 Sign 254 -59 219 south @("FREQUENZ", "Tuner-Rechtsklick:", "87,5-108,0 MHz", "(hier 100,0)")
 Sign 258 -59 219 south @("RADIO", "gleiche Frequenz", "= Musik, sonst", "Rauschen (95,0)")

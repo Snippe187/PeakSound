@@ -64,7 +64,7 @@ final class SettingsClipboard implements Listener {
                 case SPOTLIGHT -> lights.apply(block, clip.light());
                 case DJ_DESK -> dj.put(block, clip.dj());
                 case MICROPHONE -> mic.put(block, clip.microphone());
-                case SONG_LIBRARY, RADIO_TRANSMITTER, RADIO_RECEIVER -> { /* keine kopierbaren Einstellungen */ }
+                case SONG_LIBRARY, RADIO_TRANSMITTER, RADIO_RECEIVER, DISPLAY -> { /* keine kopierbaren Einstellungen */ }
                 case MUSIC_REMOTE -> remote.put(block, clip.remote());
             }
             player.sendActionBar(Messages.info(player, "Einstellungen eingefuegt.", "Settings pasted."));
@@ -76,7 +76,7 @@ final class SettingsClipboard implements Listener {
             case SPOTLIGHT -> new Clip(type, key, null, null, lights.settingsOf(block), null, null, null);
             case DJ_DESK -> new Clip(type, key, null, null, null, dj.settingsOf(block), null, null);
             case MICROPHONE -> new Clip(type, key, null, null, null, null, mic.settingsOf(block), null);
-            case SONG_LIBRARY, RADIO_TRANSMITTER, RADIO_RECEIVER -> new Clip(type, key, null, null, null, null, null, null);
+            case SONG_LIBRARY, RADIO_TRANSMITTER, RADIO_RECEIVER, DISPLAY -> new Clip(type, key, null, null, null, null, null, null);
             case MUSIC_REMOTE -> new Clip(type, key, null, null, null, null, null, remote.settingsOf(block));
         };
         clips.put(player.getUniqueId(), copied);

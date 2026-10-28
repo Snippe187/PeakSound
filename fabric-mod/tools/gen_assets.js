@@ -51,6 +51,7 @@ json(path.join(PS, "models/block/microphone.json"), cube("peaksound:block/microp
 json(path.join(PS, "models/block/music_remote.json"), cube("peaksound:block/remote_side", "peaksound:block/remote_top"));
 json(path.join(PS, "models/block/song_library.json"), cube("peaksound:block/library_side", "peaksound:block/library_top"));
 json(path.join(PS, "models/block/spotlight.json"), cube("peaksound:block/spotlight_side", "peaksound:block/spotlight_top"));
+json(path.join(PS, "models/block/display.json"), cube("peaksound:block/display_side", "peaksound:block/display_top"));
 json(path.join(PS, "models/block/radio_receiver.json"), cube("peaksound:block/radio_receiver_side", "peaksound:block/radio_receiver_top"));
 json(path.join(PS, "models/block/radio_transmitter.json"), cube("peaksound:block/radio_transmitter_side", "peaksound:block/radio_transmitter_top"));
 // Items nutzen direkt vorhandene Vanilla-Texturen (es werden keine Mojang-Dateien kopiert)
@@ -79,7 +80,7 @@ itemDef("disc_fragment_5.json", "minecraft:item/disc_fragment_5",
 itemDef("trial_key.json", "minecraft:item/trial_key", { peak_tuner: "peaksound:item/peak_tuner", pocket_radio: "peaksound:item/pocket_radio" });
 itemDef("note_block.json", "minecraft:block/note_block",
   { jukebox: "peaksound:block/jukebox", speaker: "peaksound:block/speaker",
-    dj_desk: "peaksound:block/dj_desk", spotlight: "peaksound:block/spotlight", microphone: "peaksound:block/microphone", song_library: "peaksound:block/song_library", music_remote: "peaksound:block/music_remote" });
+    dj_desk: "peaksound:block/dj_desk", spotlight: "peaksound:block/spotlight", microphone: "peaksound:block/microphone", song_library: "peaksound:block/song_library", music_remote: "peaksound:block/music_remote", display: "peaksound:block/display" });
 // Radios nutzen Spielerkoepfe als Traeger: Vanilla-Kopfmodell bleibt Fallback fuer alle echten Koepfe
 itemDef("player_head.json", null,
   { radio_receiver: "peaksound:block/radio_receiver", radio_transmitter: "peaksound:block/radio_transmitter" },
@@ -133,7 +134,8 @@ const instruments = ["harp", "basedrum", "snare", "hat", "bass", "flute", "bell"
   "dragon", "wither_skeleton", "piglin", "custom_head"];
 const special = { "bit/23/true": "peaksound:block/jukebox", "bit/24/true": "peaksound:block/speaker",
   "bit/21/true": "peaksound:block/dj_desk", "bit/22/true": "peaksound:block/spotlight", "bit/20/true": "peaksound:block/microphone", "bit/19/true": "peaksound:block/song_library", "bit/18/true": "peaksound:block/music_remote",
-  "bit/17/true": "peaksound:block/radio_transmitter", "bit/16/true": "peaksound:block/radio_receiver" };
+  "bit/17/true": "peaksound:block/radio_transmitter", "bit/16/true": "peaksound:block/radio_receiver",
+  "bit/15/true": "peaksound:block/display" };
 const variants = {};
 for (const inst of instruments) {
   for (let note = 0; note <= 24; note++) {

@@ -113,7 +113,7 @@ Ziel: Minecraft 26.2, Fabric-Client-Mod + Paper-Plugin + gemeinsames Protokoll. 
 ## Phase 14 – Anzeige, Songtext, Wünsche
 - [x] Now-Playing-Anzeige (nur beim Songstart), Songtexte aus MP3-Tags (Zeitstempel oder gleichmäßig verteilt)
 - [x] Wunsch-Warteschlange an der Song-Bibliothek mit Skip-Abstimmung
-- [ ] Display-Block, mehrere Blöcke zu einer Cover-Wand verbindbar (offen: braucht Zeichnen einer Textur in der Welt, noch nicht untersucht)
+- [x] Display-Block, mehrere Blöcke zu einer Cover-Wand verbindbar (Bilderrahmen mit Karten, serverseitig; Bilder per Datei-Dump geprüft, im Spiel nicht gesehen)
 - [ ] Manuelle Abnahme (noch nichts im Spiel gesehen)
 
 ## Phase 15 – Audio-Effekte

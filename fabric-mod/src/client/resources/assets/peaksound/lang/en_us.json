@@ -59,6 +59,7 @@
   "peaksound.reverb.bath": "Bathroom",
   "peaksound.admin.tab.stats": "Statistics",
   "peaksound.admin.stats.empty": "No statistics yet.",
+  "item.peaksound.display": "Display",
   "peaksound.menu.library.upload": "Upload new song",
   "peaksound.upload.dialog": "Choose a music file",
   "peaksound.upload.start": "Upload",

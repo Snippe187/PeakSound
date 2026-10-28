@@ -52,6 +52,13 @@
           "type": "minecraft:model",
           "model": "peaksound:block/music_remote"
         }
+      },
+      {
+        "when": "display",
+        "model": {
+          "type": "minecraft:model",
+          "model": "peaksound:block/display"
+        }
       }
     ],
     "fallback": {

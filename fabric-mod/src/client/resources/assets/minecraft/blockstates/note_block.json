@@ -2044,7 +2044,7 @@
       "model": "minecraft:block/note_block"
     },
     "instrument=bit,note=15,powered=true": {
-      "model": "minecraft:block/note_block"
+      "model": "peaksound:block/display"
     },
     "instrument=bit,note=16,powered=false": {
       "model": "minecraft:block/note_block"

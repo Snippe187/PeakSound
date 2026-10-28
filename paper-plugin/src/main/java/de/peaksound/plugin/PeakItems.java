@@ -106,6 +106,7 @@ public final class PeakItems {
             case POCKET_RADIO -> "Pocket Radio";
             case RADIO_TRANSMITTER -> "Radio Transmitter";
             case RADIO_RECEIVER -> "Radio";
+            case DISPLAY -> "Display";
         };
     }
 }

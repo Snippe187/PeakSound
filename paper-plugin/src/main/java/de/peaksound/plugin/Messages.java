@@ -61,6 +61,7 @@ final class Messages {
             case MUSIC_REMOTE -> t(p, "Musik-Fernbedienung", "Music remote");
             case RADIO_TRANSMITTER -> t(p, "Radio-Sender", "Radio transmitter");
             case RADIO_RECEIVER -> t(p, "Radio", "Radio");
+            case DISPLAY -> t(p, "Display", "Display");
         };
     }
 

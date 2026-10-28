@@ -129,6 +129,19 @@ module.exports = function (png, write, PS) {
     save("textures/block/remote_top", top);
   }
 
+  // ---------- Display: schwarzer Rahmen, dunkler Bildschirm mit Cover-Symbol und Pegel ----------
+  {
+    const side = canvas().fill("#15151b").border("#0a0a0e", "#24242e");
+    side.rect(2, 2, 13, 13, "#06060a");                                                                  // Bildschirm
+    side.rect(3, 3, 7, 8, "#3fd0ee").rect(4, 4, 6, 7, "#2a2145").disc(5, 5.6, 1.1, "#ff4b9a");             // Cover-Symbol
+    side.rect(9, 3, 12, 3, "#8c8ca0").rect(9, 5, 12, 5, "#5a5a6c");                                      // Titelzeilen
+    for (let i = 0; i < 8; i++) { const hgt = [2, 4, 3, 5, 2, 4, 3, 1][i]; side.rect(3 + i, 12 - hgt, 3 + i, 12, i % 3 === 0 ? "#ff4b9a" : "#39e06a"); }   // Pegel
+    side.set(13, 14, "#39e06a");                                                                         // Betriebs-LED
+    save("textures/block/display_side", side);
+    const top = canvas().fill("#15151b").border("#0a0a0e", "#24242e");
+    for (const y of [5, 7, 9, 11]) top.rect(4, y, 11, y, "#06060a");
+    save("textures/block/display_top", top);
+  }
   // ---------- Radio-Empfaenger: Holzradio mit Lautsprecher-Gitter, Skala und Drehknoepfen ----------
   {
     const side = canvas().fill("#8a5a2e").border("#4d3118", "#a8743c");

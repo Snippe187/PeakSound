@@ -22,6 +22,8 @@ public final class PeakSoundPlugin extends JavaPlugin {
     private MicService micService;
     private JukeboxStorage storageRef;
     private BlockSettingsStore<de.peaksound.protocol.RadioSettings> radioStoreRef;
+    private BlockSettingsStore<DisplaySettings> displayStoreRef;
+    private DisplayService displayRef;
     private BlockSettingsStore<de.peaksound.protocol.RemoteSettings> remoteStoreRef;
 
     SongStore songs() { return songs; }
@@ -131,6 +133,16 @@ public final class PeakSoundPlugin extends JavaPlugin {
         radio.setPlayback(playback);
         debugService.setRadio(radio);
         playback.setRadio(radio);
+        BlockSettingsStore<DisplaySettings> displayStore = new BlockSettingsStore<>(this, "displays.json", DisplaySettings.class,
+                DisplaySettings.defaults(), DisplaySettings::sanitized);
+        displayStore.load();
+        displayStore.startAutosave();
+        this.displayStoreRef = displayStore;
+        DisplayService displayService = new DisplayService(this, blocks, networks, playback, songs, displayStore);
+        this.displayRef = displayService;
+        getServer().getPluginManager().registerEvents(displayService, this);
+        Bukkit.getScheduler().runTaskTimer(this, displayService::tick, 40L, 10L);
+        debugService.setDisplay(displayService);
         QueueService queueService = new QueueService(this, blocks, networks, songs, playback, jukeboxSettings, items);
         playback.setQueue(queueService);
         library.setQueue(queueService);
@@ -143,12 +155,12 @@ public final class PeakSoundPlugin extends JavaPlugin {
         SettingsClipboard clipboard = new SettingsClipboard(items, jukeboxSettings, playback, speakers, lightService, dj, micService, remote);
         getServer().getPluginManager().registerEvents(clipboard, this);
         getServer().getPluginManager().registerEvents(network, this);
-        BlockListener blockListener = new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj, micService, library, remote, storage, radio);
+        BlockListener blockListener = new BlockListener(items, blocks, playback, jukeboxSettings, menu, network, speakers, speakerMenu, clipboard, lightService, dj, micService, library, remote, storage, radio, displayService);
         getServer().getPluginManager().registerEvents(blockListener, this);
         Bukkit.getScheduler().runTaskTimer(this, blockListener::purgeStale, 600L, 600L); // verschwundene Bloecke aufraeumen
         getServer().getPluginManager().registerEvents(new CraftListener(this, items, recipes), this);
         getServer().getPluginManager().registerEvents(new NetworkListener(networks, equalizer), this);
-        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj, lightService, debugService, library, remote, jukeboxSettings, menu, radio, statsService, backup);
+        PeakSoundCommand command = new PeakSoundCommand(equalizer, blocks, songs, playback, items, speakers, dj, lightService, debugService, library, remote, jukeboxSettings, menu, radio, statsService, backup, displayService);
         getCommand("peaksound").setExecutor(command);
         getCommand("peaksound").setTabCompleter(command);
         getServer().getPluginManager().registerEvents(
@@ -190,6 +202,8 @@ public final class PeakSoundPlugin extends JavaPlugin {
         if (micStore != null) micStore.saveNow();
         if (remoteStoreRef != null) remoteStoreRef.saveNow();
         if (radioStoreRef != null) radioStoreRef.saveNow();
+        if (displayRef != null) displayRef.shutdown();
+        if (displayStoreRef != null) displayStoreRef.saveNow();
         if (storageRef != null) storageRef.saveNow();
     }
 }

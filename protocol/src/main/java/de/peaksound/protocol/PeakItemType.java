@@ -23,7 +23,8 @@ public enum PeakItemType {
     POCKET_RADIO("pocket_radio", "TRIAL_KEY", null),
     // Radios sind Spielerkoepfe als Traeger: ohne Mod sieht man einen Kopf, mit Mod das Radio-Modell
     RADIO_TRANSMITTER("radio_transmitter", "PLAYER_HEAD", PeakBlockType.RADIO_TRANSMITTER),
-    RADIO_RECEIVER("radio_receiver", "PLAYER_HEAD", PeakBlockType.RADIO_RECEIVER);
+    RADIO_RECEIVER("radio_receiver", "PLAYER_HEAD", PeakBlockType.RADIO_RECEIVER),
+    DISPLAY("display", PeakBlockType.CARRIER_MATERIAL, PeakBlockType.DISPLAY);
 
     private final String id;
     private final String carrier;

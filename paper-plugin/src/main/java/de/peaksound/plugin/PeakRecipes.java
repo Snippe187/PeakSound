@@ -127,6 +127,16 @@ public final class PeakRecipes {
         transmitter.setCategory(CraftingBookCategory.REDSTONE);
         add(transmitter);
 
+        // Display: Glasscheiben oben, Eisen links/rechts um den Bilderrahmen, Redstone unten (zeigt das Cover des laufenden Songs)
+        ShapedRecipe displayRecipe = new ShapedRecipe(key("display"), items.create(PeakItemType.DISPLAY, 1));
+        displayRecipe.shape("GGG", "IFI", " R ");
+        displayRecipe.setIngredient('G', Material.GLASS_PANE);
+        displayRecipe.setIngredient('I', Material.IRON_INGOT);
+        displayRecipe.setIngredient('F', Material.ITEM_FRAME);
+        displayRecipe.setIngredient('R', Material.REDSTONE);
+        displayRecipe.setCategory(CraftingBookCategory.REDSTONE);
+        add(displayRecipe);
+
         // Taschenradio: Blitzableiter (Antenne) oben, Notenblock zwischen Eisen, Redstone unten
         ShapedRecipe pocket = new ShapedRecipe(key("pocket_radio"), items.create(PeakItemType.POCKET_RADIO, 1));
         pocket.shape(" L ", "INI", " R ");

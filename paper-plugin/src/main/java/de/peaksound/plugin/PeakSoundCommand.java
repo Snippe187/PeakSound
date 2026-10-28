@@ -29,6 +29,7 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
     private final LibraryService library;
     private final RadioService radio;
     private final StatsService stats;
+    private final DisplayService display;
     private final BackupService backup;
     private final RemoteService remote;
     private final JukeboxMenuService jukeboxMenu;
@@ -36,7 +37,8 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
 
     PeakSoundCommand(EqualizerService equalizer, BlockRegistry registry, SongStore songs, PlaybackManager playback, PeakItems items,
                      SpeakerService speakers, DjService dj, LightService lights, DebugService debug, LibraryService library, RemoteService remote, JukeboxSettingsStore jukeboxSettings, JukeboxMenuService jukeboxMenu, RadioService radio,
-                     StatsService stats, BackupService backup) {
+                     StatsService stats, BackupService backup, DisplayService display) {
+        this.display = display;
         this.stats = stats;
         this.backup = backup;
         this.radio = radio;
@@ -59,6 +61,18 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("peaksound.admin")) {
             sender.sendMessage("Dafuer fehlt dir die Berechtigung / You do not have permission.");
+            return true;
+        }
+        // /peaksound display <x> <y> <z> <south|west|north|east>: Blickrichtung eines Display-Blocks setzen (Test); displaydump schreibt die Bilder
+        if (args.length == 5 && args[0].equalsIgnoreCase("display")) {
+            Block block = blockAt(sender, args);
+            if (block == null) return true;
+            display.setFacing(block, args[4]);
+            sender.sendMessage("Display zeigt nach " + args[4]);
+            return true;
+        }
+        if (args.length == 1 && args[0].equalsIgnoreCase("displaydump")) {
+            sender.sendMessage(display.dump() + " Kachelbilder geschrieben (plugins/PeakSound/display-debug).");
             return true;
         }
         // /peaksound stats | backup | backups | restore <Name>: Statistik und Sicherungen (siehe docs/INSTALL.md)
@@ -121,6 +135,7 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
                 case "remote", "music_remote" -> de.peaksound.protocol.PeakBlockType.MUSIC_REMOTE;
                 case "transmitter", "radio_transmitter" -> de.peaksound.protocol.PeakBlockType.RADIO_TRANSMITTER;
                 case "receiver", "radio_receiver" -> de.peaksound.protocol.PeakBlockType.RADIO_RECEIVER;
+                case "display" -> de.peaksound.protocol.PeakBlockType.DISPLAY;
                 default -> de.peaksound.protocol.PeakBlockType.JUKEBOX;
             };
             PeakBlocks.install(block, type, registry);
@@ -301,6 +316,6 @@ final class PeakSoundCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 2 && args[0].equalsIgnoreCase("restore")) return backup.list();
-        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker", "dj", "light", "remote", "jukebox", "port", "give", "radio", "stats", "backup", "backups", "restore") : List.of();
+        return args.length == 1 ? List.of("eqtest", "place", "play", "speaker", "dj", "light", "remote", "jukebox", "port", "give", "radio", "stats", "backup", "backups", "restore", "display", "displaydump") : List.of();
     }
 }
