@@ -69,7 +69,7 @@ public final class ClientNetwork {
             lastError = e.getMessage();
             if (INVALID.size() < 12) {
                 StringBuilder hex = new StringBuilder();
-                for (int i = 0; i < Math.min(data.length, 24); i++) hex.append(String.format("%02x", data[i]));
+                for (int i = 0; i < Math.min(data.length, 128); i++) hex.append(String.format("%02x", data[i]));
                 INVALID.add("id=" + (data.length > 0 ? data[0] & 0xFF : -1) + " len=" + data.length + " (" + e.getMessage() + ") " + hex);
             }
             return null;
