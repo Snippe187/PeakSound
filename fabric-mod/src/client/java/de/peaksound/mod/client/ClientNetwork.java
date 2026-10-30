@@ -21,39 +21,61 @@ public final class ClientNetwork {
     private static final java.util.List<String> INVALID = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     static String debug() {
-        return "  Gesendet: " + new java.util.TreeMap<>(SENT) + "\n  Empfangen: " + new java.util.TreeMap<>(RECEIVED) + "\n  Ungueltig empfangen: " + malformed
+        return PeakLink.debug() + "  Gesendet: " + new java.util.TreeMap<>(SENT) + "\n  Empfangen: " + new java.util.TreeMap<>(RECEIVED) + "\n  Ungueltig empfangen: " + malformed
                 + ", nicht gesendet (Server kennt Kanal nicht): " + dropped + ", letzter Fehler: " + lastError + "\n  Ungueltige Pakete (erste 12): " + INVALID + "\n";
     }
 
+    /** Sendet ein Paket auf dem Weg, den {@link PeakLink} nach dem Beitritt gewaehlt hat (PeakCore oder alter Kanal). */
     public static void send(Packet.Serverbound packet) {
-        if (ClientPlayNetworking.canSend(RawPayload.TYPE)) {
-            SENT.computeIfAbsent(packet.getClass().getSimpleName(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
-            ClientPlayNetworking.send(new RawPayload(packet.encode()));
-        } else {
-            dropped++;
-        }
+        byte[] data = packet.encode();
+        boolean sent = switch (PeakLink.route()) {
+            case CORE -> PeakLink.sendViaCore(data);
+            case LEGACY -> {
+                if (!ClientPlayNetworking.canSend(RawPayload.TYPE)) yield false;
+                ClientPlayNetworking.send(new RawPayload(data));
+                yield true;
+            }
+            case UNDECIDED, NONE -> false;
+        };
+        if (sent) SENT.computeIfAbsent(packet.getClass().getSimpleName(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
+        else dropped++;
     }
 
     static void register() {
+        // Alter Kanal peaksound:main (Server mit dem Alpha-Plugin)
         ClientPlayNetworking.registerGlobalReceiver(RawPayload.TYPE, (payload, context) -> {
-            Packet.Clientbound packet;
-            try {
-                packet = PacketCodec.decodeClientbound(payload.data());
-            } catch (MalformedPacketException e) {
-                malformed++;
-                lastError = e.getMessage();
-                if (INVALID.size() < 12) {
-                    byte[] d = payload.data();
-                    StringBuilder hex = new StringBuilder();
-                    for (int i = 0; i < Math.min(d.length, 24); i++) hex.append(String.format("%02x", d[i]));
-                    INVALID.add("id=" + (d.length > 0 ? d[0] & 0xFF : -1) + " len=" + d.length + " (" + e.getMessage() + ") " + hex);
-                }
-                return; // unbekannte oder defekte Pakete ignorieren
-            }
-            RECEIVED.computeIfAbsent(packet.getClass().getSimpleName(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
+            Packet.Clientbound packet = decode(payload.data());
+            if (packet == null) return; // unbekannte oder defekte Pakete ignorieren
             Minecraft client = context.client();
             client.execute(() -> dispatch(packet));
         });
+        // Neuer Weg: Modul "peaksound" bei der Core-Mod; die Core-Mod ruft den Handler schon auf dem Client-Haupt-Thread auf
+        PeakLink.register();
+    }
+
+    /** Nutzdaten des Moduls "peaksound" von PeakCore. */
+    static void onCorePayload(byte[] payload) {
+        Packet.Clientbound packet = decode(payload);
+        if (packet != null) dispatch(packet);
+    }
+
+    /** Decodiert ein Paket vom Server; ungueltige werden gezaehlt und verworfen ({@code null}). */
+    private static Packet.Clientbound decode(byte[] data) {
+        Packet.Clientbound packet;
+        try {
+            packet = PacketCodec.decodeClientbound(data);
+        } catch (MalformedPacketException e) {
+            malformed++;
+            lastError = e.getMessage();
+            if (INVALID.size() < 12) {
+                StringBuilder hex = new StringBuilder();
+                for (int i = 0; i < Math.min(data.length, 24); i++) hex.append(String.format("%02x", data[i]));
+                INVALID.add("id=" + (data.length > 0 ? data[0] & 0xFF : -1) + " len=" + data.length + " (" + e.getMessage() + ") " + hex);
+            }
+            return null;
+        }
+        RECEIVED.computeIfAbsent(packet.getClass().getSimpleName(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
+        return packet;
     }
 
     private static void dispatch(Packet.Clientbound packet) {

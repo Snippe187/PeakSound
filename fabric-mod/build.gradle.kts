@@ -32,6 +32,15 @@ dependencies {
     implementation("net.fabricmc:fabric-loader:${property("loader_version")}")
     implementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_api_version")}")
 
+    // PeakCore-Mod (Handshake und Kanal): wird als eigene Mod installiert (depends in der fabric.mod.json), nicht in dieses Jar eingebaut.
+    // Im Dev-Client kommt sie ueber den Composite Build (includeBuild("../PeakCore")) dazu; core-client und core-protocol liefert sie als Jar-in-Jar.
+    implementation("de.peakverse:core-mod")
+    "clientImplementation"("de.peakverse:core-mod")
+    compileOnly("de.peakverse:core-client")
+    compileOnly("de.peakverse:core-protocol")
+    "clientCompileOnly"("de.peakverse:core-client")
+    "clientCompileOnly"("de.peakverse:core-protocol")
+
     implementation(project(":protocol"))
     implementation(project(":audio-core"))
     "clientImplementation"(project(":protocol"))
@@ -52,6 +61,16 @@ dependencies {
         include(lib)
     }
 }
+
+dependencies {
+    testImplementation("de.peakverse:core-client")
+    testImplementation("de.peakverse:core-protocol")
+    testImplementation(platform("org.junit:junit-bom:5.11.4"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test { useJUnitPlatform() }
 
 tasks.processResources {
     val version = project.version

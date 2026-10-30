@@ -62,8 +62,8 @@ public final class PeakSoundClient implements ClientModInitializer {
             ServerState.reset();
             AudioEngine.clear();
             LightShow.clear();
-            ServerState.onHelloSent();
-            ClientNetwork.send(new Packet.Hello(PeakIds.PROTOCOL_VERSION, PeakSoundMod.VERSION));
+            // Das Hello geht erst raus, wenn der Weg zum Plugin feststeht (PeakCore oder alter Kanal): siehe PeakLink.tick
+            PeakLink.onJoin();
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             ServerState.reset();
@@ -71,16 +71,14 @@ public final class PeakSoundClient implements ClientModInitializer {
             CoverCache.clear();
             LightShow.clear();
             PreviewPlayer.stop();
+            PeakLink.onDisconnect();
         });
         ClientTooltipComponentCallback.EVENT.register(CoverTooltip::create);
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             AudioEngine.tick();
             LightShow.tick();
             DebugReport.tick();
-            if (client.player != null && ServerState.shouldRetryHello()) {
-                ServerState.onHelloSent();
-                ClientNetwork.send(new Packet.Hello(PeakIds.PROTOCOL_VERSION, PeakSoundMod.VERSION));
-            }
+            if (client.player != null) PeakLink.tick();
             PreviewPlayer.tick();
         });
         // Button "Song-Verwaltung" im Escape-Menue, nur fuer Operatoren (der Server meldet den Status).
