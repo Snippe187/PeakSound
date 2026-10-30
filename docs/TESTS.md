@@ -158,3 +158,10 @@ Siehe `PeakCore/docs/TESTS.md` (Abschnitt Phase 6b) fuer die Pruefungen des Jars
 - [x] Daten, Befehle, Rechte, Item-Markierungen und der Datenordner `plugins/PeakSound` sind unveraendert (Plugin-Name steckt nirgends mehr im Namensraum: Schluessel nutzen `PeakIds.NAMESPACE`)
 - [x] Mod startet unabhaengig von der Reihenfolge der Mods (`PeakCoreSession.whenReady`); vorher stuerzte der Dev-Client ab, wenn PeakSound vor der Core-Mod initialisiert wurde
 - [ ] Voice Chat, Upload per Mod und Mikrofon im All-in-One-Jar: nicht erneut getestet (Code mechanisch umgestellt)
+
+## Phase 7 - Neue Mod gegen das alte Alpha-Plugin (Rueckfall)
+
+Server nur mit dem alten `PeakSound-Paper-0.1.0.jar` (ohne PeakCore), Dev-Client mit der neuen Mod, Auto-Debug:
+- [x] Weg zum Plugin: LEGACY (PeakCore-Zustand NO_SERVER_SUPPORT, alter Kanal bekannt), Hello und HelloAck laufen, Plugin erkannt und kompatibel
+- [x] Wiedergabe, Lichtshow, Cover, Songinfo und Liedtexte kommen an, 0 ungueltige Pakete, 0 nicht gesendete
+- [ ] Menues, Upload und Radio im Spiel per Hand: nicht erneut durchgeklickt
