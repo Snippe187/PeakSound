@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.PeakBlockType;
 import de.peaksound.protocol.SpeakerChannel;
 import de.peaksound.protocol.SpeakerNumbering;
@@ -22,12 +23,12 @@ final class SpeakerService {
     /** Ein Lautsprecher mit allen Angaben, die Wiedergabe und Menues brauchen. */
     record Speaker(BlockRegistry.Key key, SpeakerSettings settings, int number, BlockRegistry.Key jukebox) {}
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final BlockRegistry registry;
     private final NetworkRegistry networks;
     private final SpeakerStore store;
 
-    SpeakerService(PeakSoundPlugin plugin, BlockRegistry registry, NetworkRegistry networks, SpeakerStore store) {
+    SpeakerService(JavaPlugin plugin, BlockRegistry registry, NetworkRegistry networks, SpeakerStore store) {
         this.plugin = plugin;
         this.registry = registry;
         this.networks = networks;
@@ -149,7 +150,7 @@ final class SpeakerService {
             }
         }
         if (speakerKeys.size() > SpeakerNumbering.MAX_NUMBER && hasJukebox) {
-            plugin.getLogger().warning("Mehr als " + SpeakerNumbering.MAX_NUMBER + " Lautsprecher in einem System: die weiteren bleiben stumm.");
+            Ctx.logger().warning("Mehr als " + SpeakerNumbering.MAX_NUMBER + " Lautsprecher in einem System: die weiteren bleiben stumm.");
         }
     }
 }

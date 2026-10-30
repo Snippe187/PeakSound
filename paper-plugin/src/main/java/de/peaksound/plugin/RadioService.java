@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.PeakIds;
@@ -38,7 +39,7 @@ final class RadioService implements Listener {
     /** Wie weit ueber die Reichweite hinaus ein Spieler das Rauschen schon vorgeladen bekommt. */
     private static final int STATIC_MARGIN = 6;
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final BlockRegistry registry;
     private final NetworkRegistry networks;
     private final BlockSettingsStore<RadioSettings> store;
@@ -56,7 +57,7 @@ final class RadioService implements Listener {
     /** Je Spieler: Rauschen, das sein Client gerade spielt (Staerke, Reichweite, Lautstaerke). */
     private final Map<UUID, Map<BlockRegistry.Key, int[]>> staticHeard = new ConcurrentHashMap<>();
 
-    RadioService(PeakSoundPlugin plugin, BlockRegistry registry, NetworkRegistry networks, BlockSettingsStore<RadioSettings> store,
+    RadioService(JavaPlugin plugin, BlockRegistry registry, NetworkRegistry networks, BlockSettingsStore<RadioSettings> store,
                  EditAccess access, NetworkHandler network, PeakItems items) {
         this.items = items;
         this.network = network;

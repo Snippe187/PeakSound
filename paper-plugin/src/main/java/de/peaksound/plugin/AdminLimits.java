@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.peaksound.protocol.LimitLogic;
@@ -25,14 +26,14 @@ final class AdminLimits {
         Map<String, Integer> perPlayer = new HashMap<>();
     }
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final Path file;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private Data data = new Data();
 
-    AdminLimits(PeakSoundPlugin plugin) {
+    AdminLimits(JavaPlugin plugin) {
         this.plugin = plugin;
-        this.file = plugin.getDataFolder().toPath().resolve("limits.json");
+        this.file = Ctx.dataFolder().toPath().resolve("limits.json");
     }
 
     synchronized void load() {
@@ -44,7 +45,7 @@ final class AdminLimits {
                 data = loaded;
             }
         } catch (IOException | RuntimeException e) {
-            plugin.getLogger().log(Level.SEVERE, "limits.json konnte nicht gelesen werden", e);
+            Ctx.logger().log(Level.SEVERE, "limits.json konnte nicht gelesen werden", e);
         }
     }
 
@@ -53,14 +54,14 @@ final class AdminLimits {
             Files.createDirectories(file.getParent());
             Files.writeString(file, gson.toJson(data));
         } catch (IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "limits.json konnte nicht gespeichert werden", e);
+            Ctx.logger().log(Level.SEVERE, "limits.json konnte nicht gespeichert werden", e);
         }
     }
 
     /** Standard-Songlimit pro Spieler (0 = unbegrenzt). */
     synchronized int defaultMaxSongs() {
         return LimitLogic.clampSongLimit(data.defaultMaxSongs != null ? data.defaultMaxSongs
-                : plugin.getConfig().getInt("upload.max-songs-per-player", 10));
+                : Ctx.config().getInt("upload.max-songs-per-player", 10));
     }
 
     /** Das fuer diesen Spieler geltende Songlimit (0 = unbegrenzt). */
@@ -88,7 +89,7 @@ final class AdminLimits {
 
     /** Serverweites Speicher-Limit in Bytes (0 = unbegrenzt). */
     synchronized long maxStorageBytes() {
-        long mb = data.maxStorageMb != null ? data.maxStorageMb : plugin.getConfig().getLong("upload.max-storage-mb", 2048);
+        long mb = data.maxStorageMb != null ? data.maxStorageMb : Ctx.config().getLong("upload.max-storage-mb", 2048);
         return LimitLogic.mbToBytes(mb);
     }
 

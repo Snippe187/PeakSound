@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.LibraryLogic;
 import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.Packet;
@@ -20,7 +21,7 @@ import org.bukkit.inventory.PlayerInventory;
  * leere Platte im Inventar); der Client schlaegt nur vor.
  */
 final class LibraryService {
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final SongStore songs;
     private final PeakItems items;
     private final EditAccess access;
@@ -32,7 +33,7 @@ final class LibraryService {
 
     void setQueue(QueueService queue) { this.queue = queue; }
 
-    LibraryService(PeakSoundPlugin plugin, SongStore songs, PeakItems items, EditAccess access, FavoriteStore favorites,
+    LibraryService(JavaPlugin plugin, SongStore songs, PeakItems items, EditAccess access, FavoriteStore favorites,
                    PlaybackManager playback, AnalysisStore analysis) {
         this.plugin = plugin;
         this.songs = songs;
@@ -46,7 +47,7 @@ final class LibraryService {
     void setUploads(UploadService uploads) { this.uploads = uploads; }
 
     boolean enabled() {
-        return plugin.getConfig().getBoolean("library.enabled", true);
+        return Ctx.config().getBoolean("library.enabled", true);
     }
 
     void open(Player player, Block block) {
@@ -149,7 +150,7 @@ final class LibraryService {
                 String title = de.peaksound.audio.AudioInspector.clean(manage.text());
                 if (title.isEmpty() || !canManage(player, song.uploader().equals(player.getUniqueId()))) return;
                 songs.rename(song.hash(), title);
-                plugin.getLogger().info("[Bibliothek] " + player.getName() + " benennt \"" + song.title() + "\" um in \"" + title + "\"");
+                Ctx.logger().info("[Bibliothek] " + player.getName() + " benennt \"" + song.title() + "\" um in \"" + title + "\"");
             }
             case DELETE -> {
                 if (!canManage(player, song.uploader().equals(player.getUniqueId()))) return;
@@ -167,7 +168,7 @@ final class LibraryService {
                     analysis.forget(s.hash());
                     favorites.forget(s.hash());
                     playback.onSongRemoved(s.hash());
-                    plugin.getLogger().info("[Bibliothek] " + player.getName() + " loescht \"" + s.title() + "\" (" + s.hash().substring(0, 8) + ")");
+                    Ctx.logger().info("[Bibliothek] " + player.getName() + " loescht \"" + s.title() + "\" (" + s.hash().substring(0, 8) + ")");
                     player.sendMessage(Messages.info(player, "Song \"" + s.title() + "\" geloescht. Platten damit bleiben stumm.",
                             "Song \"" + s.title() + "\" deleted. Records with it will stay silent."));
                 });

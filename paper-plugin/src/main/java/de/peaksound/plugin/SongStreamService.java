@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.Packet;
 import java.io.IOException;
@@ -20,7 +21,7 @@ final class SongStreamService {
 
     private record Bucket(long windowStart, int count) {}
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final SongStore store;
     private final Map<UUID, Bucket> buckets = new ConcurrentHashMap<>();
     /** Zuletzt benutzte Songs im Arbeitsspeicher (LRU, hoechstens {@link #MAX_CACHE_BYTES}). */
@@ -28,7 +29,7 @@ final class SongStreamService {
     private final java.util.LinkedHashMap<String, byte[]> cache = new java.util.LinkedHashMap<>(16, 0.75f, true);
     private long cacheBytes;
 
-    SongStreamService(PeakSoundPlugin plugin, SongStore store) {
+    SongStreamService(JavaPlugin plugin, SongStore store) {
         this.plugin = plugin;
         this.store = store;
     }
@@ -55,7 +56,7 @@ final class SongStreamService {
                 if (len <= 0) return;
                 data = java.util.Arrays.copyOfRange(whole, offset, offset + len);
             } catch (IOException e) {
-                plugin.getLogger().log(Level.WARNING, "Song konnte nicht gelesen werden: " + hash, e);
+                Ctx.logger().log(Level.WARNING, "Song konnte nicht gelesen werden: " + hash, e);
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     Player p = Bukkit.getPlayer(uuid);
                     if (p != null) Net.send(plugin, p, new Packet.SongUnavailable(hash));
@@ -102,7 +103,7 @@ final class SongStreamService {
                     byte[] raw = java.nio.file.Files.readAllBytes(store.coverPath(song.hash()));
                     if (raw.length <= Limits.MAX_COVER_BYTES) image = raw;
                 } catch (IOException e) {
-                    plugin.getLogger().log(Level.WARNING, "Cover nicht lesbar: " + song.hash(), e);
+                    Ctx.logger().log(Level.WARNING, "Cover nicht lesbar: " + song.hash(), e);
                 }
             }
             byte[] result = image;
@@ -125,7 +126,7 @@ final class SongStreamService {
                 java.nio.file.Path file = store.lyricsPath(song.hash());
                 if (java.nio.file.Files.exists(file)) text = java.nio.file.Files.readString(file);
             } catch (IOException | RuntimeException e) {
-                plugin.getLogger().log(Level.WARNING, "Songtext nicht lesbar: " + song.hash(), e);
+                Ctx.logger().log(Level.WARNING, "Songtext nicht lesbar: " + song.hash(), e);
             }
             String result = text.length() > Limits.MAX_LYRICS_CHARS ? text.substring(0, Limits.MAX_LYRICS_CHARS) : text;
             Bukkit.getScheduler().runTask(plugin, () -> {

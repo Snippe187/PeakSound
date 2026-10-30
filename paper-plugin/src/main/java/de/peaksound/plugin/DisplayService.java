@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.DisplayWallLogic;
 import de.peaksound.protocol.DisplayWallLogic.Facing;
 import de.peaksound.protocol.DisplayWallLogic.Pos;
@@ -78,7 +79,7 @@ final class DisplayService implements Listener {
         int version;
     }
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final BlockRegistry registry;
     private final NetworkRegistry networks;
     private final PlaybackManager playback;
@@ -94,7 +95,7 @@ final class DisplayService implements Listener {
     private final Set<String> noCover = ConcurrentHashMap.newKeySet();
     private final Set<UUID> ourFrames = ConcurrentHashMap.newKeySet();
 
-    DisplayService(PeakSoundPlugin plugin, BlockRegistry registry, NetworkRegistry networks, PlaybackManager playback, SongStore songs,
+    DisplayService(JavaPlugin plugin, BlockRegistry registry, NetworkRegistry networks, PlaybackManager playback, SongStore songs,
                    BlockSettingsStore<DisplaySettings> store) {
         System.setProperty("java.awt.headless", "true");
         this.plugin = plugin;
@@ -262,7 +263,7 @@ final class DisplayService implements Listener {
                 File f = songs.coverPath(hash).toFile();
                 if (f.exists()) image = ImageIO.read(new ByteArrayInputStream(Files.readAllBytes(f.toPath())));
             } catch (Exception e) {
-                plugin.getLogger().log(Level.FINE, "Cover nicht lesbar: " + hash, e);
+                Ctx.logger().log(Level.FINE, "Cover nicht lesbar: " + hash, e);
             }
             BufferedImage result = image;
             Bukkit.getScheduler().runTask(plugin, () -> {
@@ -321,7 +322,7 @@ final class DisplayService implements Listener {
                 g.drawString(fit(g, artist, w - 8), 4, h - strip + 25);
             }
         } catch (Throwable t) { // keine Schriften auf diesem Server: Cover ohne Text
-            plugin.getLogger().log(Level.FINE, "Text auf dem Display nicht moeglich", t);
+            Ctx.logger().log(Level.FINE, "Text auf dem Display nicht moeglich", t);
         }
     }
 
@@ -367,7 +368,7 @@ final class DisplayService implements Listener {
             ourFrames.add(ts.frame);
             sent.values().forEach(m -> m.remove(key)); // Spieler bekommen die Karte neu
         } catch (RuntimeException e) {
-            plugin.getLogger().log(Level.FINE, "Display-Rahmen konnte nicht gesetzt werden", e);
+            Ctx.logger().log(Level.FINE, "Display-Rahmen konnte nicht gesetzt werden", e);
         }
     }
 
@@ -417,7 +418,7 @@ final class DisplayService implements Listener {
     /** Fuer Tests: schreibt die aktuellen Wandbilder als PNG nach plugins/PeakSound/display-debug. @return Anzahl */
     int dump() {
         int n = 0;
-        File dir = new File(plugin.getDataFolder(), "display-debug");
+        File dir = new File(Ctx.dataFolder(), "display-debug");
         dir.mkdirs();
         for (Map.Entry<BlockRegistry.Key, TileState> e : tiles.entrySet()) {
             BufferedImage img = e.getValue().renderer.image;
@@ -426,7 +427,7 @@ final class DisplayService implements Listener {
                 ImageIO.write(img, "png", new File(dir, e.getKey().x() + "_" + e.getKey().y() + "_" + e.getKey().z() + ".png"));
                 n++;
             } catch (java.io.IOException ex) {
-                plugin.getLogger().log(Level.WARNING, "Debug-Bild nicht schreibbar", ex);
+                Ctx.logger().log(Level.WARNING, "Debug-Bild nicht schreibbar", ex);
             }
         }
         return n;

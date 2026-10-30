@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.MicSettings;
 import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.PeakBlockType;
@@ -32,7 +33,7 @@ final class MicService {
     private static final int DUCK_FADE_MS = 300;
     private static final int RESTORE_FADE_MS = 700;
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final BlockRegistry registry;
     private final NetworkRegistry networks;
     private final BlockSettingsStore<MicSettings> store;
@@ -46,7 +47,7 @@ final class MicService {
     private final Map<BlockRegistry.Key, List<BlockRegistry.Key>> ducked = new ConcurrentHashMap<>();
     private volatile boolean voiceChat;
 
-    MicService(PeakSoundPlugin plugin, BlockRegistry registry, NetworkRegistry networks, BlockSettingsStore<MicSettings> store,
+    MicService(JavaPlugin plugin, BlockRegistry registry, NetworkRegistry networks, BlockSettingsStore<MicSettings> store,
                SpeakerService speakers, JukeboxSettingsStore jukeboxSettings, PlaybackManager playback, EditAccess access) {
         this.plugin = plugin;
         this.registry = registry;

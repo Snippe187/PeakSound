@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.audio.Analysis;
 import de.peaksound.audio.LightLogic;
 import de.peaksound.protocol.LightSettings;
@@ -37,7 +38,7 @@ final class LightService {
     private static final double RELEASE_RADIUS = 100;
     private static final int BEAM_BLOCKS = 4;
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final BlockRegistry registry;
     private final NetworkRegistry networks;
     private final BlockSettingsStore<LightSettings> store;
@@ -54,7 +55,7 @@ final class LightService {
     private final Map<BlockRegistry.Key, Placed> placed = new HashMap<>();
     private final Path placedFile;
 
-    LightService(PeakSoundPlugin plugin, BlockRegistry registry, NetworkRegistry networks, BlockSettingsStore<LightSettings> store,
+    LightService(JavaPlugin plugin, BlockRegistry registry, NetworkRegistry networks, BlockSettingsStore<LightSettings> store,
                  PlaybackManager playback, AnalysisStore analysis, SongStore songs, NetworkHandler network, EditAccess access) {
         this.plugin = plugin;
         this.registry = registry;
@@ -65,7 +66,7 @@ final class LightService {
         this.songs = songs;
         this.network = network;
         this.access = access;
-        this.placedFile = plugin.getDataFolder().toPath().resolve("light-blocks.txt");
+        this.placedFile = Ctx.dataFolder().toPath().resolve("light-blocks.txt");
     }
 
     // ---- Menue ----
@@ -238,7 +239,7 @@ final class LightService {
                 Files.createDirectories(placedFile.getParent());
                 Files.write(placedFile, lines);
             } catch (IOException e) {
-                plugin.getLogger().log(Level.WARNING, "light-blocks.txt konnte nicht gespeichert werden", e);
+                Ctx.logger().log(Level.WARNING, "light-blocks.txt konnte nicht gespeichert werden", e);
             }
         });
     }
@@ -257,7 +258,7 @@ final class LightService {
             }
             Files.deleteIfExists(placedFile);
         } catch (IOException | RuntimeException e) {
-            plugin.getLogger().log(Level.WARNING, "Alte Lichtbloecke konnten nicht entfernt werden", e);
+            Ctx.logger().log(Level.WARNING, "Alte Lichtbloecke konnten nicht entfernt werden", e);
         }
     }
 

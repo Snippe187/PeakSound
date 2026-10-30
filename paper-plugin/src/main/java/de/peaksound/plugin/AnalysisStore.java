@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.audio.Analysis;
 import de.peaksound.audio.AudioException;
 import de.peaksound.audio.Analyzer;
@@ -20,12 +21,12 @@ import org.bukkit.Bukkit;
  * fehlt sie (aeltere Songs), wird sie einmal asynchron nachberechnet. Im Tick-Loop wird nur aus dem Speicher gelesen.
  */
 final class AnalysisStore {
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final SongStore songs;
     private final Map<String, Analysis> cache = new ConcurrentHashMap<>();
     private final Set<String> computing = ConcurrentHashMap.newKeySet();
 
-    AnalysisStore(PeakSoundPlugin plugin, SongStore songs) {
+    AnalysisStore(JavaPlugin plugin, SongStore songs) {
         this.plugin = plugin;
         this.songs = songs;
     }
@@ -62,7 +63,7 @@ final class AnalysisStore {
             Files.write(path(song.hash()), analysis.toBytes());
             cache.put(song.hash(), analysis);
         } catch (AudioException | IOException e) {
-            plugin.getLogger().log(Level.WARNING, "Analyse fehlgeschlagen fuer " + song.hash(), e);
+            Ctx.logger().log(Level.WARNING, "Analyse fehlgeschlagen fuer " + song.hash(), e);
         }
     }
 
@@ -76,7 +77,7 @@ final class AnalysisStore {
             AudioFormat format = AudioFormat.detect(Files.readAllBytes(songs.audioPath(song))).orElse(null);
             if (format != null) store(song, Files.readAllBytes(songs.audioPath(song)), format);
         } catch (AudioException | IOException e) {
-            plugin.getLogger().log(Level.WARNING, "Analyse konnte nicht geladen werden: " + song.hash(), e);
+            Ctx.logger().log(Level.WARNING, "Analyse konnte nicht geladen werden: " + song.hash(), e);
         }
     }
 }

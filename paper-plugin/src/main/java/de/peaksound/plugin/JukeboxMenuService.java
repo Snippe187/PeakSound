@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.JukeboxSettings;
 import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.PeakBlockType;
@@ -15,7 +16,7 @@ import org.bukkit.inventory.ItemStack;
  * im erlaubten Bereich.
  */
 final class JukeboxMenuService {
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final BlockRegistry registry;
     private final JukeboxSettingsStore settings;
     private final PlaybackManager playback;
@@ -23,7 +24,7 @@ final class JukeboxMenuService {
     private final EditAccess access;
     private final SpeakerService speakers;
 
-    JukeboxMenuService(PeakSoundPlugin plugin, BlockRegistry registry, JukeboxSettingsStore settings,
+    JukeboxMenuService(JavaPlugin plugin, BlockRegistry registry, JukeboxSettingsStore settings,
                        PlaybackManager playback, PlaylistService playlist, EditAccess access, SpeakerService speakers) {
         this.plugin = plugin;
         this.access = access;

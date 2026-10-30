@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.audio.AudioException;
 import de.peaksound.audio.AudioInfo;
 import de.peaksound.audio.AudioInspector;
@@ -59,7 +60,7 @@ final class UploadService {
         static Outcome fail(Reason reason, int arg) { return new Outcome(reason, arg, null, false); }
     }
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final PeakItems items;
     private final SongStore store;
     private final AnalysisStore analysis;
@@ -72,7 +73,7 @@ final class UploadService {
     private final AtomicInteger processing = new AtomicInteger();
     private int nextUploadId = 1;
 
-    UploadService(PeakSoundPlugin plugin, PeakItems items, SongStore store, AnalysisStore analysis, Transcoder transcoder,
+    UploadService(JavaPlugin plugin, PeakItems items, SongStore store, AnalysisStore analysis, Transcoder transcoder,
                   AdminLimits limits) {
         this.plugin = plugin;
         this.limits = limits;
@@ -106,11 +107,11 @@ final class UploadService {
             reject(player, 0, Reason.NO_TICKET, 0);
             return;
         }
-        if (sessions.containsKey(id) || processing.get() >= plugin.getConfig().getInt("upload.max-concurrent", 3)) {
+        if (sessions.containsKey(id) || processing.get() >= Ctx.config().getInt("upload.max-concurrent", 3)) {
             reject(player, 0, Reason.BUSY, 0);
             return;
         }
-        long cooldownMs = plugin.getConfig().getLong("upload.cooldown-seconds", 60) * 1000L;
+        long cooldownMs = Ctx.config().getLong("upload.cooldown-seconds", 60) * 1000L;
         long since = System.currentTimeMillis() - lastUpload.getOrDefault(id, 0L);
         if (cooldownMs > 0 && since < cooldownMs) {
             reject(player, 0, Reason.RATE_LIMIT, (int) ((cooldownMs - since + 999) / 1000));
@@ -177,7 +178,7 @@ final class UploadService {
             try {
                 outcome = process(data, s.fallbackTitle, uuid, uploaderName, s.maxSongs);
             } catch (RuntimeException | IOException e) {
-                plugin.getLogger().log(Level.SEVERE, "Upload-Verarbeitung fehlgeschlagen", e);
+                Ctx.logger().log(Level.SEVERE, "Upload-Verarbeitung fehlgeschlagen", e);
                 outcome = Outcome.fail(Reason.INTERNAL, 0);
             }
             Outcome result = outcome;
@@ -191,8 +192,8 @@ final class UploadService {
 
     /** Laeuft asynchron. */
     /** Hoechste Songlaenge in Sekunden: Config upload.max-song-seconds (Standard 240, erlaubt 30 bis 3600). */
-    static int maxSongSeconds(PeakSoundPlugin plugin) {
-        return Math.max(30, Math.min(3600, plugin.getConfig().getInt("upload.max-song-seconds", Limits.MAX_SONG_SECONDS)));
+    static int maxSongSeconds(JavaPlugin plugin) {
+        return Math.max(30, Math.min(3600, Ctx.config().getInt("upload.max-song-seconds", Limits.MAX_SONG_SECONDS)));
     }
 
     private Outcome process(byte[] data, String fallbackTitle, UUID uploader, String uploaderName, int maxSongs) throws IOException {

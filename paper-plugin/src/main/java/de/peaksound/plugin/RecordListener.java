@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.PeakBlockType;
 import de.peaksound.protocol.PeakItemType;
 import org.bukkit.block.Block;
@@ -23,7 +24,7 @@ import org.bukkit.inventory.PlayerInventory;
  * </ul>
  */
 final class RecordListener implements Listener {
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final PeakItems items;
     private final BlockRegistry registry;
     private final SongStore store;
@@ -31,7 +32,7 @@ final class RecordListener implements Listener {
     private final PlaybackManager playback;
     private final NetworkHandler network;
 
-    RecordListener(PeakSoundPlugin plugin, PeakItems items, BlockRegistry registry, SongStore store,
+    RecordListener(JavaPlugin plugin, PeakItems items, BlockRegistry registry, SongStore store,
                    UploadService uploads, PlaybackManager playback, NetworkHandler network) {
         this.plugin = plugin;
         this.items = items;

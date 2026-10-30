@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -29,7 +30,7 @@ public final class SongStore {
     /** Ergebnis von {@link #add}. */
     public enum AddResult { ADDED, ALREADY_PRESENT, STORAGE_FULL, QUOTA_REACHED }
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final Path dataDir;
     private final Path songsDir;
     private final Path indexFile;
@@ -38,9 +39,9 @@ public final class SongStore {
     private long totalBytes;
     private boolean dirty;
 
-    SongStore(PeakSoundPlugin plugin) {
+    SongStore(JavaPlugin plugin) {
         this.plugin = plugin;
-        this.dataDir = plugin.getDataFolder().toPath();
+        this.dataDir = Ctx.dataFolder().toPath();
         this.songsDir = dataDir.resolve("songs");
         this.indexFile = dataDir.resolve("songs.json");
     }
@@ -62,13 +63,13 @@ public final class SongStore {
                             songs.put(s.hash(), s);
                             totalBytes += s.sizeBytes();
                         } else {
-                            plugin.getLogger().warning("Song ohne Datei uebersprungen: " + s.hash());
+                            Ctx.logger().warning("Song ohne Datei uebersprungen: " + s.hash());
                         }
                     }
                 }
             }
         } catch (IOException | RuntimeException e) {
-            plugin.getLogger().log(Level.SEVERE, "songs.json konnte nicht gelesen werden", e);
+            Ctx.logger().log(Level.SEVERE, "songs.json konnte nicht gelesen werden", e);
         }
     }
 
@@ -166,7 +167,7 @@ public final class SongStore {
             try {
                 Files.deleteIfExists(p);
             } catch (IOException e) {
-                plugin.getLogger().log(Level.WARNING, "Datei konnte nicht geloescht werden: " + p, e);
+                Ctx.logger().log(Level.WARNING, "Datei konnte nicht geloescht werden: " + p, e);
             }
         }
         return Optional.of(song);
@@ -185,7 +186,7 @@ public final class SongStore {
             Files.move(tmp, indexFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
             dirty = true;
-            plugin.getLogger().log(Level.SEVERE, "songs.json konnte nicht gespeichert werden", e);
+            Ctx.logger().log(Level.SEVERE, "songs.json konnte nicht gespeichert werden", e);
         }
     }
 }

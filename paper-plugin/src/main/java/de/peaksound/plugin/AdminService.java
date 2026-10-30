@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.LimitLogic;
 import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.Packet;
@@ -23,14 +24,14 @@ final class AdminService {
     /** Mindestabstand zwischen zwei Anfragen eines Spielers. */
     private static final long MIN_INTERVAL_MS = 100;
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final SongStore store;
     private final AdminLimits limits;
     private final PlaybackManager playback;
     private final AnalysisStore analysis;
     private final Map<UUID, Long> lastRequest = new ConcurrentHashMap<>();
 
-    AdminService(PeakSoundPlugin plugin, SongStore store, AdminLimits limits, PlaybackManager playback, AnalysisStore analysis) {
+    AdminService(JavaPlugin plugin, SongStore store, AdminLimits limits, PlaybackManager playback, AnalysisStore analysis) {
         this.plugin = plugin;
         this.store = store;
         this.limits = limits;
@@ -40,7 +41,7 @@ final class AdminService {
 
     private boolean allowed(Player player) {
         if (!Permissions.admin(player)) {
-            plugin.getLogger().fine(player.getName() + " hat versucht, die Song-Verwaltung ohne Rechte zu nutzen");
+            Ctx.logger().fine(player.getName() + " hat versucht, die Song-Verwaltung ohne Rechte zu nutzen");
             return false;
         }
         long now = System.currentTimeMillis();
@@ -82,7 +83,7 @@ final class AdminService {
     }
 
     private void log(Player admin, String what) {
-        plugin.getLogger().info("[Admin] " + admin.getName() + ": " + what);
+        Ctx.logger().info("[Admin] " + admin.getName() + ": " + what);
     }
 
     private void approve(Player admin, String hash) {

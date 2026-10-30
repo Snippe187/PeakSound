@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.audio.Analysis;
 import de.peaksound.protocol.PeakBlockType;
 import de.peaksound.protocol.PortFunction;
@@ -29,7 +30,7 @@ final class EqualizerService {
     /** Seiten der Jukebox und ihr Band. {@code null} steht fuer den Gesamtpegel. */
     private static final BlockFace[] FACES = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final BlockRegistry registry;
     private final AnalysisStore analysis;
     private final ComparatorDriver driver; // null = Equalizer aus
@@ -38,7 +39,7 @@ final class EqualizerService {
 
     private final JukeboxSettingsStore settings;
 
-    EqualizerService(PeakSoundPlugin plugin, BlockRegistry registry, AnalysisStore analysis, ComparatorDriver driver,
+    EqualizerService(JavaPlugin plugin, BlockRegistry registry, AnalysisStore analysis, ComparatorDriver driver,
                      JukeboxSettingsStore settings) {
         this.settings = settings;
         this.plugin = plugin;
@@ -101,7 +102,7 @@ final class EqualizerService {
             if (world == null || !world.isChunkLoaded(key.x() >> 4, key.z() >> 4)) continue;
             Block jukebox = world.getBlockAt(key.x(), key.y(), key.z());
             PlaybackManager.State state = effective.get(key);
-            Optional<Analysis> a = state == null ? Optional.empty() : plugin.songs().get(state.hash).flatMap(analysis::peek);
+            Optional<Analysis> a = state == null ? Optional.empty() : Ctx.songs().get(state.hash).flatMap(analysis::peek);
             long position = state == null ? 0 : now - state.startedAt;
             long ended = lastEnded.applyAsLong(key);
             long sinceEnd = ended == 0 ? -1 : now - ended;

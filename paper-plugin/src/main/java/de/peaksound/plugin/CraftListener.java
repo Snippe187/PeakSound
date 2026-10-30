@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.PeakItemType;
 import de.peaksound.protocol.SwordCraft;
 import java.util.OptionalInt;
@@ -21,11 +22,11 @@ import org.bukkit.inventory.meta.Damageable;
  * das Schwert-Rezept (Schwert kommt mit halber Haltbarkeit zurueck) selbst um, auch bei Shift-Klick.
  */
 final class CraftListener implements Listener {
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final PeakItems items;
     private final PeakRecipes recipes;
 
-    CraftListener(PeakSoundPlugin plugin, PeakItems items, PeakRecipes recipes) {
+    CraftListener(JavaPlugin plugin, PeakItems items, PeakRecipes recipes) {
         this.plugin = plugin;
         this.items = items;
         this.recipes = recipes;

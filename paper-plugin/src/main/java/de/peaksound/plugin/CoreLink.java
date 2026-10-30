@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peakverse.core.api.ModuleInfo;
 import de.peakverse.core.api.ModuleRegistration;
 import de.peakverse.core.api.PeakCoreApi;
@@ -19,9 +20,9 @@ final class CoreLink {
     }
 
     /** Meldet PeakSound als Modul an; Pakete der neuen Mod gehen an {@code network}. */
-    static CoreLink register(PeakSoundPlugin plugin, NetworkHandler network) {
+    static CoreLink register(JavaPlugin plugin, NetworkHandler network) {
         PeakCoreApi core = PeakCoreApi.get().orElseThrow(() -> new IllegalStateException("PeakCore nicht gefunden (Plugin PeakCore muss installiert sein)"));
-        ModuleRegistration registration = core.registerModule(plugin, new ModuleInfo(MODULE_ID, "PeakSound", plugin.getPluginMeta().getVersion(), 1));
+        ModuleRegistration registration = core.registerModule(plugin, new ModuleInfo(MODULE_ID, "PeakSound", Ctx.version(), 1));
         registration.setMessageHandler(network::onCoreMessage);
         return new CoreLink(registration);
     }

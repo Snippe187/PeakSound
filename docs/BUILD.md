@@ -12,7 +12,7 @@ Unter Windows: `gradlew.bat build`. Das Ergebnis:
 
 | Datei | Zweck |
 |---|---|
-| `paper-plugin/build/libs/PeakSound-<version>.jar` | Server-Plugin |
+| `paper-plugin/build/libs/paper-plugin-<version>.jar` | Teil des Server-Plugins (Modul PeakSound); das fertige Plugin `PeakCore-<version>.jar` baut `../Bundle` |
 | `fabric-mod/build/libs/fabric-mod-<version>.jar` | Client-Mod (mit eingebetteten Bibliotheken, Jar-in-Jar) |
 
 `./gradlew build` führt auch alle Unit-Tests aus.
@@ -54,4 +54,4 @@ beim Start (`libraries:` in `plugin.yml`), die Mod bindet sie als eigene Jars ei
 
 ## PeakCore (Composite Build)
 
-Das Plugin braucht die API von PeakCore (`core-api`). Beim Entwickeln wird sie direkt aus dem Nachbarordner `../PeakCore` bezogen (`includeBuild` in `settings.gradle.kts`); beide Projekte muessen also nebeneinander liegen (PeakVerse-Verbund). Das PeakSound-Jar enthaelt die API nicht, zur Laufzeit liefert sie das Plugin PeakCore.
+PeakSound ist ein eingebautes Modul von PeakCore, kein eigenes Plugin. `paper-plugin` braucht die API von PeakCore (`core-api`) nur zum Kompilieren und bezieht sie direkt aus dem Nachbarordner `../PeakCore` (`includeBuild` in `settings.gradle.kts`); beide Projekte muessen nebeneinander liegen (PeakVerse-Verbund). Das fertige Server-Plugin baut `../Bundle` (`./gradlew build` dort, oder `../tools/build-all.ps1`): ein Jar `PeakCore-<version>.jar` aus Core, API, Protokoll und allen Modulen, mit der zusammengefuehrten `plugin.yml`. Die plugin.yml fuer Befehle und Rechte von PeakSound liegt deshalb dort (`Bundle/src/main/resources/plugin.yml`).

@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.PeakIds;
 import de.peaksound.protocol.PeakItemType;
 import java.util.ArrayList;
@@ -13,7 +14,7 @@ import org.bukkit.inventory.recipe.CraftingBookCategory;
 
 /** Registriert alle Crafting-Rezepte. Sie werden Spielern beim Beitritt im Rezeptbuch freigeschaltet. */
 public final class PeakRecipes {
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final PeakItems items;
     private final List<NamespacedKey> keys = new ArrayList<>();
 
@@ -21,7 +22,7 @@ public final class PeakRecipes {
     /** Das DJ-Pult-Rezept braucht PeakSound-Jukeboxen als Zutat (alle anderen Rezepte lehnen PeakSound-Items als Zutat ab). */
     public final NamespacedKey djDeskKey = key("dj_desk");
 
-    PeakRecipes(PeakSoundPlugin plugin, PeakItems items) {
+    PeakRecipes(JavaPlugin plugin, PeakItems items) {
         this.plugin = plugin;
         this.items = items;
     }

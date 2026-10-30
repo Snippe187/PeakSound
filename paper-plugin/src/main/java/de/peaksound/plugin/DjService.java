@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.DjMath;
 import de.peaksound.protocol.DjSettings;
 import de.peaksound.protocol.Packet;
@@ -26,7 +27,7 @@ final class DjService {
 
     private record Decks(List<List<BlockRegistry.Key>> jukeboxes, long at) {}
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final BlockRegistry registry;
     private final NetworkRegistry networks;
     private final BlockSettingsStore<DjSettings> store;
@@ -38,7 +39,7 @@ final class DjService {
     /** Jukeboxen, deren Faktor von einem Pult gesetzt wurde (zum Zuruecksetzen, wenn sie nicht mehr angeschlossen sind). */
     private final Set<BlockRegistry.Key> managed = new HashSet<>();
 
-    DjService(PeakSoundPlugin plugin, BlockRegistry registry, NetworkRegistry networks, BlockSettingsStore<DjSettings> store,
+    DjService(JavaPlugin plugin, BlockRegistry registry, NetworkRegistry networks, BlockSettingsStore<DjSettings> store,
               PlaybackManager playback, PlaylistService playlist, JukeboxSettingsStore jukeboxSettings, EditAccess access) {
         this.plugin = plugin;
         this.registry = registry;

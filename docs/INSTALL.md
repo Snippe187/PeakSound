@@ -6,10 +6,13 @@ keine Musik und sieht nur normale Blöcke.
 ## Server (Paper 26.2)
 
 1. Paper 26.2 installieren (Build 135 oder neuer) und einmal starten.
-2. **`PeakCore-<version>.jar` und `PeakSound-<version>.jar`** in den Ordner `plugins/` legen. PeakSound ist ein Modul von PeakCore
-   und laedt ohne PeakCore nicht. (PeakCore: `PeakCore/Plugin/PeakCore-<version>.jar`, PeakSound: `PeakSound/Plugin/PeakSound-<version>.jar`.)
+2. **`PeakCore-<version>.jar`** in den Ordner `plugins/` legen (`PeakCore/Plugin/PeakCore-<version>.jar`). Das ist das einzige Server-Plugin:
+   PeakSound steckt als Modul darin. Ein Modul laesst sich in `plugins/PeakCore/config.yml` ausschalten (`modules.peaksound.enabled`).
 
-   **Update von der Alpha-Version:** Beide Jars ins `plugins/`-Verzeichnis legen, die alte PeakSound-Jar ersetzen, Server neu starten.
+   **Update von der Alpha-Version:** Die alte `PeakSound-<version>.jar` aus `plugins/` **loeschen** und `PeakCore-<version>.jar` hineinlegen,
+   Server neu starten. Bleibt die alte Jar liegen, startet PeakCore das eingebaute PeakSound nicht und schreibt eine Fehlermeldung ins Log.
+   Der Datenordner `plugins/PeakSound/` bleibt, wie er ist, auch Rechte (`peaksound.*`), Befehle und Item-Markierungen. Ein Hinweis: Der
+   Befehlszusatz fuer Plugins heisst jetzt `/peakcore:peaksound` statt `/peaksound:peaksound`; Rechte-Plugins, die nur `peaksound.*` verwenden, merken nichts.
    Name, Daten, Rechte und Befehle bleiben gleich, alle gebauten Anlagen (Jukeboxen, Lautsprecher, DJ-Pulte, Radios, Displays, Bibliothek)
    laufen weiter. Spieler mit der alten Mod koennen weiterspielen (sie nutzen den bisherigen Kanal `peaksound:main`), bis sie die neue Mod
    installieren. Vorher mit `/peaksound backup` eine Sicherung anlegen.

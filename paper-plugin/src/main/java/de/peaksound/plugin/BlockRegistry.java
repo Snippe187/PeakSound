@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.PeakBlockType;
 import java.io.File;
 import java.io.IOException;
@@ -24,14 +25,14 @@ public final class BlockRegistry {
         static Key of(Block b) { return new Key(b.getWorld().getUID(), b.getX(), b.getY(), b.getZ()); }
     }
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final File file;
     private final Map<Key, PeakBlockType> blocks = new ConcurrentHashMap<>();
     private volatile boolean dirty;
 
-    BlockRegistry(PeakSoundPlugin plugin) {
+    BlockRegistry(JavaPlugin plugin) {
         this.plugin = plugin;
-        this.file = new File(plugin.getDataFolder(), "blocks.yml");
+        this.file = new File(Ctx.dataFolder(), "blocks.yml");
     }
 
     void load() {
@@ -45,7 +46,7 @@ public final class BlockRegistry {
                         blocks.put(new Key(UUID.fromString(p[0]), Integer.parseInt(p[1]),
                                 Integer.parseInt(p[2]), Integer.parseInt(p[3])), type));
             } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Ungueltiger Eintrag in blocks.yml uebersprungen: " + line);
+                Ctx.logger().warning("Ungueltiger Eintrag in blocks.yml uebersprungen: " + line);
             }
         }
     }
@@ -112,11 +113,11 @@ public final class BlockRegistry {
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("blocks", lines);
         try {
-            plugin.getDataFolder().mkdirs();
+            Ctx.dataFolder().mkdirs();
             yaml.save(file);
         } catch (IOException e) {
             dirty = true;
-            plugin.getLogger().log(Level.SEVERE, "blocks.yml konnte nicht gespeichert werden", e);
+            Ctx.logger().log(Level.SEVERE, "blocks.yml konnte nicht gespeichert werden", e);
         }
     }
 }

@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -18,15 +19,15 @@ import java.util.logging.Level;
 
 /** Favoriten je Spieler (Song-Hashes) in {@code favorites.json}. Geloeschte Songs fallen beim Lesen einfach heraus. */
 final class FavoriteStore {
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final Path file;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final Map<String, Set<String>> byPlayer = new LinkedHashMap<>();
     private boolean dirty;
 
-    FavoriteStore(PeakSoundPlugin plugin) {
+    FavoriteStore(JavaPlugin plugin) {
         this.plugin = plugin;
-        this.file = plugin.getDataFolder().toPath().resolve("favorites.json");
+        this.file = Ctx.dataFolder().toPath().resolve("favorites.json");
     }
 
     synchronized void load() {
@@ -35,7 +36,7 @@ final class FavoriteStore {
             Map<String, Set<String>> data = gson.fromJson(r, new TypeToken<Map<String, Set<String>>>() {}.getType());
             if (data != null) data.forEach((k, v) -> byPlayer.put(k, new HashSet<>(v)));
         } catch (IOException | RuntimeException e) {
-            plugin.getLogger().log(Level.WARNING, "favorites.json konnte nicht gelesen werden", e);
+            Ctx.logger().log(Level.WARNING, "favorites.json konnte nicht gelesen werden", e);
         }
     }
 
@@ -69,7 +70,7 @@ final class FavoriteStore {
             Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
             dirty = true;
-            plugin.getLogger().log(Level.WARNING, "favorites.json konnte nicht gespeichert werden", e);
+            Ctx.logger().log(Level.WARNING, "favorites.json konnte nicht gespeichert werden", e);
         }
     }
 }

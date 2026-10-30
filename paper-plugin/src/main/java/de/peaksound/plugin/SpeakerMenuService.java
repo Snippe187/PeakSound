@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.PeakBlockType;
 import org.bukkit.block.Block;
@@ -7,12 +8,12 @@ import org.bukkit.entity.Player;
 
 /** Oeffnet das Lautsprecher-Menue und uebernimmt dessen (serverseitig geprueften) Aenderungen. */
 final class SpeakerMenuService {
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final EditAccess access;
     private final SpeakerService speakers;
     private final JukeboxSettingsStore jukeboxSettings;
 
-    SpeakerMenuService(PeakSoundPlugin plugin, EditAccess access, SpeakerService speakers, JukeboxSettingsStore jukeboxSettings) {
+    SpeakerMenuService(JavaPlugin plugin, EditAccess access, SpeakerService speakers, JukeboxSettingsStore jukeboxSettings) {
         this.plugin = plugin;
         this.access = access;
         this.speakers = speakers;

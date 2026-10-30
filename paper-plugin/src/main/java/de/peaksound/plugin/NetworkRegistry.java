@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.DustNetwork;
 import de.peaksound.protocol.PeakBlockType;
 import java.util.ArrayList;
@@ -63,12 +64,12 @@ final class NetworkRegistry {
 
     private static final long VALIDATE_EVERY_MS = 10_000;
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final BlockRegistry registry;
     private final Map<BlockRegistry.Key, Net> byMember = new HashMap<>();
     private final Set<Net> all = new HashSet<>();
 
-    NetworkRegistry(PeakSoundPlugin plugin, BlockRegistry registry) {
+    NetworkRegistry(JavaPlugin plugin, BlockRegistry registry) {
         this.plugin = plugin;
         this.registry = registry;
     }
@@ -86,12 +87,12 @@ final class NetworkRegistry {
             drop(cached);
         }
         DustNetwork.Result result = DustNetwork.find(new WorldGrid(world), new DustNetwork.Pos(key.x(), key.y(), key.z()),
-                Math.max(8, plugin.getConfig().getInt("network.max-dust", 256)),
-                Math.max(1, plugin.getConfig().getInt("network.max-devices", 32)));
+                Math.max(8, Ctx.config().getInt("network.max-dust", 256)),
+                Math.max(1, Ctx.config().getInt("network.max-devices", 32)));
         if (result.devices().isEmpty()) return null; // Block ist (nicht mehr) ein PeakSound-Block
         Net net = new Net(key.world(), result);
         if (net.truncated) {
-            plugin.getLogger().warning("Redstone-Netz bei " + key.x() + " " + key.y() + " " + key.z()
+            Ctx.logger().warning("Redstone-Netz bei " + key.x() + " " + key.y() + " " + key.z()
                     + " ist groesser als das Limit (network.max-dust / max-devices) und wird abgeschnitten.");
         }
         all.add(net);
@@ -106,8 +107,8 @@ final class NetworkRegistry {
     List<Net> netsAround(Block desk) {
         World world = desk.getWorld();
         WorldGrid grid = new WorldGrid(world);
-        int maxDust = Math.max(8, plugin.getConfig().getInt("network.max-dust", 256));
-        int maxDevices = Math.max(1, plugin.getConfig().getInt("network.max-devices", 32));
+        int maxDust = Math.max(8, Ctx.config().getInt("network.max-dust", 256));
+        int maxDevices = Math.max(1, Ctx.config().getInt("network.max-devices", 32));
         int[][] sides = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
         List<DustNetwork.Pos> starts = new ArrayList<>();
         starts.add(new DustNetwork.Pos(desk.getX(), desk.getY() + 1, desk.getZ()));

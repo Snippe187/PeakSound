@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,14 +31,14 @@ final class BackupService {
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
     private static final String PENDING = "restore-pending.zip";
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final Path dataDir;
     private final Path backupDir;
     private final AtomicBoolean running = new AtomicBoolean();
 
-    BackupService(PeakSoundPlugin plugin) {
+    BackupService(JavaPlugin plugin) {
         this.plugin = plugin;
-        this.dataDir = plugin.getDataFolder().toPath();
+        this.dataDir = Ctx.dataFolder().toPath();
         this.backupDir = dataDir.resolve("backups");
     }
 
@@ -50,7 +51,7 @@ final class BackupService {
             Files.createDirectories(backupDir);
             String name = prefix + "-" + LocalDateTime.now().format(STAMP) + ".zip";
             Path tmp = backupDir.resolve(name + ".tmp");
-            boolean songs = plugin.getConfig().getBoolean("backup.include-songs", true);
+            boolean songs = Ctx.config().getBoolean("backup.include-songs", true);
             try (OutputStream out = Files.newOutputStream(tmp); ZipOutputStream zip = new ZipOutputStream(out)) {
                 zip.setLevel(Deflater.BEST_SPEED);
                 try (Stream<Path> files = Files.walk(dataDir)) {
@@ -76,7 +77,7 @@ final class BackupService {
 
     /** Alte automatische Sicherungen loeschen (config backup.keep, Standard 7). Manuelle und "vor-Wiederherstellung"-Sicherungen bleiben. */
     private void rotate() throws IOException {
-        int keep = Math.max(1, plugin.getConfig().getInt("backup.keep", 7));
+        int keep = Math.max(1, Ctx.config().getInt("backup.keep", 7));
         List<Path> auto = new ArrayList<>();
         try (DirectoryStream<Path> s = Files.newDirectoryStream(backupDir, "auto-*.zip")) {
             s.forEach(auto::add);
@@ -92,7 +93,7 @@ final class BackupService {
         try (DirectoryStream<Path> s = Files.newDirectoryStream(backupDir, "*.zip")) {
             for (Path p : s) out.add(p.getFileName().toString());
         } catch (IOException e) {
-            plugin.getLogger().log(Level.WARNING, "Sicherungen konnten nicht gelesen werden", e);
+            Ctx.logger().log(Level.WARNING, "Sicherungen konnten nicht gelesen werden", e);
         }
         out.sort(Comparator.reverseOrder());
         return out;
@@ -110,7 +111,7 @@ final class BackupService {
     /** Jede Stunde pruefen: Ist die letzte automatische Sicherung aelter als 24 h, eine neue anlegen. */
     void scheduleDaily() {
         org.bukkit.Bukkit.getAsyncScheduler().runAtFixedRate(plugin, t -> {
-            if (!plugin.getConfig().getBoolean("backup.daily", true)) return;
+            if (!Ctx.config().getBoolean("backup.daily", true)) return;
             try {
                 long newest = 0;
                 for (String n : list()) {
@@ -120,10 +121,10 @@ final class BackupService {
                 }
                 if (System.currentTimeMillis() - newest >= 24L * 3600 * 1000) {
                     String name = backupNow("auto");
-                    plugin.getLogger().info("Automatische Sicherung erstellt: " + name);
+                    Ctx.logger().info("Automatische Sicherung erstellt: " + name);
                 }
             } catch (IOException | RuntimeException e) {
-                plugin.getLogger().log(Level.WARNING, "Automatische Sicherung fehlgeschlagen", e);
+                Ctx.logger().log(Level.WARNING, "Automatische Sicherung fehlgeschlagen", e);
             }
         }, 2, 60, java.util.concurrent.TimeUnit.MINUTES);
     }
@@ -158,9 +159,9 @@ final class BackupService {
                     files++;
                 }
             }
-            plugin.getLogger().info("Sicherung eingespielt (" + files + " Dateien). Der vorherige Stand liegt in backups/vor-restore-*.zip.");
+            Ctx.logger().info("Sicherung eingespielt (" + files + " Dateien). Der vorherige Stand liegt in backups/vor-restore-*.zip.");
         } catch (IOException | RuntimeException e) {
-            plugin.getLogger().log(Level.SEVERE, "Wiederherstellung fehlgeschlagen. Der vorherige Stand liegt in backups/vor-restore-*.zip", e);
+            Ctx.logger().log(Level.SEVERE, "Wiederherstellung fehlgeschlagen. Der vorherige Stand liegt in backups/vor-restore-*.zip", e);
         } finally {
             try { Files.deleteIfExists(pending); } catch (IOException ignored) { /* naechster Start versucht es nicht erneut */ }
         }

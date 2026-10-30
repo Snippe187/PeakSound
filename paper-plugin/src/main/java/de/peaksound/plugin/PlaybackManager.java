@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.audio.Analysis;
 import de.peaksound.protocol.ChannelLayout;
 import de.peaksound.protocol.JukeboxSettings;
@@ -113,7 +114,7 @@ final class PlaybackManager {
     /** Erst ab dieser zusaetzlichen Entfernung wird der Client wieder entlastet. */
     private static final int RELEASE_MARGIN = 24;
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final NetworkHandler network;
     private final JukeboxSettingsStore settings;
     private final AnalysisStore analysis;
@@ -131,7 +132,7 @@ final class PlaybackManager {
     /** Fuer welche Jukeboxen der Spieler "Jetzt laeuft" schon gesehen hat (bis er wieder weit weg ist). */
     private final Map<UUID, Set<BlockRegistry.Key>> announced = new ConcurrentHashMap<>();
 
-    PlaybackManager(PeakSoundPlugin plugin, NetworkHandler network, JukeboxSettingsStore settings, AnalysisStore analysis,
+    PlaybackManager(JavaPlugin plugin, NetworkHandler network, JukeboxSettingsStore settings, AnalysisStore analysis,
                     PlaylistService playlist, NetworkRegistry networks, EqualizerService equalizer, SpeakerService speakers) {
         this.plugin = plugin;
         this.speakers = speakers;
@@ -721,7 +722,7 @@ final class PlaybackManager {
         for (Map.Entry<State, List<BlockRegistry.Key>> e : byLeader.entrySet()) {
             State s = e.getKey();
             long position = now - s.startedAt;
-            Optional<Analysis> a = plugin.songs().get(s.hash).flatMap(analysis::peek);
+            Optional<Analysis> a = Ctx.songs().get(s.hash).flatMap(analysis::peek);
             if (a.isEmpty()) continue;
             int beat = a.get().nextBeatAfter(s.beatCursorMs);
             if (beat < 0 || beat > position) continue;
@@ -757,7 +758,7 @@ final class PlaybackManager {
     }
 
     private int songChannels(String hash) {
-        return plugin.songs().get(hash).map(Song::channels).filter(c -> c >= 1 && c <= 16).orElse(2);
+        return Ctx.songs().get(hash).map(Song::channels).filter(c -> c >= 1 && c <= 16).orElse(2);
     }
 
     void onQuit(Player player) {
@@ -804,11 +805,11 @@ final class PlaybackManager {
 
     private void write(String text) {
         try {
-            java.nio.file.Path file = plugin.getDataFolder().toPath().resolve("playback.yml");
+            java.nio.file.Path file = Ctx.dataFolder().toPath().resolve("playback.yml");
             java.nio.file.Files.createDirectories(file.getParent());
             java.nio.file.Files.writeString(file, text);
         } catch (java.io.IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "playback.yml konnte nicht gespeichert werden", e);
+            Ctx.logger().log(Level.SEVERE, "playback.yml konnte nicht gespeichert werden", e);
         }
     }
 
@@ -822,7 +823,7 @@ final class PlaybackManager {
     }
 
     void load() {
-        java.nio.file.Path file = plugin.getDataFolder().toPath().resolve("playback.yml");
+        java.nio.file.Path file = Ctx.dataFolder().toPath().resolve("playback.yml");
         if (!java.nio.file.Files.exists(file)) return;
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file.toFile());
         for (Map<?, ?> m : yaml.getMapList("jukeboxes")) {
@@ -837,7 +838,7 @@ final class PlaybackManager {
                         ((Number) m.get("started")).longValue(), (Boolean) m.get("playing"),
                         Boolean.TRUE.equals(m.get("playlist")), m.get("index") instanceof Number n ? n.intValue() : -1));
             } catch (RuntimeException e) {
-                plugin.getLogger().warning("Ungueltiger Eintrag in playback.yml uebersprungen: " + e.getMessage());
+                Ctx.logger().warning("Ungueltiger Eintrag in playback.yml uebersprungen: " + e.getMessage());
             }
         }
     }

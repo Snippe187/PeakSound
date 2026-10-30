@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.Limits;
 import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.PeakBlockType;
@@ -30,7 +31,7 @@ final class DebugService {
     private static final Pattern LOG_NOISE = Pattern.compile("(?i)oshi|Perflib|CrashReport preload|Loaded library|Loading \\d+ libraries|No key layers");
     private static final Pattern LOG_FILTER = Pattern.compile("(?i)peaksound|voicechat|exception|\\bERROR\\b|\\bSEVERE\\b");
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final BlockRegistry blocks;
     private final SongStore songs;
     private final PlaybackManager playback;
@@ -45,7 +46,7 @@ final class DebugService {
 
     void setRadio(RadioService radio) { this.radio = radio; }
 
-    DebugService(PeakSoundPlugin plugin, BlockRegistry blocks, SongStore songs, PlaybackManager playback,
+    DebugService(JavaPlugin plugin, BlockRegistry blocks, SongStore songs, PlaybackManager playback,
                  NetworkHandler network, EqualizerService equalizer, MicService mic) {
         this.plugin = plugin;
         this.blocks = blocks;
@@ -92,7 +93,7 @@ final class DebugService {
         StringBuilder sb = new StringBuilder(8192);
         line(sb, "Zeit (Server)", Instant.now().toString());
         sb.append("\n[Plugin]\n");
-        line(sb, "PeakSound-Plugin", plugin.getPluginMeta().getVersion() + ", Protokoll " + PeakIds.PROTOCOL_VERSION);
+        line(sb, "PeakSound-Plugin", Ctx.version() + ", Protokoll " + PeakIds.PROTOCOL_VERSION);
         line(sb, "Aktiviert", String.valueOf(plugin.isEnabled()));
         line(sb, "Server", Bukkit.getName() + " " + Bukkit.getVersion());
         line(sb, "Minecraft", Bukkit.getMinecraftVersion() + " (Bukkit " + Bukkit.getBukkitVersion() + ")");
@@ -133,7 +134,7 @@ final class DebugService {
         for (Player p : Bukkit.getOnlinePlayers()) if (network.hasMod(p)) modded.add(p.getName());
         line(sb, "Spieler mit PeakSound-Mod", modded.size() + " " + modded);
 
-        sb.append("\n[Config]\n").append(plugin.getConfig().saveToString()).append('\n');
+        sb.append("\n[Config]\n").append(Ctx.config().saveToString()).append('\n');
 
         if (admin) {
             sb.append("[Installierte Plugins]\n");
@@ -142,7 +143,7 @@ final class DebugService {
                         .append(p.isEnabled() ? "" : " (AUS)").append('\n');
             }
             sb.append("\n[Plugin-Datenordner]\n");
-            try (var files = Files.list(plugin.getDataFolder().toPath())) {
+            try (var files = Files.list(Ctx.dataFolder().toPath())) {
                 files.sorted().forEach(f -> sb.append("  ").append(f.getFileName()).append("  ")
                         .append(Files.isDirectory(f) ? "(Ordner)" : size(f)).append('\n'));
             } catch (IOException e) {

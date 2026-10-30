@@ -22,7 +22,8 @@ final class PeakLink {
 
     /** Meldet das Modul "peaksound" bei der Core-Mod an (beim Start der Mod, damit es im Hello an PeakCore steht). */
     static void register() {
-        channel = PeakCoreSession.get().registerModule(PeakIds.NAMESPACE, PeakSoundMod.VERSION, ClientNetwork::onCorePayload);
+        // whenReady: die Core-Mod startet nicht zwingend vor uns; die Anmeldung wird sonst nachgeholt, sobald die Sitzung steht
+        PeakCoreSession.whenReady(session -> channel = session.registerModule(PeakIds.NAMESPACE, PeakSoundMod.VERSION, ClientNetwork::onCorePayload));
     }
 
     static RouteDecision.Route route() {

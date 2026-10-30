@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.MalformedPacketException;
 import de.peaksound.protocol.Packet;
 import de.peaksound.protocol.PacketCodec;
@@ -22,7 +23,7 @@ import org.bukkit.plugin.messaging.PluginMessageListener;
  * Weiterleitung an Upload- und Streaming-Dienst. Spieler ohne Mod bekommen nur einen Chat-Hinweis.
  */
 final class NetworkHandler implements PluginMessageListener, Listener {
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final PeakRecipes recipes;
     private final Set<UUID> modded = ConcurrentHashMap.newKeySet();
     private UploadService uploads;
@@ -52,7 +53,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     private final Map<UUID, String> lastError = new ConcurrentHashMap<>();
     private final Map<UUID, Boolean> lastOperator = new ConcurrentHashMap<>();
 
-    NetworkHandler(PeakSoundPlugin plugin, PeakRecipes recipes) {
+    NetworkHandler(JavaPlugin plugin, PeakRecipes recipes) {
         this.plugin = plugin;
         this.recipes = recipes;
     }
@@ -93,7 +94,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         switch (route) {
             case LEGACY -> player.sendPluginMessage(plugin, PeakIds.CHANNEL, data);
             case CORE -> {
-                if (!core.send(player, data)) plugin.getLogger().fine("Paket nicht gesendet: " + player.getName() + " hat keinen PeakCore-Handshake mehr");
+                if (!core.send(player, data)) Ctx.logger().fine("Paket nicht gesendet: " + player.getName() + " hat keinen PeakCore-Handshake mehr");
             }
             case TOO_BIG -> throw new IllegalStateException("Paket zu gross");
             case NO_ROUTE -> { /* kein Hello gesehen: keine Mod */ }
@@ -143,7 +144,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         } catch (MalformedPacketException e) {
             stats[1]++;
             lastError.put(player.getUniqueId(), e.getMessage() + " (" + message.length + " Bytes)");
-            plugin.getLogger().fine("Ungueltiges Paket von " + player.getName() + ": " + e.getMessage());
+            Ctx.logger().fine("Ungueltiges Paket von " + player.getName() + ": " + e.getMessage());
             return; // manipulierte Pakete werden still ignoriert
         }
         if (packet instanceof Packet.Hello hello) {
@@ -189,7 +190,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         boolean compatible = hello.protocolVersion() == PeakIds.PROTOCOL_VERSION;
         hellos.put(player.getUniqueId(), new HelloInfo(hello.protocolVersion(), hello.modVersion(), System.currentTimeMillis(), compatible));
         transports.set(player.getUniqueId(), transport);
-        plugin.getLogger().info(player.getName() + ": PeakSound-Mod meldet sich (Protokoll " + hello.protocolVersion() + ", Server " + PeakIds.PROTOCOL_VERSION
+        Ctx.logger().info(player.getName() + ": PeakSound-Mod meldet sich (Protokoll " + hello.protocolVersion() + ", Server " + PeakIds.PROTOCOL_VERSION
                 + ", Operator: " + Permissions.admin(player) + ", Weg: " + (transport == Transports.Kind.CORE ? "PeakCore" : "alter Kanal") + ")");
         if (compatible) {
             modded.add(player.getUniqueId());

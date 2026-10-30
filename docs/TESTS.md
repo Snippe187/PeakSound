@@ -138,7 +138,7 @@ Grenzen: Die Warteschlange liegt nur im Speicher (nach einem Neustart leer). Kar
 ## Phase 6 - PeakSound als Modul von PeakCore (Kompatibilitaet mit der Alpha-Version)
 
 Automatisch (`./gradlew build`):
-- [x] `PluginYmlTest`: Name `PeakSound`, Befehle `peaksound` und `peaksoundvote`, alle Rechte der Alpha-Version, `depend: [PeakCore]`, `softdepend: [voicechat]`, gueltiges YAML
+- [x] `PluginYmlTest` (seit Phase 6b im Projekt `Bundle`): Befehle `peaksound` und `peaksoundvote`, alle Rechte der Alpha-Version, `softdepend: [voicechat]`, gueltiges YAML
 - [x] `TransportsTest`: Weg je Spieler (alter Kanal oder PeakCore), Sendeweg nach Groesse, ohne Hello wird nichts gesendet, Core-Weg hat wegen des Umschlags etwas weniger Platz
 
 Auf dem Testserver mit PeakCore + PeakSound (Alpha-Serverdaten: 73 Bloecke, 7 Songs, Radios, Displays, Bibliothek) und der **alten Mod** (aktuelle PeakSound-Mod mit Protokoll 2, Dev-Client):
@@ -149,6 +149,12 @@ Auf dem Testserver mit PeakCore + PeakSound (Alpha-Serverdaten: 73 Bloecke, 7 So
 - [x] Diagnose der alten Mod (Auto-Debug): Handshake beantwortet, Operator ja, Server-Bericht erhalten; Empfangen: HelloAck, PlaybackStart 7, LightStart 16, AnalysisData 2, CoverData 1, LyricsData 2, SongInfo 7; 0 ungueltige Pakete
 - [x] Spieler mit der alten Mod bekommt keinen Hinweis "keine Mod gefunden" von PeakCore (`/peakcore players` zeigt ihn als "keine Mod gemeldet", er ist aber als kompatibel markiert)
 - [x] Beim Abschalten meldet PeakCore das Modul ab
-- [ ] **Neue Mod ueber den PeakCore-Kanal** (Weg "PeakCore"): braucht die auf PeakCore umgestellte PeakSound-Mod (Phase 7)
+- [x] **Neue Mod ueber den PeakCore-Kanal** (Weg "PeakCore"): Handshake ACTIVE, Wiedergabe laeuft (Phase 7 und 6b, Auto-Debug)
 - [ ] Update einer echten Alpha-Installation (Daten vom Freunde-Server): nicht moeglich, es gibt kein Backup; nur mit den eigenen Testdaten geprueft
 - [ ] Mit Simple Voice Chat, Upload per Mod und Mikrofon: nicht erneut getestet (der Code dort ist unveraendert)
+## Phase 6b - Eingebautes Modul im All-in-One-Jar
+
+Siehe `PeakCore/docs/TESTS.md` (Abschnitt Phase 6b) fuer die Pruefungen des Jars, des Modul-Schalters und des doppelten Alt-Jars. Fuer PeakSound selbst:
+- [x] Daten, Befehle, Rechte, Item-Markierungen und der Datenordner `plugins/PeakSound` sind unveraendert (Plugin-Name steckt nirgends mehr im Namensraum: Schluessel nutzen `PeakIds.NAMESPACE`)
+- [x] Mod startet unabhaengig von der Reihenfolge der Mods (`PeakCoreSession.whenReady`); vorher stuerzte der Dev-Client ab, wenn PeakSound vor der Core-Mod initialisiert wurde
+- [ ] Voice Chat, Upload per Mod und Mikrofon im All-in-One-Jar: nicht erneut getestet (Code mechanisch umgestellt)

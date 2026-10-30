@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -19,7 +20,7 @@ import org.bukkit.block.Block;
 
 /** Einstellungen je PeakSound-Block (Scheinwerfer, DJ-Pult), gespeichert in einer JSON-Datei. */
 final class BlockSettingsStore<T> {
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final Path file;
     private final String fileName;
     private final Type mapType;
@@ -29,10 +30,10 @@ final class BlockSettingsStore<T> {
     private final Map<BlockRegistry.Key, T> values = new ConcurrentHashMap<>();
     private volatile boolean dirty;
 
-    BlockSettingsStore(PeakSoundPlugin plugin, String fileName, Class<T> type, T defaults, UnaryOperator<T> sanitizer) {
+    BlockSettingsStore(JavaPlugin plugin, String fileName, Class<T> type, T defaults, UnaryOperator<T> sanitizer) {
         this.plugin = plugin;
         this.fileName = fileName;
-        this.file = plugin.getDataFolder().toPath().resolve(fileName);
+        this.file = Ctx.dataFolder().toPath().resolve(fileName);
         this.mapType = TypeToken.getParameterized(Map.class, String.class, type).getType();
         this.defaults = defaults;
         this.sanitizer = sanitizer;
@@ -56,11 +57,11 @@ final class BlockSettingsStore<T> {
                 try {
                     values.put(parse(k), sanitizer.apply(v));
                 } catch (RuntimeException e) {
-                    plugin.getLogger().warning("Ungueltiger Eintrag in " + fileName + " uebersprungen: " + k);
+                    Ctx.logger().warning("Ungueltiger Eintrag in " + fileName + " uebersprungen: " + k);
                 }
             });
         } catch (IOException | RuntimeException e) {
-            plugin.getLogger().log(Level.SEVERE, fileName + " konnte nicht gelesen werden", e);
+            Ctx.logger().log(Level.SEVERE, fileName + " konnte nicht gelesen werden", e);
         }
     }
 
@@ -92,7 +93,7 @@ final class BlockSettingsStore<T> {
             Files.writeString(file, gson.toJson(raw));
         } catch (IOException e) {
             dirty = true;
-            plugin.getLogger().log(Level.SEVERE, fileName + " konnte nicht gespeichert werden", e);
+            Ctx.logger().log(Level.SEVERE, fileName + " konnte nicht gespeichert werden", e);
         }
     }
 }

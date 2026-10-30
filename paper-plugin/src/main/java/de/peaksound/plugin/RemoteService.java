@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.JukeboxSettings;
 import de.peaksound.protocol.LoopMode;
 import de.peaksound.protocol.Packet;
@@ -20,7 +21,7 @@ import org.bukkit.entity.Player;
  * Song nach Signalstaerke, Lautstaerke nach Signalstaerke). Die Auswertung laeuft auf dem Hauptthread alle 2 Ticks.
  */
 final class RemoteService {
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final BlockRegistry registry;
     private final NetworkRegistry networks;
     private final BlockSettingsStore<RemoteSettings> store;
@@ -31,7 +32,7 @@ final class RemoteService {
     /** Letzte Signalstaerke je Fernbedienung (fehlt = noch nicht gemessen: der erste Wert loest nichts aus). */
     private final Map<BlockRegistry.Key, Integer> last = new HashMap<>();
 
-    RemoteService(PeakSoundPlugin plugin, BlockRegistry registry, NetworkRegistry networks, BlockSettingsStore<RemoteSettings> store,
+    RemoteService(JavaPlugin plugin, BlockRegistry registry, NetworkRegistry networks, BlockSettingsStore<RemoteSettings> store,
                   PlaybackManager playback, PlaylistService playlist, JukeboxSettingsStore jukeboxSettings, EditAccess access) {
         this.plugin = plugin;
         this.registry = registry;

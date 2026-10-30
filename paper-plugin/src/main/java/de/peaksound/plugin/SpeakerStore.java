@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -23,15 +24,15 @@ final class SpeakerStore {
     /** Ein Lautsprecher: seine Einstellungen und die Nummer in seinem System (0 = nicht verbunden). */
     record Data(SpeakerSettings settings, int number) {}
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final Path file;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final Map<BlockRegistry.Key, Data> speakers = new ConcurrentHashMap<>();
     private volatile boolean dirty;
 
-    SpeakerStore(PeakSoundPlugin plugin) {
+    SpeakerStore(JavaPlugin plugin) {
         this.plugin = plugin;
-        this.file = plugin.getDataFolder().toPath().resolve("speakers.json");
+        this.file = Ctx.dataFolder().toPath().resolve("speakers.json");
     }
 
     private static String keyString(BlockRegistry.Key k) {
@@ -53,11 +54,11 @@ final class SpeakerStore {
                     int number = Math.max(0, Math.min(de.peaksound.protocol.SpeakerNumbering.MAX_NUMBER, v.number()));
                     speakers.put(parse(k), new Data(v.settings().sanitized(), number));
                 } catch (RuntimeException e) {
-                    plugin.getLogger().warning("Ungueltiger Lautsprecher-Eintrag uebersprungen: " + k);
+                    Ctx.logger().warning("Ungueltiger Lautsprecher-Eintrag uebersprungen: " + k);
                 }
             });
         } catch (IOException | RuntimeException e) {
-            plugin.getLogger().log(Level.SEVERE, "speakers.json konnte nicht gelesen werden", e);
+            Ctx.logger().log(Level.SEVERE, "speakers.json konnte nicht gelesen werden", e);
         }
     }
 
@@ -97,7 +98,7 @@ final class SpeakerStore {
             Files.writeString(file, gson.toJson(raw));
         } catch (IOException e) {
             dirty = true;
-            plugin.getLogger().log(Level.SEVERE, "speakers.json konnte nicht gespeichert werden", e);
+            Ctx.logger().log(Level.SEVERE, "speakers.json konnte nicht gespeichert werden", e);
         }
     }
 }

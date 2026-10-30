@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -19,15 +20,15 @@ import org.bukkit.block.Block;
 
 /** Einstellungen aller Jukeboxen (Name, Reichweite, Lautstaerke, Partikel, ...), gespeichert in {@code jukebox-settings.json}. */
 final class JukeboxSettingsStore {
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final Path file;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final Map<BlockRegistry.Key, JukeboxSettings> settings = new ConcurrentHashMap<>();
     private volatile boolean dirty;
 
-    JukeboxSettingsStore(PeakSoundPlugin plugin) {
+    JukeboxSettingsStore(JavaPlugin plugin) {
         this.plugin = plugin;
-        this.file = plugin.getDataFolder().toPath().resolve("jukebox-settings.json");
+        this.file = Ctx.dataFolder().toPath().resolve("jukebox-settings.json");
     }
 
     private static String keyString(BlockRegistry.Key k) {
@@ -48,11 +49,11 @@ final class JukeboxSettingsStore {
                 try {
                     settings.put(parse(k), v.sanitized());
                 } catch (RuntimeException e) {
-                    plugin.getLogger().warning("Ungueltige Jukebox-Einstellung uebersprungen: " + k);
+                    Ctx.logger().warning("Ungueltige Jukebox-Einstellung uebersprungen: " + k);
                 }
             });
         } catch (IOException | RuntimeException e) {
-            plugin.getLogger().log(Level.SEVERE, "jukebox-settings.json konnte nicht gelesen werden", e);
+            Ctx.logger().log(Level.SEVERE, "jukebox-settings.json konnte nicht gelesen werden", e);
         }
     }
 
@@ -74,8 +75,8 @@ final class JukeboxSettingsStore {
 
     JukeboxSettings defaults() {
         return JukeboxSettings.defaults(
-                Math.max(Limits.MIN_RANGE, Math.min(Limits.MAX_RANGE, plugin.getConfig().getInt("playback.default-range", 16))),
-                Math.max(0, Math.min(100, plugin.getConfig().getInt("playback.default-volume", 100))));
+                Math.max(Limits.MIN_RANGE, Math.min(Limits.MAX_RANGE, Ctx.config().getInt("playback.default-range", 16))),
+                Math.max(0, Math.min(100, Ctx.config().getInt("playback.default-volume", 100))));
     }
 
     void set(Block block, JukeboxSettings value) {
@@ -96,7 +97,7 @@ final class JukeboxSettingsStore {
             Files.writeString(file, gson.toJson(raw));
         } catch (IOException e) {
             dirty = true;
-            plugin.getLogger().log(Level.SEVERE, "jukebox-settings.json konnte nicht gespeichert werden", e);
+            Ctx.logger().log(Level.SEVERE, "jukebox-settings.json konnte nicht gespeichert werden", e);
         }
     }
 }

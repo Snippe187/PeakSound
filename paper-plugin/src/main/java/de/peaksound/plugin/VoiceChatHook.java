@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.maxhenkel.voicechat.api.BukkitVoicechatService;
 import de.maxhenkel.voicechat.api.VoicechatApi;
 import de.maxhenkel.voicechat.api.VoicechatConnection;
@@ -34,14 +35,14 @@ final class VoiceChatHook implements VoicechatPlugin {
     }
 
     /** Meldet das Plugin bei Simple Voice Chat an. Gibt false zurueck, wenn das nicht moeglich ist. */
-    static boolean register(PeakSoundPlugin plugin, MicService mic) {
+    static boolean register(JavaPlugin plugin, MicService mic) {
         try {
             BukkitVoicechatService service = plugin.getServer().getServicesManager().load(BukkitVoicechatService.class);
             if (service == null) return false;
             service.registerPlugin(new VoiceChatHook(mic));
             return true;
         } catch (LinkageError | RuntimeException e) {
-            plugin.getLogger().log(Level.WARNING, "Simple Voice Chat konnte nicht angebunden werden (Mikrofon-Block ohne Funktion)", e);
+            Ctx.logger().log(Level.WARNING, "Simple Voice Chat konnte nicht angebunden werden (Mikrofon-Block ohne Funktion)", e);
             return false;
         }
     }

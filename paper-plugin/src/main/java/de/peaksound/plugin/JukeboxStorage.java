@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -30,15 +31,15 @@ final class JukeboxStorage {
     /** Bukkit-Kisteninventare haben ein Vielfaches von 9 Slots; die letzten drei bleiben ungenutzt. */
     private static final int SIZE = 18;
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final Path file;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final Map<BlockRegistry.Key, Inventory> inventories = new ConcurrentHashMap<>();
     private volatile boolean dirty;
 
-    JukeboxStorage(PeakSoundPlugin plugin) {
+    JukeboxStorage(JavaPlugin plugin) {
         this.plugin = plugin;
-        this.file = plugin.getDataFolder().toPath().resolve("jukebox-inventories.json");
+        this.file = Ctx.dataFolder().toPath().resolve("jukebox-inventories.json");
     }
 
     private static String keyString(BlockRegistry.Key k) {
@@ -94,11 +95,11 @@ final class JukeboxStorage {
                     }
                     inventories.put(parse(k), inv);
                 } catch (RuntimeException e) {
-                    plugin.getLogger().warning("Ungueltiges Jukebox-Inventar uebersprungen: " + k);
+                    Ctx.logger().warning("Ungueltiges Jukebox-Inventar uebersprungen: " + k);
                 }
             });
         } catch (IOException | RuntimeException e) {
-            plugin.getLogger().log(Level.SEVERE, "jukebox-inventories.json konnte nicht gelesen werden", e);
+            Ctx.logger().log(Level.SEVERE, "jukebox-inventories.json konnte nicht gelesen werden", e);
         }
     }
 
@@ -130,7 +131,7 @@ final class JukeboxStorage {
             Files.writeString(file, gson.toJson(raw));
         } catch (IOException e) {
             dirty = true;
-            plugin.getLogger().log(Level.SEVERE, "jukebox-inventories.json konnte nicht gespeichert werden", e);
+            Ctx.logger().log(Level.SEVERE, "jukebox-inventories.json konnte nicht gespeichert werden", e);
         }
     }
 }

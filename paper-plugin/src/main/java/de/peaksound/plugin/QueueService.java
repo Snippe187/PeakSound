@@ -1,5 +1,6 @@
 package de.peaksound.plugin;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import de.peaksound.protocol.PeakBlockType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ import org.bukkit.inventory.ItemStack;
 final class QueueService implements CommandExecutor {
     private record Entry(String hash, UUID requester, String requesterName) {}
 
-    private final PeakSoundPlugin plugin;
+    private final JavaPlugin plugin;
     private final BlockRegistry registry;
     private final NetworkRegistry networks;
     private final SongStore songs;
@@ -44,7 +45,7 @@ final class QueueService implements CommandExecutor {
     private final Map<BlockRegistry.Key, String> voteSong = new ConcurrentHashMap<>();
     private final Map<BlockRegistry.Key, Set<UUID>> votes = new ConcurrentHashMap<>();
 
-    QueueService(PeakSoundPlugin plugin, BlockRegistry registry, NetworkRegistry networks, SongStore songs, PlaybackManager playback,
+    QueueService(JavaPlugin plugin, BlockRegistry registry, NetworkRegistry networks, SongStore songs, PlaybackManager playback,
                  JukeboxSettingsStore settings, PeakItems items) {
         this.plugin = plugin;
         this.registry = registry;
@@ -55,11 +56,11 @@ final class QueueService implements CommandExecutor {
         this.items = items;
     }
 
-    private int maxSize() { return Math.max(1, plugin.getConfig().getInt("queue.max-size", 10)); }
+    private int maxSize() { return Math.max(1, Ctx.config().getInt("queue.max-size", 10)); }
 
-    private int maxPerPlayer() { return Math.max(1, plugin.getConfig().getInt("queue.max-per-player", 3)); }
+    private int maxPerPlayer() { return Math.max(1, Ctx.config().getInt("queue.max-per-player", 3)); }
 
-    boolean enabled() { return plugin.getConfig().getBoolean("queue.enabled", true); }
+    boolean enabled() { return Ctx.config().getBoolean("queue.enabled", true); }
 
     // ---- Wuensche ----
 
