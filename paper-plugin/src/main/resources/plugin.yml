@@ -3,6 +3,7 @@ version: '${version}'
 main: de.peaksound.plugin.PeakSoundPlugin
 api-version: '26.2'
 description: 3D-Audio, Schallplatten, Jukeboxen und Lautsprecher fuer die PeakSound-Mod.
+depend: [PeakCore]
 softdepend: [voicechat]
 commands:
   peaksound:

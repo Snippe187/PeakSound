@@ -39,6 +39,9 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     private LibraryService library;
     private RemoteService remote;
     private RadioService radio;
+    /** Verbindung zu PeakCore (neue Mod); der alte Kanal bleibt fuer die Alpha-Mod. */
+    private CoreLink core;
+    private final Transports transports = new Transports();
     /** Spieler, deren HelloAck noch aussteht, weil ihr Client den Kanal beim Server noch nicht angemeldet hatte (Paper verwirft solche Sendungen still). */
     private final Set<UUID> pendingAck = ConcurrentHashMap.newKeySet();
     /** Letztes Hello je Spieler (auch bei Versionskonflikt) und Paketzaehler, nur fuer die Diagnose. */
@@ -77,6 +80,26 @@ final class NetworkHandler implements PluginMessageListener, Listener {
 
     void setRadio(RadioService radio) { this.radio = radio; }
 
+    void setCore(CoreLink core) { this.core = core; }
+
+    /**
+     * Sendet ein Paket auf dem Weg, auf dem die Mod des Spielers sich gemeldet hat. Nur auf dem Haupt-Thread.
+     * Spieler ohne Hello bekommen nichts (sie haben keine Mod).
+     */
+    void send(Player player, Packet.Clientbound packet) {
+        byte[] data = packet.encode();
+        int coreMax = core == null ? 0 : core.maxPayloadToClient();
+        Transports.Route route = Transports.route(transports.get(player.getUniqueId()), data.length, PacketCodec.MAX_CLIENTBOUND_SIZE, coreMax);
+        switch (route) {
+            case LEGACY -> player.sendPluginMessage(plugin, PeakIds.CHANNEL, data);
+            case CORE -> {
+                if (!core.send(player, data)) plugin.getLogger().fine("Paket nicht gesendet: " + player.getName() + " hat keinen PeakCore-Handshake mehr");
+            }
+            case TOO_BIG -> throw new IllegalStateException("Paket zu gross");
+            case NO_ROUTE -> { /* kein Hello gesehen: keine Mod */ }
+        }
+    }
+
     /** Diagnosezeilen ueber diesen Spieler: Hello, Paketzaehler, letzter Fehler. */
     String describe(Player player) {
         HelloInfo h = hellos.get(player.getUniqueId());
@@ -85,7 +108,9 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         sb.append("  Hello empfangen: ").append(h == null ? "NEIN (der Server hat von diesem Spieler noch nie ein gueltiges Hello gesehen)"
                 : "ja, Mod " + h.modVersion() + ", Protokoll " + h.protocol() + " (Server " + PeakIds.PROTOCOL_VERSION + "), kompatibel: "
                 + h.compatible() + ", vor " + (System.currentTimeMillis() - h.at()) / 1000 + " s").append('\n');
-        sb.append("  Pakete von diesem Spieler auf Kanal ").append(PeakIds.CHANNEL).append(": ").append(t == null ? 0 : t[0])
+        sb.append("  Weg der Mod: ").append(transports.get(player.getUniqueId()) == null ? "unbekannt (kein Hello)"
+                : transports.get(player.getUniqueId()) == Transports.Kind.CORE ? "PeakCore-Kanal" : "alter Kanal " + PeakIds.CHANNEL).append('\n');
+        sb.append("  Pakete von diesem Spieler (alter Kanal und PeakCore) auf Kanal ").append(PeakIds.CHANNEL).append(": ").append(t == null ? 0 : t[0])
                 .append(" (davon ungueltig: ").append(t == null ? 0 : t[1]).append(")\n");
         String err = lastError.get(player.getUniqueId());
         if (err != null) sb.append("  Letzter Paketfehler: ").append(err).append('\n');
@@ -96,9 +121,19 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         return modded.contains(player.getUniqueId());
     }
 
+    /** Alter Kanal {@code peaksound:main} (Alpha-Mod). */
     @Override
     public void onPluginMessageReceived(String channel, Player player, byte[] message) {
         if (!channel.equals(PeakIds.CHANNEL)) return;
+        receive(player, message, Transports.Kind.LEGACY);
+    }
+
+    /** Nutzdaten der neuen Mod ueber den Kanal von PeakCore (der Core hat den Handshake schon geprueft). */
+    void onCoreMessage(Player player, byte[] payload) {
+        receive(player, payload, Transports.Kind.CORE);
+    }
+
+    private void receive(Player player, byte[] message, Transports.Kind transport) {
         Packet.Serverbound packet;
         long[] stats = traffic.computeIfAbsent(player.getUniqueId(), k -> new long[3]);
         stats[0]++;
@@ -112,7 +147,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
             return; // manipulierte Pakete werden still ignoriert
         }
         if (packet instanceof Packet.Hello hello) {
-            onHello(player, hello);
+            onHello(player, hello, transport);
             return;
         }
         if (packet instanceof Packet.DebugRequest) { // die Diagnose muss auch ohne Handshake antworten
@@ -150,13 +185,16 @@ final class NetworkHandler implements PluginMessageListener, Listener {
         }
     }
 
-    private void onHello(Player player, Packet.Hello hello) {
+    private void onHello(Player player, Packet.Hello hello, Transports.Kind transport) {
         boolean compatible = hello.protocolVersion() == PeakIds.PROTOCOL_VERSION;
         hellos.put(player.getUniqueId(), new HelloInfo(hello.protocolVersion(), hello.modVersion(), System.currentTimeMillis(), compatible));
+        transports.set(player.getUniqueId(), transport);
         plugin.getLogger().info(player.getName() + ": PeakSound-Mod meldet sich (Protokoll " + hello.protocolVersion() + ", Server " + PeakIds.PROTOCOL_VERSION
-                + ", Operator: " + Permissions.admin(player) + ")");
+                + ", Operator: " + Permissions.admin(player) + ", Weg: " + (transport == Transports.Kind.CORE ? "PeakCore" : "alter Kanal") + ")");
         if (compatible) {
             modded.add(player.getUniqueId());
+            // Die alte Mod meldet sich nicht bei PeakCore: damit sie dort nicht als "ohne Mod" gilt
+            if (transport == Transports.Kind.LEGACY && core != null) core.markLegacyClient(player);
         } else {
             player.sendMessage(Messages.versionMismatch(player, PeakIds.PROTOCOL_VERSION, hello.protocolVersion()));
         }
@@ -170,7 +208,8 @@ final class NetworkHandler implements PluginMessageListener, Listener {
      */
     private void trySendAck(Player player) {
         HelloInfo h = hellos.get(player.getUniqueId());
-        if (h == null || !player.getListeningPluginChannels().contains(PeakIds.CHANNEL)) return;
+        // Auf dem alten Kanal erst antworten, wenn der Client ihn angemeldet hat; ueber PeakCore ist der Kanal durch den Handshake schon sicher da
+        if (h == null || (transports.get(player.getUniqueId()) == Transports.Kind.LEGACY && !player.getListeningPluginChannels().contains(PeakIds.CHANNEL))) return;
         if (!pendingAck.remove(player.getUniqueId())) return;
         if (h.compatible()) { // Client startet leer: laufende Jukeboxen und Rauschen erneut melden
             playback.forget(player);
@@ -199,11 +238,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         player.discoverRecipes(recipes.keys()); // Rezepte im Rezeptbuch sichtbar machen
-        if (!plugin.getConfig().getBoolean("non-mod-hint.enabled", true)) return;
-        long delay = Math.max(1, plugin.getConfig().getLong("non-mod-hint.delay-ticks", 100));
-        player.getScheduler().runDelayed(plugin, task -> {
-            if (!hasMod(player)) player.sendMessage(Messages.nonModHint(player));
-        }, null, delay);
+        // Der Hinweis "keine Mod gefunden" kommt jetzt von PeakCore (config.yml dort); Spieler mit der alten Mod sind dort als kompatibel markiert
     }
 
     @EventHandler
@@ -216,6 +251,7 @@ final class NetworkHandler implements PluginMessageListener, Listener {
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         modded.remove(player.getUniqueId());
+        transports.remove(player.getUniqueId());
         uploads.onQuit(player);
         streams.onQuit(player);
         playback.onQuit(player);

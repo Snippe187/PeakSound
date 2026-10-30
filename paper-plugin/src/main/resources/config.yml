@@ -1,6 +1,7 @@
 # PeakSound - Plugin-Konfiguration
 
-# Hinweis im Chat fuer Spieler ohne PeakSound-Mod.
+# Wird nicht mehr gelesen: der Hinweis fuer Spieler ohne Mod kommt jetzt von PeakCore (plugins/PeakCore/config.yml).
+# Der Eintrag bleibt stehen, damit bestehende Konfigurationen unveraendert gueltig sind.
 non-mod-hint:
   enabled: true
   # Wartezeit nach dem Beitritt (20 Ticks = 1 Sekunde). Die Mod meldet sich normalerweise sofort.

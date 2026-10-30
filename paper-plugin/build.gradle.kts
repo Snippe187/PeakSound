@@ -16,9 +16,18 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:${property("paper_api_version")}")
     // Simple Voice Chat ist optional (softdepend): nur zum Kompilieren, zur Laufzeit liefert es der Server
     compileOnly("de.maxhenkel.voicechat:voicechat-api:2.6.25")
+    // PeakCore-API: zur Laufzeit liefert sie das Plugin PeakCore (depend in der plugin.yml), deshalb nicht im Jar
+    compileOnly("de.peakverse:core-api")
     implementation(project(":protocol"))
     implementation(project(":audio-core"))
+
+    testImplementation("org.yaml:snakeyaml:2.4") // prueft die plugin.yml (Kompatibilitaet mit der Alpha-Version)
+    testImplementation(platform("org.junit:junit-bom:5.11.4"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
+
+tasks.test { useJUnitPlatform() }
 
 tasks.processResources {
     val version = project.version

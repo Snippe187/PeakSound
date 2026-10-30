@@ -25,6 +25,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
     private BlockSettingsStore<DisplaySettings> displayStoreRef;
     private DisplayService displayRef;
     private BlockSettingsStore<de.peaksound.protocol.RemoteSettings> remoteStoreRef;
+    private CoreLink coreLink;
 
     SongStore songs() { return songs; }
 
@@ -49,6 +50,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
         recipes.register();
 
         NetworkHandler network = new NetworkHandler(this, recipes);
+        Net.setHandler(network);
         Transcoder transcoder = Transcoder.create(getConfig().getString("upload.ffmpeg-path", ""));
         getLogger().info(transcoder.ffmpegAvailable()
                 ? "ffmpeg gefunden: Uploads werden zu Ogg Vorbis komprimiert."
@@ -149,8 +151,12 @@ public final class PeakSoundPlugin extends JavaPlugin {
         getCommand("peaksoundvote").setExecutor(queueService);
         network.setRadio(radio);
 
+        // Alter Kanal fuer die Alpha-Mod (bleibt, damit bestehende Spieler nach dem Update weiterspielen koennen) ...
         getServer().getMessenger().registerIncomingPluginChannel(this, PeakIds.CHANNEL, network);
         getServer().getMessenger().registerOutgoingPluginChannel(this, PeakIds.CHANNEL);
+        // ... und Anmeldung bei PeakCore als Modul "peaksound" fuer die neue Mod
+        coreLink = CoreLink.register(this, network);
+        network.setCore(coreLink);
 
         SettingsClipboard clipboard = new SettingsClipboard(items, jukeboxSettings, playback, speakers, lightService, dj, micService, remote);
         getServer().getPluginManager().registerEvents(clipboard, this);
@@ -188,6 +194,7 @@ public final class PeakSoundPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (coreLink != null) coreLink.unregister();
         if (recipes != null) recipes.unregister();
         if (blocks != null) blocks.saveNow();
         if (songs != null) songs.saveIfDirty();
