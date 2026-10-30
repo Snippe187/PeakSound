@@ -6,7 +6,15 @@ keine Musik und sieht nur normale Blöcke.
 ## Server (Paper 26.2)
 
 1. Paper 26.2 installieren (Build 135 oder neuer) und einmal starten.
-2. `Server-Plugin-Paper/PeakSound-<version>.jar` in den Ordner `plugins/` legen.
+2. **`PeakCore-<version>.jar` und `PeakSound-<version>.jar`** in den Ordner `plugins/` legen. PeakSound ist ein Modul von PeakCore
+   und laedt ohne PeakCore nicht. (PeakCore: `PeakCore/Plugin/PeakCore-<version>.jar`, PeakSound: `PeakSound/Plugin/PeakSound-<version>.jar`.)
+
+   **Update von der Alpha-Version:** Beide Jars ins `plugins/`-Verzeichnis legen, die alte PeakSound-Jar ersetzen, Server neu starten.
+   Name, Daten, Rechte und Befehle bleiben gleich, alle gebauten Anlagen (Jukeboxen, Lautsprecher, DJ-Pulte, Radios, Displays, Bibliothek)
+   laufen weiter. Spieler mit der alten Mod koennen weiterspielen (sie nutzen den bisherigen Kanal `peaksound:main`), bis sie die neue Mod
+   installieren. Vorher mit `/peaksound backup` eine Sicherung anlegen.
+   Der Hinweis "keine Mod gefunden" kommt jetzt von PeakCore (`plugins/PeakCore/config.yml`); die Schluessel `non-mod-hint.*` in der
+   PeakSound-`config.yml` werden nicht mehr gelesen.
 3. Server starten. Beim **ersten Start** lädt Paper die Audio-Bibliotheken von Maven Central
    (jaudiotagger, JLayer, JOrbis, jFLAC, java-flac-encoder). Der Server braucht dafür einmal Internet.
 4. Im Ordner `plugins/PeakSound/` entsteht die `config.yml` (siehe unten) und beim Betrieb `songs/`, `songs.json`,

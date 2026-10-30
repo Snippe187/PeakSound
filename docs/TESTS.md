@@ -134,3 +134,21 @@ Grenzen: Die Warteschlange liegt nur im Speicher (nach einem Neustart leer). Kar
 - [ ] Alle PeakSound-Bloecke und -Items (Jukebox, Lautsprecher mit Nummer, DJ-Pult, Scheinwerfer, Mikrofon, Bibliothek, Fernbedienung, Display, Radio-Sender/-Empfaenger, Taschenradio, Tuner, Platten) sehen mit der Mod aus wie vorher - platziert, im Inventar und in der Hand.
 - [ ] Dasselbe mit einem Server-Resource-Pack, das eine eigene ssets/minecraft/blockstates/note_block.json und items/note_block.json mitbringt: unsere Bloecke und Items behalten ihre Optik, normale Notenbloecke zeigen das Modell des Packs.
 - [ ] Echte Spielerkoepfe und Vanilla-Items (Notenblock, Trial Key) sind unveraendert.
+
+## Phase 6 - PeakSound als Modul von PeakCore (Kompatibilitaet mit der Alpha-Version)
+
+Automatisch (`./gradlew build`):
+- [x] `PluginYmlTest`: Name `PeakSound`, Befehle `peaksound` und `peaksoundvote`, alle Rechte der Alpha-Version, `depend: [PeakCore]`, `softdepend: [voicechat]`, gueltiges YAML
+- [x] `TransportsTest`: Weg je Spieler (alter Kanal oder PeakCore), Sendeweg nach Groesse, ohne Hello wird nichts gesendet, Core-Weg hat wegen des Umschlags etwas weniger Platz
+
+Auf dem Testserver mit PeakCore + PeakSound (Alpha-Serverdaten: 73 Bloecke, 7 Songs, Radios, Displays, Bibliothek) und der **alten Mod** (aktuelle PeakSound-Mod mit Protokoll 2, Dev-Client):
+- [x] PeakSound laedt mit den vorhandenen Daten, Log: "Modul angemeldet: PeakSound 0.1.0 (peaksound, Plugin PeakSound)"; `/peakcore modules` listet es
+- [x] Alte Mod meldet sich: "Mod meldet sich (Protokoll 2, Server 2, Operator: true, Weg: alter Kanal)"
+- [x] `/peaksound stats`: "13 Jukeboxen (11 spielen), 35 Lautsprecher, 1 Sender, 2 Radios, 1 Bibliotheken; Spieler online: 1 (1 mit Mod)" - alle Anlagen sind geladen
+- [x] Wiedergabe: nach `/peaksound play` laedt der Client die Songs ueber den alten Kanal herunter (Cache-Dateien mit exakt denselben Groessen wie auf dem Server)
+- [x] Diagnose der alten Mod (Auto-Debug): Handshake beantwortet, Operator ja, Server-Bericht erhalten; Empfangen: HelloAck, PlaybackStart 7, LightStart 16, AnalysisData 2, CoverData 1, LyricsData 2, SongInfo 7; 0 ungueltige Pakete
+- [x] Spieler mit der alten Mod bekommt keinen Hinweis "keine Mod gefunden" von PeakCore (`/peakcore players` zeigt ihn als "keine Mod gemeldet", er ist aber als kompatibel markiert)
+- [x] Beim Abschalten meldet PeakCore das Modul ab
+- [ ] **Neue Mod ueber den PeakCore-Kanal** (Weg "PeakCore"): braucht die auf PeakCore umgestellte PeakSound-Mod (Phase 7)
+- [ ] Update einer echten Alpha-Installation (Daten vom Freunde-Server): nicht moeglich, es gibt kein Backup; nur mit den eigenen Testdaten geprueft
+- [ ] Mit Simple Voice Chat, Upload per Mod und Mikrofon: nicht erneut getestet (der Code dort ist unveraendert)

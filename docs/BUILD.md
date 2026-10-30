@@ -51,3 +51,7 @@ Hilfsmittel (brauchen Node.js beziehungsweise Java):
 
 Die Audio-Bibliotheken stehen unter der LGPL und werden **nicht** in unser Jar eingeschmolzen: Das Plugin lädt sie
 beim Start (`libraries:` in `plugin.yml`), die Mod bindet sie als eigene Jars ein. Details: [THIRD-PARTY-LICENSES.md](../THIRD-PARTY-LICENSES.md).
+
+## PeakCore (Composite Build)
+
+Das Plugin braucht die API von PeakCore (`core-api`). Beim Entwickeln wird sie direkt aus dem Nachbarordner `../PeakCore` bezogen (`includeBuild` in `settings.gradle.kts`); beide Projekte muessen also nebeneinander liegen (PeakVerse-Verbund). Das PeakSound-Jar enthaelt die API nicht, zur Laufzeit liefert sie das Plugin PeakCore.

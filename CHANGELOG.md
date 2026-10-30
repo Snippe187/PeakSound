@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.1.0
+- PeakSound ist jetzt ein Modul von PeakCore: `depend: [PeakCore]`, Anmeldung als Modul `peaksound`. Der alte Kanal `peaksound:main` (Protokoll 2) bleibt, damit Spieler mit der Alpha-Mod nach dem Update weiterspielen; die neue Mod spricht ueber den Kanal von PeakCore. Name, Daten, Rechte und Befehle sind unveraendert.
+- Der Hinweis fuer Spieler ohne Mod kommt von PeakCore; Spieler mit der alten Mod werden dort als kompatibel erkannt.
 - Server-Resource-Packs: Die Mod ueberschreibt keine Vanilla-Dateien mehr (Notenblock-Blockstate, Item-Definitionen), sondern setzt ihre Modelle clientseitig per Code ein (PeakModels). Ein Server-Pack mit eigener note_block.json verdraengt unsere Optik dadurch nicht.
 - Display-Block: zeigt Cover, Titel und Interpret des laufenden Songs; nebeneinander liegende Displays bilden eine Cover-Wand (Bilderrahmen mit Karten, serverseitig, auch ohne Mod).
 - Aufraeumen: Verschwundene PeakSound-Bloecke (WorldEdit, /setblock) werden alle 30 s erkannt, ihre Wiedergabe und Einstellungen vergessen.
