@@ -18,6 +18,7 @@ import net.minecraft.network.chat.Component;
 public final class PeakSoundClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        PeakModels.register();
         PeakCreativeTab.register();
         DebugReport.register();
         // Diagnose: /peaksoundstatus zeigt, was die Mod ueber den Server weiss

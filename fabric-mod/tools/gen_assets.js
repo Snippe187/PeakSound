@@ -1,10 +1,9 @@
-// Erzeugt Modelle (mit Vanilla-Texturen), Item-Definitionen und den Notenblock-Blockstate der Mod.
+// Erzeugt Modelle (mit Vanilla-Texturen), Item-Definitionen der Mod.
 // Aufruf: node fabric-mod/tools/gen_assets.js   (nur Node-Standardbibliothek)
 const fs = require("fs"), path = require("path"), zlib = require("zlib");
 
 const OUT = path.join(__dirname, "..", "src", "client", "resources", "assets");
 const PS = path.join(OUT, "peaksound");
-const MC = path.join(OUT, "minecraft");
 
 function write(file, content) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -63,31 +62,10 @@ for (const [id, tex] of Object.entries(items)) {
   });
 }
 
-// ---------- Item-Definitionen (ersetzen die Vanilla-Definitionen, Fallback = Vanilla-Modell) ----------
-function itemDef(file, vanillaModel, cases, fallbackOverride) {
-  json(path.join(MC, "items", file), {
-    model: {
-      type: "minecraft:select",
-      property: "minecraft:custom_model_data",
-      index: 0,
-      cases: Object.entries(cases).map(([when, model]) => ({ when, model: { type: "minecraft:model", model } })),
-      fallback: fallbackOverride || { type: "minecraft:model", model: vanillaModel }
-    }
-  });
-}
-itemDef("disc_fragment_5.json", "minecraft:item/disc_fragment_5",
-  { blank_record: "peaksound:item/blank_record", written_record: "peaksound:item/written_record" });
-itemDef("trial_key.json", "minecraft:item/trial_key", { peak_tuner: "peaksound:item/peak_tuner", pocket_radio: "peaksound:item/pocket_radio" });
-itemDef("note_block.json", "minecraft:block/note_block",
-  { jukebox: "peaksound:block/jukebox", speaker: "peaksound:block/speaker",
-    dj_desk: "peaksound:block/dj_desk", spotlight: "peaksound:block/spotlight", microphone: "peaksound:block/microphone", song_library: "peaksound:block/song_library", music_remote: "peaksound:block/music_remote", display: "peaksound:block/display" });
-// Radios nutzen Spielerkoepfe als Traeger: Vanilla-Kopfmodell bleibt Fallback fuer alle echten Koepfe
-itemDef("player_head.json", null,
-  { radio_receiver: "peaksound:block/radio_receiver", radio_transmitter: "peaksound:block/radio_transmitter" },
-  { type: "minecraft:special", base: "minecraft:item/template_skull", model: { type: "minecraft:player_head" },
-    transformation: { left_rotation: [1, 0, 0, -0], right_rotation: [0, 0, 0, 1], scale: [1, 1, 1], translation: [0.5, 0, 0.5] } });
-
-
+// ---------- Item-Definitionen (nur unter peaksound:, KEINE Vanilla-Dateien: die Zuordnung Traeger-Item -> Modell macht PeakModels.java per Code) ----------
+const itemModels = { blank_record: "peaksound:item/blank_record", written_record: "peaksound:item/written_record", peak_tuner: "peaksound:item/peak_tuner", pocket_radio: "peaksound:item/pocket_radio" };
+for (const id of ["jukebox", "speaker", "dj_desk", "spotlight", "microphone", "song_library", "music_remote", "display", "radio_receiver", "radio_transmitter"]) itemModels[id] = `peaksound:block/${id}`;
+for (const [id, model] of Object.entries(itemModels)) json(path.join(PS, "items", `${id}.json`), { model: { type: "minecraft:model", model } });
 // ---------- Lautsprecher-Nummern 1-25: durchsichtige Ziffern-Overlays auf dem Vanilla-Notenblock ----------
 const DIGITS = {
   0: ["111", "101", "101", "101", "111"], 1: ["010", "110", "010", "010", "111"], 2: ["111", "001", "111", "100", "111"],
@@ -128,24 +106,5 @@ for (let n = 1; n <= MAX_SPEAKERS; n++) {
     ]
   });
 }
-// ---------- Notenblock-Blockstate: alle 1150 Zustaende, PeakSound-Zustaende mit eigenem Modell ----------
-const instruments = ["harp", "basedrum", "snare", "hat", "bass", "flute", "bell", "guitar", "chime", "xylophone",
-  "iron_xylophone", "cow_bell", "didgeridoo", "bit", "banjo", "pling", "zombie", "skeleton", "creeper",
-  "dragon", "wither_skeleton", "piglin", "custom_head"];
-const special = { "bit/23/true": "peaksound:block/jukebox", "bit/24/true": "peaksound:block/speaker",
-  "bit/21/true": "peaksound:block/dj_desk", "bit/22/true": "peaksound:block/spotlight", "bit/20/true": "peaksound:block/microphone", "bit/19/true": "peaksound:block/song_library", "bit/18/true": "peaksound:block/music_remote",
-  "bit/17/true": "peaksound:block/radio_transmitter", "bit/16/true": "peaksound:block/radio_receiver",
-  "bit/15/true": "peaksound:block/display" };
-const variants = {};
-for (const inst of instruments) {
-  for (let note = 0; note <= 24; note++) {
-    for (const powered of ["false", "true"]) {
-      let model = special[`${inst}/${note}/${powered}`] || "minecraft:block/note_block";
-      // Lautsprecher mit Nummer: custom_head + powered, Ton = Nummer - 1
-      if (inst === "custom_head" && powered === "true" && note < MAX_SPEAKERS) model = `peaksound:block/speaker_${note + 1}`;
-      variants[`instrument=${inst},note=${note},powered=${powered}`] = { model };
-    }
-  }
-}
-json(path.join(MC, "blockstates", "note_block.json"), { variants });
+// Notenblock-Zustaende (Instrument/Ton -> Modell) ordnet PeakModels.java per Code zu; es gibt keine Blockstate-Datei der Mod mehr.
 console.log("ok");

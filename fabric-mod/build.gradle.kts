@@ -2,6 +2,8 @@ plugins {
     id("net.fabricmc.fabric-loom") version "1.19-SNAPSHOT"
 }
 
+base { archivesName = "PeakSound" }
+
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)
     withSourcesJar()

@@ -9,8 +9,8 @@ Aus dem Ordner `dist/` des Projekts (oder selbst gebaut, siehe [BUILD.md](BUILD.
 
 | Datei | Wohin |
 |---|---|
-| `PeakSound-Paper-0.1.0.jar` | Server, Ordner `plugins/` |
-| `PeakSound-Fabric-0.1.0.jar` | Client, Ordner `.minecraft/mods/` |
+| `Server-Plugin-Paper/PeakSound-0.1.0.jar` | Server, Ordner `plugins/` |
+| `Client-Mod-Fabric/PeakSound-0.1.0.jar` | Client, Ordner `.minecraft/mods/` |
 | `PeakSound-Showroom-Map.zip` | Testkarte (Welt + Plugin-Daten), siehe Schritt 3 |
 
 Zusätzlich:
@@ -23,7 +23,7 @@ Zusätzlich:
 
 1. Neuen Ordner anlegen, `paper.jar` hineinlegen, dort `java -jar paper.jar nogui` ausführen. Beim ersten Mal bricht er
    ab: in `eula.txt` `eula=true` setzen und noch einmal starten. Danach mit `stop` beenden.
-2. `PeakSound-Paper-0.1.0.jar` (und optional Simple Voice Chat) nach `plugins/` kopieren.
+2. `Server-Plugin-Paper/PeakSound-0.1.0.jar` (und optional Simple Voice Chat) nach `plugins/` kopieren.
 3. Für den Test in `server.properties` sinnvoll: `gamemode=creative`, `spawn-protection=0`.
    Spielst du nur lokal und ohne Mojang-Konto-Prüfung, brauchst du `online-mode=false`; sonst lass es auf `true`.
 
@@ -39,7 +39,7 @@ Das Zip enthält zwei Ordner: `world/` und `plugins/PeakSound/`. Bei **gestoppte
 
 ## 4. Client
 
-1. Fabric Loader für 26.2 installieren, `fabric-api-….jar` und `PeakSound-Fabric-0.1.0.jar` in `.minecraft/mods/` legen
+1. Fabric Loader für 26.2 installieren, `fabric-api-….jar` und `Client-Mod-Fabric/PeakSound-0.1.0.jar` in `.minecraft/mods/` legen
    (bei Lunar: im Reiter *Mods* per Drag-and-drop, siehe [INSTALL.md](INSTALL.md)).
 2. Mit dem Fabric-Profil starten und dem Server beitreten (`localhost`, bei einem Server im Netzwerk die IP).
 3. Teleport zum Showroom (als Operator): `/tp 240 -60 236`. Alternativ steht der Weltspawn dort.

@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.1.0
+- Server-Resource-Packs: Die Mod ueberschreibt keine Vanilla-Dateien mehr (Notenblock-Blockstate, Item-Definitionen), sondern setzt ihre Modelle clientseitig per Code ein (PeakModels). Ein Server-Pack mit eigener note_block.json verdraengt unsere Optik dadurch nicht.
 - Display-Block: zeigt Cover, Titel und Interpret des laufenden Songs; nebeneinander liegende Displays bilden eine Cover-Wand (Bilderrahmen mit Karten, serverseitig, auch ohne Mod).
 - Aufraeumen: Verschwundene PeakSound-Bloecke (WorldEdit, /setblock) werden alle 30 s erkannt, ihre Wiedergabe und Einstellungen vergessen.
 - Showroom-Karte mit Radio-Ecke, Rezept-PDF mit Radio-Rezepten.

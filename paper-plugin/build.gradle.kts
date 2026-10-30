@@ -29,7 +29,7 @@ tasks.processResources {
 // Das Plugin-Jar enthaelt nur unsere Module. Die Audio-Bibliotheken (LGPL) werden NICHT eingeschmolzen,
 // sondern beim Serverstart ueber "libraries" in plugin.yml als eigene Jars von Maven Central geladen.
 tasks.jar {
-    archiveBaseName = "PeakSound-Paper"
+    archiveBaseName = "PeakSound"
     from(project(":protocol").sourceSets["main"].output)
     from(project(":audio-core").sourceSets["main"].output)
 }

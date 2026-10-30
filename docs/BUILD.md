@@ -12,7 +12,7 @@ Unter Windows: `gradlew.bat build`. Das Ergebnis:
 
 | Datei | Zweck |
 |---|---|
-| `paper-plugin/build/libs/PeakSound-Paper-<version>.jar` | Server-Plugin |
+| `paper-plugin/build/libs/PeakSound-<version>.jar` | Server-Plugin |
 | `fabric-mod/build/libs/fabric-mod-<version>.jar` | Client-Mod (mit eingebetteten Bibliotheken, Jar-in-Jar) |
 
 `./gradlew build` führt auch alle Unit-Tests aus.
@@ -35,13 +35,14 @@ Ein lokaler Testserver und ein Dev-Client:
 ```
 
 Der Dev-Client verbindet sich mit dem Spieler `PeakDev` (siehe `fabric-mod/build.gradle.kts`). Als Server taugt ein
-Paper-26.2-Server in `run/server` mit `online-mode=false` und dem gebauten Plugin in `plugins/`.
+Paper-26.2-Server mit `online-mode=false` und dem gebauten Plugin in `plugins/`. Im PeakVerse-Verbund liegt er unter
+`../run/server` (gemeinsamer Test-Server aller Module); `../tools/build-all.ps1` baut und kopiert die Jars dorthin.
 
 Hilfsmittel (brauchen Node.js beziehungsweise Java):
 
 | Befehl | Zweck |
 |---|---|
-| `node fabric-mod/tools/gen_assets.js` | erzeugt Modelle, Item-Definitionen, Zahlen-Overlays und den Notenblock-Blockstate |
+| `node fabric-mod/tools/gen_assets.js` | erzeugt Modelle, Item-Definitionen und Zahlen-Overlays (Notenblock-Zustaende ordnet `PeakModels` per Code zu) |
 | `node tools/make_test_audio.js` | erzeugt Test-WAV-Dateien in `run/test-audio/` |
 | `node branding/gen_logo.js` | erzeugt das Logo als SVG und PNG |
 | `java tools/MakeTestSongs.java ...` | legt Test-Songs direkt im Song-Speicher des Testservers an |

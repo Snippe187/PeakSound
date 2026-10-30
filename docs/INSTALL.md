@@ -6,7 +6,7 @@ keine Musik und sieht nur normale Blöcke.
 ## Server (Paper 26.2)
 
 1. Paper 26.2 installieren (Build 135 oder neuer) und einmal starten.
-2. `PeakSound-Paper-<version>.jar` in den Ordner `plugins/` legen.
+2. `Server-Plugin-Paper/PeakSound-<version>.jar` in den Ordner `plugins/` legen.
 3. Server starten. Beim **ersten Start** lädt Paper die Audio-Bibliotheken von Maven Central
    (jaudiotagger, JLayer, JOrbis, jFLAC, java-flac-encoder). Der Server braucht dafür einmal Internet.
 4. Im Ordner `plugins/PeakSound/` entsteht die `config.yml` (siehe unten) und beim Betrieb `songs/`, `songs.json`,

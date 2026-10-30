@@ -128,3 +128,9 @@ Grenzen: Die Warteschlange liegt nur im Speicher (nach einem Neustart leer). Kar
 - [ ] `/peaksound stats` und Admin-Menü → Reiter **Statistik**: Songs, Speicher, Abspielungen, Top-Songs, größte Hochlader, Blöcke, Spieler online.
 - [ ] `/peaksound backup` erzeugt `plugins/PeakSound/backups/manuell-*.zip`; täglich entsteht automatisch `auto-*.zip` (die ältesten über `backup.keep` werden gelöscht).
 - [ ] `/peaksound restore <Name>` (Tab-Vervollständigung) meldet „bereit“; nach dem Neustart steht im Log „Sicherung eingespielt“ und `vor-restore-*.zip` enthält den vorherigen Stand.
+
+## Server-Resource-Pack
+
+- [ ] Alle PeakSound-Bloecke und -Items (Jukebox, Lautsprecher mit Nummer, DJ-Pult, Scheinwerfer, Mikrofon, Bibliothek, Fernbedienung, Display, Radio-Sender/-Empfaenger, Taschenradio, Tuner, Platten) sehen mit der Mod aus wie vorher - platziert, im Inventar und in der Hand.
+- [ ] Dasselbe mit einem Server-Resource-Pack, das eine eigene ssets/minecraft/blockstates/note_block.json und items/note_block.json mitbringt: unsere Bloecke und Items behalten ihre Optik, normale Notenbloecke zeigen das Modell des Packs.
+- [ ] Echte Spielerkoepfe und Vanilla-Items (Notenblock, Trial Key) sind unveraendert.
