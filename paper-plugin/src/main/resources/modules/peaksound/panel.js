@@ -1,4 +1,4 @@
-﻿// Seite "PeakSound": Songs ansehen, anhoeren, umbenennen, freigeben, loeschen und Upload-Limits einstellen.
+// Seite "PeakSound": Songs ansehen, anhoeren, umbenennen, freigeben, loeschen und Upload-Limits einstellen.
 export default async function mount(root, ctx) {
   const { h } = ctx;
   const L = (de, en) => ctx.t({ de, en });
