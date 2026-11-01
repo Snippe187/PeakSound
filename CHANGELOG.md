@@ -28,3 +28,4 @@ Erste Version für Minecraft 26.2 (Fabric-Mod + Paper-Plugin).
 - Scheinwerfer mit Farben, Modi, Effekten und Strobo-Schutz
 - Mikrofon-Block über Simple Voice Chat (optional)
 - Eigene Texturen, Rezeptbuch-Reiter 
+- Web: Song-Verwaltung in der PeakCore-Weboberflaeche (Songs anhoeren, umbenennen, freigeben, loeschen, Limits einstellen).

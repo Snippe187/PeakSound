@@ -170,6 +170,16 @@ public final class PeakSoundModule implements PeakModule {
         coreLink = CoreLink.register(plugin, network);
         network.setCore(coreLink);
 
+        // Song-Verwaltung in der Web-Oberflaeche von PeakCore (nur wenn sie eingeschaltet ist)
+        if (ctx.web().enabled()) {
+            try (java.io.InputStream in = PeakSoundModule.class.getResourceAsStream("/modules/peaksound/panel.js")) {
+                if (in == null) throw new java.io.IOException("panel.js fehlt im Jar");
+                new SongWeb(ctx.web(), songs, limits, analysis, favorites, playback).register(new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+            } catch (java.io.IOException e) {
+                ctx.logger().warning("Web-Seite von PeakSound nicht verfuegbar: " + e.getMessage());
+            }
+        }
+
         SettingsClipboard clipboard = new SettingsClipboard(items, jukeboxSettings, playback, speakers, lightService, dj, micService, remote);
         plugin.getServer().getPluginManager().registerEvents(clipboard, plugin);
         plugin.getServer().getPluginManager().registerEvents(network, plugin);
