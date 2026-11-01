@@ -62,3 +62,7 @@ Die Architektur steht in [ARCHITECTURE.md](ARCHITECTURE.md), der Fortschritt in 
 ## Lizenz
 
 MIT, siehe [LICENSE](LICENSE). Die verwendeten Bibliotheken stehen in [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md).
+
+## Lizenz
+
+GPL-3.0 (siehe [LICENSE](LICENSE)). Der urspruengliche Code der PeakSound-Alpha steht unter der MIT-Lizenz, deren Text und Hinweis bleiben in [LICENSES/MIT-PeakSound-Alpha.txt](LICENSES/MIT-PeakSound-Alpha.txt) erhalten.
