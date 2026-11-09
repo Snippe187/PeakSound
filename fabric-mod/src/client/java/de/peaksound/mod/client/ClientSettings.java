@@ -19,6 +19,7 @@ public final class ClientSettings {
         boolean strobe = true;
         boolean hud = true;
         boolean lyrics = true;
+        boolean peakAdvancements = true;
     }
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -70,6 +71,11 @@ public final class ClientSettings {
     public static synchronized boolean lyrics() { ensureLoaded(); return data.lyrics; }
 
     public static synchronized void setLyrics(boolean on) { ensureLoaded(); data.lyrics = on; save(); }
+
+    /** Fortschritts-Ansicht im PeakVerse-Stil statt der Standard-Ansicht (Taste L). */
+    public static synchronized boolean peakAdvancements() { ensureLoaded(); return data.peakAdvancements; }
+
+    public static synchronized void setPeakAdvancements(boolean on) { ensureLoaded(); data.peakAdvancements = on; save(); }
 
     /** Faktor 0-1 fuer die Wiedergabe. */
     public static float volumeFactor() { return volumePercent() / 100f; }

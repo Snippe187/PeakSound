@@ -21,6 +21,15 @@ public abstract class SoundOptionsScreenMixin {
             ClientSettings.setStrobeAllowed(!ClientSettings.strobeAllowed());
             b.setMessage(peaksound$strobeLabel());
         }).bounds(0, 0, 310, 20).build());
+        list.addBig(net.minecraft.client.gui.components.Button.builder(peaksound$advLabel(), b -> {
+            ClientSettings.setPeakAdvancements(!ClientSettings.peakAdvancements());
+            b.setMessage(peaksound$advLabel());
+        }).bounds(0, 0, 310, 20).build());
+    }
+
+    private static net.minecraft.network.chat.Component peaksound$advLabel() {
+        return net.minecraft.network.chat.Component.translatable("peaksound.options.advancements",
+                net.minecraft.network.chat.Component.translatable(ClientSettings.peakAdvancements() ? "options.on" : "options.off"));
     }
 
     private static net.minecraft.network.chat.Component peaksound$strobeLabel() {

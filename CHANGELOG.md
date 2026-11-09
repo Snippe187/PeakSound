@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.8
+- **Fortschrittsansicht im PeakVerse-Stil** (Taste L): dunkle Flaeche, Reiter je Bereich mit Zaehler, Gesamtbalken, Baum mit Linien, Tooltip mit Beschreibung; ziehen oder Mausrad zum Verschieben. Umschalten per Knopf 'Standard-Ansicht' oder in den Soundoptionen. Noch nicht im Spiel angesehen (nur gebaut, Mixin laedt ohne Fehler).
+
 ## 0.1.0
 - PeakSound ist jetzt ein **eingebautes Modul von PeakCore** (All-in-One-Jar `PeakCore-<Version>.jar`, kein eigenes Plugin mehr; Schalter `modules.peaksound.enabled`), Anmeldung als Modul `peaksound`. Beim Update die alte `PeakSound`-Jar loeschen. Der alte Kanal `peaksound:main` (Protokoll 2) bleibt, damit Spieler mit der Alpha-Mod nach dem Update weiterspielen; die neue Mod spricht ueber den Kanal von PeakCore. Datenordner `plugins/PeakSound`, Daten, Rechte und Befehle sind unveraendert. Die Mod meldet sich unabhaengig von der Startreihenfolge der Mods bei der Core-Mod an.
 - Der Hinweis fuer Spieler ohne Mod kommt von PeakCore; Spieler mit der alten Mod werden dort als kompatibel erkannt.
