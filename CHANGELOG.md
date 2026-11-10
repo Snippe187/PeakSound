@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.1.8
-- **Fortschrittsansicht im PeakVerse-Stil** (Taste L): dunkle Flaeche, Reiter je Bereich mit Zaehler, Gesamtbalken, Baum mit Linien, Tooltip mit Beschreibung; ziehen oder Mausrad zum Verschieben. Umschalten per Knopf 'Standard-Ansicht' oder in den Soundoptionen. Noch nicht im Spiel angesehen (nur gebaut, Mixin laedt ohne Fehler).
+- **Fortschrittsansicht im PeakVerse-Stil** (Taste L): Reiter PeakVerse (Standard) und Vanilla, Baum mit Zoom (Mausrad zur Maus, +/-, 0 oder Knopf 'Alles zeigen', 10 bis 300 %), Verschieben per Ziehen, Suche, Filter (alle/offen/erreicht), Aeste per Rechtsklick ein-/ausklappen, Seitenleiste mit Details, Belohnung und Checkliste der Teilziele (z. B. welche Biome noch fehlen; auch im Tooltip), Aufgaben anpinnen (Liste mit Fortschritt rechts im Spiel, erledigte loesen sich). Knopf 'Standard-Ansicht' und Option in den Soundoptionen schalten auf die normale Ansicht. Noch nicht im Spiel angesehen. Gesamtpunkte und Rang folgen (brauchen Daten vom Server).
 
 ## 0.1.0
 - PeakSound ist jetzt ein **eingebautes Modul von PeakCore** (All-in-One-Jar `PeakCore-<Version>.jar`, kein eigenes Plugin mehr; Schalter `modules.peaksound.enabled`), Anmeldung als Modul `peaksound`. Beim Update die alte `PeakSound`-Jar loeschen. Der alte Kanal `peaksound:main` (Protokoll 2) bleibt, damit Spieler mit der Alpha-Mod nach dem Update weiterspielen; die neue Mod spricht ueber den Kanal von PeakCore. Datenordner `plugins/PeakSound`, Daten, Rechte und Befehle sind unveraendert. Die Mod meldet sich unabhaengig von der Startreihenfolge der Mods bei der Core-Mod an.

@@ -20,6 +20,7 @@ public final class ClientSettings {
         boolean hud = true;
         boolean lyrics = true;
         boolean peakAdvancements = true;
+        java.util.List<String> pins = new java.util.ArrayList<>();
     }
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -76,6 +77,20 @@ public final class ClientSettings {
     public static synchronized boolean peakAdvancements() { ensureLoaded(); return data.peakAdvancements; }
 
     public static synchronized void setPeakAdvancements(boolean on) { ensureLoaded(); data.peakAdvancements = on; save(); }
+
+    /** Angepinnte Aufgaben (Schluessel wie peakachievements:xyz), die als Liste im Spiel erscheinen. */
+    public static synchronized java.util.List<String> pins() { ensureLoaded(); if (data.pins == null) data.pins = new java.util.ArrayList<>(); return new java.util.ArrayList<>(data.pins); }
+
+    public static synchronized boolean isPinned(String key) { return pins().contains(key); }
+
+    public static synchronized void togglePin(String key) {
+        ensureLoaded();
+        if (data.pins == null) data.pins = new java.util.ArrayList<>();
+        if (!data.pins.remove(key)) { if (data.pins.size() < 5) data.pins.add(key); }
+        save();
+    }
+
+    public static synchronized void unpin(String key) { ensureLoaded(); if (data.pins != null && data.pins.remove(key)) save(); }
 
     /** Faktor 0-1 fuer die Wiedergabe. */
     public static float volumeFactor() { return volumePercent() / 100f; }

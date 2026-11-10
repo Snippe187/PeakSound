@@ -44,6 +44,7 @@ public final class PeakSoundClient implements ClientModInitializer {
                 })));
         ClientNetwork.register();
         NowPlayingHud.register();
+        PinHud.register();
         // /peaksoundhud und /peaksoundlyrics: Songanzeige und Songtext-Zeile ein- bzw. ausschalten
         net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("peaksoundhud").executes(context -> {
